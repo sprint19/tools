@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Sprint19 Tools — Privacy-first, browser-based engineering utilities. No data leaves your browser. SPF, DKIM, DMARC, OpenSSL CSR, Let's Encrypt, JWT, CORS, webhooks, Postgres JSON, and Rails log tools.">
+  <meta name="description" content="Sprint19 Tools — Privacy-first, browser-based engineering utilities. No data leaves your browser. Email auth, DNS, HTTP headers, SSL/TLS, auth tokens, config parsing, and DevOps tools.">
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="https://tools.sprint19.com/">
   <meta property="og:title" content="Sprint19 Tools — Engineering Utilities">
@@ -15,6 +15,44 @@
   <title>Sprint19 Tools — Privacy-First Engineering Utilities</title>
   <link rel="stylesheet" href="/shared/styles.css">
   <style>
+    body {
+      max-width: 1080px;
+    }
+
+    .page-layout {
+      display: grid;
+      grid-template-columns: 200px 1fr;
+      gap: 32px;
+    }
+
+    .sidebar {
+      position: sticky;
+      top: 40px;
+      align-self: start;
+    }
+    .sidebar ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .sidebar li {
+      margin-bottom: 2px;
+    }
+    .sidebar a {
+      display: block;
+      padding: 6px 12px;
+      font-size: 14px;
+      color: var(--color-text-muted);
+      text-decoration: none;
+      border-radius: 4px;
+      transition: color 0.15s, background 0.15s;
+    }
+    .sidebar a:hover {
+      color: var(--color-link);
+      background: var(--color-surface);
+      text-decoration: none;
+    }
+
     .hero {
       margin-bottom: 40px;
     }
@@ -23,11 +61,24 @@
       font-size: 17px;
       max-width: 600px;
     }
+
+    .category-section {
+      margin-bottom: 32px;
+      scroll-margin-top: 24px;
+    }
+    .category-section h2 {
+      margin-top: 0;
+      transition: color 0.2s;
+    }
+    .category-section:target h2 {
+      color: var(--color-link);
+    }
+
     .tool-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 16px;
-      margin-top: 24px;
+      margin-top: 16px;
     }
     .tool-card {
       border: 1px solid var(--color-border);
@@ -74,6 +125,7 @@
       font-size: 12px;
       color: var(--color-text-dim);
     }
+
     .principles {
       margin-top: 48px;
       color: var(--color-text-muted);
@@ -85,127 +137,269 @@
     .principles li {
       margin-bottom: 4px;
     }
+
+    @media (max-width: 768px) {
+      body {
+        max-width: 100%;
+      }
+      .page-layout {
+        grid-template-columns: 1fr;
+        gap: 0;
+      }
+      .sidebar {
+        position: static;
+        border-bottom: 1px solid var(--color-border);
+        padding-bottom: 12px;
+        margin-bottom: 24px;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+      .sidebar ul {
+        display: flex;
+        gap: 4px;
+        white-space: nowrap;
+      }
+      .sidebar li {
+        margin-bottom: 0;
+      }
+      .sidebar a {
+        padding: 6px 14px;
+        font-size: 13px;
+        border: 1px solid var(--color-border);
+        border-radius: 20px;
+      }
+    }
     @media (max-width: 600px) {
       .tool-grid {
         grid-template-columns: 1fr;
+      }
+    }
+    @media print {
+      .sidebar {
+        display: none;
+      }
+      .page-layout {
+        display: block;
       }
     }
   </style>
 </head>
 <body>
 
-<div class="hero">
-  <h1>Sprint19 Tools</h1>
-  <p>Privacy-first, browser-based engineering utilities. No data leaves your browser. No tracking. No backend.</p>
+<div class="page-layout">
+
+  <nav class="sidebar">
+    <ul>
+      <li><a href="#email-dns">Email &amp; DNS</a></li>
+      <li><a href="#ssl-certs">SSL &amp; Certificates</a></li>
+      <li><a href="#auth-tokens">Auth &amp; Tokens</a></li>
+      <li><a href="#http-headers">HTTP &amp; Headers</a></li>
+      <li><a href="#data-config">Data &amp; Config</a></li>
+      <li><a href="#devops-logs">DevOps &amp; Logs</a></li>
+      <li><a href="#utilities">Utilities</a></li>
+    </ul>
+  </nav>
+
+  <div class="main-content">
+
+    <div class="hero">
+      <h1>Sprint19 Tools</h1>
+      <p>Privacy-first, browser-based engineering utilities. No data leaves your browser. No tracking. No backend.</p>
+    </div>
+
+    <section id="email-dns" class="category-section">
+      <h2>Email &amp; DNS</h2>
+      <div class="tool-grid">
+        <a href="/dkim_builder/" class="tool-card">
+          <h3>DKIM Record Builder</h3>
+          <p>Paste your public key and selector to generate a DKIM DNS TXT record.</p>
+          <span class="tag">Email Auth</span>
+        </a>
+        <a href="/dkim_inspector/" class="tool-card">
+          <h3>DKIM Inspector</h3>
+          <p>Paste a DKIM TXT record or signature header to inspect fields, flags, and key status.</p>
+          <span class="tag">Email Auth</span>
+        </a>
+        <a href="/dmarc_builder/" class="tool-card">
+          <h3>DMARC Record Builder</h3>
+          <p>Fill in your DMARC policy settings and get a ready-to-publish TXT record with field explanations.</p>
+          <span class="tag">Email Auth</span>
+        </a>
+        <a href="/dmarc_reader/" class="tool-card">
+          <h3>DMARC XML Reader</h3>
+          <p>Upload a DMARC aggregate report and get a clear, structured interpretation of authentication results.</p>
+          <span class="tag">Email Auth</span>
+        </a>
+        <a href="/spf_builder/" class="tool-card">
+          <h3>SPF Record Builder</h3>
+          <p>Enter your authorized senders and IP ranges to generate a complete SPF TXT record.</p>
+          <span class="tag">Email Auth</span>
+        </a>
+        <a href="/spf_analyzer/" class="tool-card">
+          <h3>SPF Analyzer</h3>
+          <p>Paste an SPF record to see mechanism breakdown, lookup count, and configuration warnings.</p>
+          <span class="tag">Email Auth</span>
+        </a>
+        <a href="/dns_txt_inspector/" class="tool-card coming-soon">
+          <h3>DNS TXT Record Inspector</h3>
+          <p>Paste a DNS TXT record to parse key/value pairs. Works with DMARC, SPF, DKIM, and domain verification records.</p>
+          <span class="tag">Email Auth</span>
+        </a>
+        <a href="/email_header_analyzer/" class="tool-card coming-soon">
+          <h3>Email Header Analyzer</h3>
+          <p>Paste raw email headers to extract sender info, Return-Path, SPF/DKIM/DMARC results, and sending IP.</p>
+          <span class="tag">Email Auth</span>
+        </a>
+      </div>
+    </section>
+
+    <section id="ssl-certs" class="category-section">
+      <h2>SSL &amp; Certificates</h2>
+      <div class="tool-grid">
+        <a href="/openssl_csr_builder/" class="tool-card">
+          <h3>OpenSSL CSR Builder</h3>
+          <p>Enter your domain and organization details to generate an OpenSSL CSR command with optional SAN support.</p>
+          <span class="tag">SSL / TLS</span>
+        </a>
+        <a href="/letsencrypt_builder/" class="tool-card">
+          <h3>Let's Encrypt Command Builder</h3>
+          <p>Select your web server and domain to generate a ready-to-run Certbot command.</p>
+          <span class="tag">SSL / TLS</span>
+        </a>
+        <a href="/hsts_builder/" class="tool-card coming-soon">
+          <h3>HSTS Builder</h3>
+          <p>Set max-age, includeSubDomains, and preload to generate a Strict-Transport-Security header.</p>
+          <span class="tag">SSL / TLS</span>
+        </a>
+      </div>
+    </section>
+
+    <section id="auth-tokens" class="category-section">
+      <h2>Auth &amp; Tokens</h2>
+      <div class="tool-grid">
+        <a href="/jwt_decoder/" class="tool-card">
+          <h3>JWT Decoder</h3>
+          <p>Paste a JWT to decode header, payload, and signature. No verification — decode only.</p>
+          <span class="tag">Auth &amp; Tokens</span>
+        </a>
+        <a href="/basic_auth_generator/" class="tool-card coming-soon">
+          <h3>Basic Auth Header Generator</h3>
+          <p>Enter a username and password to generate a Base64-encoded Authorization header.</p>
+          <span class="tag">Auth &amp; Tokens</span>
+        </a>
+        <a href="/oauth_scope_formatter/" class="tool-card coming-soon">
+          <h3>OAuth Scope Formatter</h3>
+          <p>Paste an OAuth scope string to get a formatted, readable list of scopes.</p>
+          <span class="tag">Auth &amp; Tokens</span>
+        </a>
+      </div>
+    </section>
+
+    <section id="http-headers" class="category-section">
+      <h2>HTTP &amp; Headers</h2>
+      <div class="tool-grid">
+        <a href="/cors_checker/" class="tool-card">
+          <h3>CORS Checker</h3>
+          <p>Paste HTTP response headers to analyze CORS configuration and flag common misconfigurations.</p>
+          <span class="tag">HTTP &amp; APIs</span>
+        </a>
+        <a href="/http_header_analyzer/" class="tool-card coming-soon">
+          <h3>HTTP Header Analyzer</h3>
+          <p>Paste HTTP response headers for a structured breakdown of Cache-Control, CSP, CORS, HSTS, and security headers.</p>
+          <span class="tag">HTTP &amp; APIs</span>
+        </a>
+        <a href="/csp_parser/" class="tool-card coming-soon">
+          <h3>CSP Policy Parser</h3>
+          <p>Paste a Content-Security-Policy header to break it into a structured directives table.</p>
+          <span class="tag">HTTP &amp; APIs</span>
+        </a>
+        <a href="/webhook_viewer/" class="tool-card coming-soon">
+          <h3>Webhook Viewer</h3>
+          <p>Paste a JSON webhook payload for formatted display, structure stats, and event detection.</p>
+          <span class="tag">HTTP &amp; APIs</span>
+        </a>
+      </div>
+    </section>
+
+    <section id="data-config" class="category-section">
+      <h2>Data &amp; Config</h2>
+      <div class="tool-grid">
+        <a href="/env_formatter/" class="tool-card coming-soon">
+          <h3>ENV File Formatter</h3>
+          <p>Paste a .env file to get a structured table with optional value masking.</p>
+          <span class="tag">Data</span>
+        </a>
+        <a href="/redis_url_parser/" class="tool-card coming-soon">
+          <h3>Redis URL Parser</h3>
+          <p>Paste a Redis connection URL to extract host, port, database, and auth details.</p>
+          <span class="tag">Data</span>
+        </a>
+        <a href="/postgres_json_formatter/" class="tool-card coming-soon">
+          <h3>Postgres JSON Formatter</h3>
+          <p>Paste JSON from psql output — handles escaped formats, pretty-prints, and validates.</p>
+          <span class="tag">Data</span>
+        </a>
+      </div>
+    </section>
+
+    <section id="devops-logs" class="category-section">
+      <h2>DevOps &amp; Logs</h2>
+      <div class="tool-grid">
+        <a href="/dockerfile_linter/" class="tool-card coming-soon">
+          <h3>Dockerfile Linter</h3>
+          <p>Paste a Dockerfile to flag unpinned base images, missing WORKDIR, and multiple RUN layers.</p>
+          <span class="tag">DevOps</span>
+        </a>
+        <a href="/nginx_formatter/" class="tool-card coming-soon">
+          <h3>NGINX Config Formatter</h3>
+          <p>Paste an NGINX config block to get pretty-printed, readable output.</p>
+          <span class="tag">DevOps</span>
+        </a>
+        <a href="/rails_log_beautifier/" class="tool-card coming-soon">
+          <h3>Rails Log Beautifier</h3>
+          <p>Paste Rails server logs to group requests, extract stats, and color-code status results.</p>
+          <span class="tag">Logs</span>
+        </a>
+      </div>
+    </section>
+
+    <section id="utilities" class="category-section">
+      <h2>Utilities</h2>
+      <div class="tool-grid">
+        <a href="/color_picker/" class="tool-card">
+          <h3>Color Picker</h3>
+          <p>Pick or paste a color to get HEX, RGB, and HSL values with one-click copy and contrast hints.</p>
+          <span class="tag">Utility</span>
+        </a>
+        <a href="/js_to_ts_converter/" class="tool-card coming-soon">
+          <h3>JavaScript to TypeScript Converter</h3>
+          <p>Paste JavaScript code to get a TypeScript version with basic type annotations and interface scaffolding.</p>
+          <span class="tag">Code</span>
+        </a>
+      </div>
+    </section>
+
+    <div class="principles">
+      <h2>Principles</h2>
+      <ul>
+        <li>Clear over clever</li>
+        <li>Deterministic over speculative</li>
+        <li>Minimal infrastructure</li>
+        <li>Transparent logic</li>
+      </ul>
+    </div>
+
+    <footer class="site-footer">
+      <hr>
+      <p>All tools run entirely in your browser.</p>
+      <p>Built by <a href="https://sprint19.com" target="_blank" rel="noopener noreferrer">Sprint19</a>. Product engineering for startups.</p>
+      <p class="guardrail">These tools provide structured interpretation only and do not perform security assessment.</p>
+      <p class="copyright">&copy; 2026 Sprint19. Code licensed under <a href="/LICENSE.md">MIT</a>. Sprint19 name and branding may not be used without permission.</p>
+    </footer>
+
+  </div>
+
 </div>
-
-<h2>Live</h2>
-
-<div class="tool-grid">
-
-  <a href="/dkim_builder/" class="tool-card">
-    <h3>DKIM Record Builder</h3>
-    <p>Paste your public key and selector to generate a DKIM DNS TXT record.</p>
-    <span class="tag">Email Auth</span>
-  </a>
-
-  <a href="/dkim_inspector/" class="tool-card">
-    <h3>DKIM Inspector</h3>
-    <p>Paste a DKIM TXT record or signature header to inspect fields, flags, and key status.</p>
-    <span class="tag">Email Auth</span>
-  </a>
-
-  <a href="/dmarc_builder/" class="tool-card">
-    <h3>DMARC Record Builder</h3>
-    <p>Fill in your DMARC policy settings and get a ready-to-publish TXT record with field explanations.</p>
-    <span class="tag">Email Auth</span>
-  </a>
-
-  <a href="/dmarc_reader/" class="tool-card">
-    <h3>DMARC XML Reader</h3>
-    <p>Upload a DMARC aggregate report and get a clear, structured interpretation of authentication results.</p>
-    <span class="tag">Email Auth</span>
-  </a>
-
-  <a href="/spf_builder/" class="tool-card">
-    <h3>SPF Record Builder</h3>
-    <p>Enter your authorized senders and IP ranges to generate a complete SPF TXT record.</p>
-    <span class="tag">Email Auth</span>
-  </a>
-
-  <a href="/spf_analyzer/" class="tool-card">
-    <h3>SPF Analyzer</h3>
-    <p>Paste an SPF record to see mechanism breakdown, lookup count, and configuration warnings.</p>
-    <span class="tag">Email Auth</span>
-  </a>
-
-  <a href="/openssl_csr_builder/" class="tool-card">
-    <h3>OpenSSL CSR Builder</h3>
-    <p>Enter your domain and organization details to generate an OpenSSL CSR command with optional SAN support.</p>
-    <span class="tag">SSL / TLS</span>
-  </a>
-
-  <a href="/letsencrypt_builder/" class="tool-card">
-    <h3>Let's Encrypt Command Builder</h3>
-    <p>Select your web server and domain to generate a ready-to-run Certbot command.</p>
-    <span class="tag">SSL / TLS</span>
-  </a>
-
-  <a href="/jwt_decoder/" class="tool-card">
-    <h3>JWT Decoder</h3>
-    <p>Paste a JWT to decode header, payload, and signature. No verification — decode only.</p>
-    <span class="tag">Auth &amp; Tokens</span>
-  </a>
-
-  <a href="/cors_checker/" class="tool-card">
-    <h3>CORS Checker</h3>
-    <p>Paste HTTP response headers to analyze CORS configuration and flag common misconfigurations.</p>
-    <span class="tag">HTTP &amp; APIs</span>
-  </a>
-
-</div>
-
-<h2>Coming Soon</h2>
-
-<div class="tool-grid">
-
-  <a href="/webhook_viewer/" class="tool-card coming-soon">
-    <h3>Webhook Viewer</h3>
-    <p>Paste a JSON webhook payload for formatted display, structure stats, and event detection.</p>
-    <span class="tag">HTTP &amp; APIs</span>
-  </a>
-
-  <a href="/postgres_json_formatter/" class="tool-card coming-soon">
-    <h3>Postgres JSON Formatter</h3>
-    <p>Paste JSON from psql output — handles escaped formats, pretty-prints, and validates.</p>
-    <span class="tag">Data</span>
-  </a>
-
-  <a href="/rails_log_beautifier/" class="tool-card coming-soon">
-    <h3>Rails Log Beautifier</h3>
-    <p>Paste Rails server logs to group requests, extract stats, and color-code status results.</p>
-    <span class="tag">Logs</span>
-  </a>
-
-</div>
-
-<div class="principles">
-  <h2>Principles</h2>
-  <ul>
-    <li>Clear over clever</li>
-    <li>Deterministic over speculative</li>
-    <li>Minimal infrastructure</li>
-    <li>Transparent logic</li>
-  </ul>
-</div>
-
-<footer class="site-footer">
-  <hr>
-  <p>All tools run entirely in your browser.</p>
-  <p>Built by <a href="https://sprint19.com" target="_blank" rel="noopener noreferrer">Sprint19</a>. Product engineering for startups.</p>
-  <p class="guardrail">These tools provide structured interpretation only and do not perform security assessment.</p>
-  <p class="copyright">&copy; 2026 Sprint19. Code licensed under <a href="/LICENSE.md">MIT</a>. Sprint19 name and branding may not be used without permission.</p>
-</footer>
 
 </body>
 </html>

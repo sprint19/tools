@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="A privacy-first, browser-based color picker. Pick or paste a color to get HEX, RGB, and HSL values with one-click copy and contrast hints. No data leaves your browser. Built by Sprint19.">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://tools.sprint19.com/color_picker/">
+  <meta property="og:title" content="Color Picker &#8211; HEX, RGB, HSL Converter | Sprint19">
+  <meta property="og:description" content="Pick or paste a color to get HEX, RGB, and HSL values with one-click copy and contrast hints. No data leaves your browser.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://tools.sprint19.com/color_picker/">
+  <meta property="og:image" content="https://tools.sprint19.com/og-image.png">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <link rel="stylesheet" href="/shared/styles.css">
+  <title>Color Picker &#8211; HEX, RGB, HSL Converter | Sprint19</title>
+  <style>
+    .picker-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 20px;
+      flex-wrap: wrap;
+    }
+    #colorPicker {
+      width: 60px;
+      height: 42px;
+      border: 1px solid var(--color-border-input);
+      border-radius: 4px;
+      padding: 2px;
+      cursor: pointer;
+      background: var(--color-card-bg);
+    }
+    #hexInput {
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+      font-size: 15px;
+      padding: 8px 12px;
+      border: 1px solid var(--color-border-input);
+      border-radius: 4px;
+      width: 130px;
+      background: var(--color-card-bg);
+      color: var(--color-text);
+      box-sizing: border-box;
+    }
+    .preset-btn {
+      font-size: 13px;
+      color: var(--color-text-faint);
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 0;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+    .preset-btn:hover { color: var(--color-link); }
+    .hex-error {
+      color: var(--color-error);
+      font-size: 13px;
+      margin-top: 6px;
+      min-height: 18px;
+    }
+    .preview-section {
+      display: flex;
+      align-items: flex-start;
+      gap: 24px;
+      margin-top: 24px;
+      flex-wrap: wrap;
+    }
+    .preview-block {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    .color-preview {
+      width: 80px;
+      height: 80px;
+      border-radius: 6px;
+      border: 1px solid var(--color-border);
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .contrast-pills {
+      display: flex;
+      gap: 6px;
+    }
+    .contrast-pill {
+      font-size: 12px;
+      font-weight: 600;
+      padding: 3px 10px;
+      border-radius: 3px;
+      border: 1px solid var(--color-border);
+    }
+    .contrast-pill.recommended {
+      border-color: var(--color-success);
+    }
+    .outputs {
+      flex: 1;
+      min-width: 240px;
+    }
+    .output-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .output-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--color-text-muted);
+      width: 36px;
+      flex-shrink: 0;
+    }
+    .output-value {
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+      font-size: 14px;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: 4px;
+      padding: 6px 10px;
+      flex: 1;
+      min-width: 0;
+      color: var(--color-text);
+    }
+    .copy-btn {
+      font-size: 13px;
+      padding: 5px 12px;
+      cursor: pointer;
+      background: var(--color-surface);
+      color: var(--color-text-muted);
+      border: 1px solid var(--color-border-input);
+      border-radius: 4px;
+      white-space: nowrap;
+      flex-shrink: 0;
+      min-width: 72px;
+      text-align: center;
+      transition: background 0.15s;
+    }
+    .copy-btn:hover { background: var(--color-surface-hover); }
+    .copy-btn.copied {
+      color: var(--color-success);
+      border-color: var(--color-success);
+    }
+    .copy-btn.failed {
+      color: var(--color-error);
+      border-color: var(--color-error);
+    }
+  </style>
+</head>
+<body>
+
+<a href="/" class="back-link">&larr; Sprint19 Tools</a>
+<h1>Color Picker</h1>
+<p>Pick or paste a color to get HEX, RGB, and HSL values. Everything runs in your browser.</p>
+
+<div class="picker-row">
+  <input type="color" id="colorPicker" value="#4CA38C">
+  <input type="text" id="hexInput" value="#4CA38C" placeholder="#4CA38C" spellcheck="false" autocomplete="off">
+  <button class="preset-btn" id="presetBtn">Sprint19 teal</button>
+</div>
+<div class="hex-error" id="hexError"></div>
+
+<div class="preview-section">
+  <div class="preview-block">
+    <div class="color-preview" id="preview"></div>
+    <div class="contrast-pills" id="contrastHint"></div>
+  </div>
+  <div class="outputs">
+    <div class="output-row">
+      <span class="output-label">HEX</span>
+      <span class="output-value" id="hexOut"></span>
+      <button class="copy-btn" data-target="hexOut">Copy</button>
+    </div>
+    <div class="output-row">
+      <span class="output-label">RGB</span>
+      <span class="output-value" id="rgbOut"></span>
+      <button class="copy-btn" data-target="rgbOut">Copy</button>
+    </div>
+    <div class="output-row">
+      <span class="output-label">HSL</span>
+      <span class="output-value" id="hslOut"></span>
+      <button class="copy-btn" data-target="hslOut">Copy</button>
+    </div>
+  </div>
+</div>
+
+<footer class="site-footer">
+  <hr>
+  <p>Converted locally in your browser.</p>
+  <p>Built by <a href="https://sprint19.com" target="_blank" rel="noopener noreferrer">Sprint19</a>. Product engineering for startups.</p>
+  <p class="guardrail">This tool converts color values client-side and does not make network requests.</p>
+  <p class="copyright">&copy; 2026 Sprint19. Code licensed under <a href="/LICENSE.md">MIT</a>. Sprint19 name and branding may not be used without permission.</p>
+</footer>
+
+<script>
+(function () {
+  var picker    = document.getElementById('colorPicker');
+  var hexInput  = document.getElementById('hexInput');
+  var hexError  = document.getElementById('hexError');
+  var preview   = document.getElementById('preview');
+  var hexOut    = document.getElementById('hexOut');
+  var rgbOut    = document.getElementById('rgbOut');
+  var hslOut    = document.getElementById('hslOut');
+  var hint      = document.getElementById('contrastHint');
+  var presetBtn = document.getElementById('presetBtn');
+  var SPRINT19  = '#4CA38C';
+
+  function parseHex(raw) {
+    var s = raw.trim().replace(/^#/, '');
+    if (/^[0-9a-f]{3}$/i.test(s)) {
+      s = s[0] + s[0] + s[1] + s[1] + s[2] + s[2];
+    }
+    if (!/^[0-9a-f]{6}$/i.test(s)) return null;
+    return '#' + s.toUpperCase();
+  }
+
+  function hexToRgb(hex) {
+    var n = parseInt(hex.slice(1), 16);
+    return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
+  }
+
+  function rgbToHsl(r, g, b) {
+    r /= 255; g /= 255; b /= 255;
+    var max = Math.max(r, g, b), min = Math.min(r, g, b);
+    var h, s, l = (max + min) / 2;
+    if (max === min) {
+      h = s = 0;
+    } else {
+      var d = max - min;
+      s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+      switch (max) {
+        case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break;
+        case g: h = ((b - r) / d + 2) / 6; break;
+        case b: h = ((r - g) / d + 4) / 6; break;
+      }
+    }
+    return {
+      h: Math.round(h * 360),
+      s: Math.round(s * 100),
+      l: Math.round(l * 100)
+    };
+  }
+
+  function luminance(r, g, b) {
+    var a = [r, g, b].map(function (v) {
+      v /= 255;
+      return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+    });
+    return 0.2126 * a[0] + 0.7152 * a[1] + 0.0722 * a[2];
+  }
+
+  function update(hex) {
+    var rgb = hexToRgb(hex);
+    var hsl = rgbToHsl(rgb.r, rgb.g, rgb.b);
+    var lum = luminance(rgb.r, rgb.g, rgb.b);
+    var useBlack = lum > 0.179;
+
+    preview.style.backgroundColor = hex;
+    hexOut.textContent  = hex;
+    rgbOut.textContent  = 'rgb(' + rgb.r + ', ' + rgb.g + ', ' + rgb.b + ')';
+    hslOut.textContent  = 'hsl(' + hsl.h + ', ' + hsl.s + '%, ' + hsl.l + '%)';
+
+    var blackPill = '<span class="contrast-pill' + (useBlack ? ' recommended' : '') +
+      '" style="background:' + hex + ';color:#000">Aa</span>';
+    var whitePill = '<span class="contrast-pill' + (!useBlack ? ' recommended' : '') +
+      '" style="background:' + hex + ';color:#fff">Aa</span>';
+    hint.innerHTML = (useBlack ? blackPill + whitePill : whitePill + blackPill);
+  }
+
+  picker.addEventListener('input', function () {
+    var hex = this.value.toUpperCase();
+    hexInput.value = hex;
+    hexError.textContent = '';
+    update(hex);
+  });
+
+  hexInput.addEventListener('input', function () {
+    var parsed = parseHex(this.value);
+    if (parsed) {
+      hexError.textContent = '';
+      picker.value = parsed.toLowerCase();
+      update(parsed);
+    } else if (this.value.trim() !== '') {
+      hexError.textContent = 'Invalid hex';
+    }
+  });
+
+  presetBtn.addEventListener('click', function () {
+    hexInput.value = SPRINT19;
+    picker.value = SPRINT19.toLowerCase();
+    hexError.textContent = '';
+    update(SPRINT19);
+  });
+
+  function copyToClipboard(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      return navigator.clipboard.writeText(text).then(
+        function () { return true; },
+        function () { return fallbackCopy(text); }
+      );
+    }
+    return Promise.resolve(fallbackCopy(text));
+  }
+
+  function fallbackCopy(text) {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.left = '-9999px';
+    document.body.appendChild(ta);
+    ta.select();
+    var ok = false;
+    try { ok = document.execCommand('copy'); } catch (e) { /* ignored */ }
+    document.body.removeChild(ta);
+    return ok;
+  }
+
+  document.querySelectorAll('.copy-btn').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var target = document.getElementById(btn.getAttribute('data-target'));
+      if (!target) return;
+      var text = target.textContent;
+      var self = btn;
+      var original = self.textContent;
+
+      copyToClipboard(text).then(function (ok) {
+        if (ok === true || ok === undefined) {
+          self.textContent = 'Copied!';
+          self.classList.add('copied');
+        } else {
+          self.textContent = 'Copy failed';
+          self.classList.add('failed');
+        }
+        setTimeout(function () {
+          self.textContent = original;
+          self.classList.remove('copied', 'failed');
+        }, 1500);
+      });
+    });
+  });
+
+  update(SPRINT19);
+})();
+</script>
+
+</body>
+</html>
