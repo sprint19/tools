@@ -18,7 +18,7 @@
       margin-bottom: 40px;
     }
     .hero p {
-      color: #555;
+      color: var(--color-text-secondary);
       font-size: 17px;
       max-width: 600px;
     }
@@ -29,36 +29,36 @@
       margin-top: 24px;
     }
     .tool-card {
-      border: 1px solid #ddd;
+      border: 1px solid var(--color-border);
       border-radius: 6px;
       padding: 20px;
-      background: #fff;
+      background: var(--color-card-bg);
       transition: border-color 0.15s, box-shadow 0.15s;
       text-decoration: none;
       color: inherit;
       display: block;
     }
     .tool-card:hover {
-      border-color: #999;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+      border-color: var(--color-text-passive);
+      box-shadow: 0 2px 8px var(--color-shadow);
       text-decoration: none;
     }
     .tool-card h3 {
       margin: 0 0 6px 0;
       font-size: 16px;
-      color: #1a1a1a;
+      color: var(--color-text);
     }
     .tool-card p {
       margin: 0;
       font-size: 14px;
-      color: #666;
+      color: var(--color-text-muted);
       line-height: 1.45;
     }
     .tool-card .tag {
       display: inline-block;
       font-size: 11px;
-      color: #888;
-      background: #f5f5f5;
+      color: var(--color-text-faint);
+      background: var(--color-surface);
       padding: 2px 8px;
       border-radius: 3px;
       margin-top: 10px;
@@ -71,11 +71,11 @@
       content: " — coming soon";
       font-weight: normal;
       font-size: 12px;
-      color: #aaa;
+      color: var(--color-text-dim);
     }
     .principles {
       margin-top: 48px;
-      color: #666;
+      color: var(--color-text-muted);
       font-size: 14px;
     }
     .principles ul {
@@ -203,7 +203,7 @@
   <p>All tools run entirely in your browser.</p>
   <p>Built by <a href="https://sprint19.com" target="_blank" rel="noopener noreferrer">Sprint19</a>. Product engineering for startups.</p>
   <p class="guardrail">These tools provide structured interpretation only and do not perform security assessment.</p>
-  <p style="margin-top: 12px; font-size: 11px; color: #bbb;">&copy; 2026 Sprint19. Code licensed under <a href="/LICENSE.md" style="color: #bbb;">MIT</a>. Sprint19 name and branding may not be used without permission.</p>
+  <p class="copyright">&copy; 2026 Sprint19. Code licensed under <a href="/LICENSE.md">MIT</a>. Sprint19 name and branding may not be used without permission.</p>
 </footer>
 
 </body>

@@ -14,28 +14,27 @@
   <link rel="stylesheet" href="/shared/styles.css">
   <title>DMARC XML Reader – Clear, Local Report Interpretation | Sprint19</title>
   <style>
-    body { font-family: Arial; max-width: 800px; margin: 40px auto; }
-    .card { border: 1px solid #ddd; padding: 20px; margin-bottom: 20px; }
-    .green { color: green; }
-    .yellow { color: orange; }
-    .red { color: red; }
+    .card { border: 1px solid var(--color-border); padding: 20px; margin-bottom: 20px; }
+    .green { color: var(--color-success); }
+    .yellow { color: var(--color-warning); }
+    .red { color: var(--color-error); }
     .summary ul { list-style: disc; padding-left: 20px; }
     .summary li { margin-bottom: 6px; line-height: 1.5; }
     .summary p { margin-top: 16px; line-height: 1.5; }
     table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-    th { background: #f5f5f5; }
-    .raw-xml { white-space: pre-wrap; overflow: auto; max-height: 400px; background: #f9f9f9; border: 1px solid #ddd; padding: 12px; font-size: 13px; }
-    .disclaimer { margin-top: 24px; font-style: italic; color: #666; }
-    .print-btn { margin-top: 24px; padding: 10px 24px; font-size: 16px; cursor: pointer; }
-    .report-timestamp { color: #666; font-size: 14px; margin-bottom: 16px; }
-    .report-source { color: #999; font-size: 13px; margin-bottom: 20px; }
-    .site-footer { text-align: center; color: #999; font-size: 13px; margin-top: 48px; padding-bottom: 24px; }
-    .site-footer hr { border: none; border-top: 1px solid #ddd; margin-bottom: 16px; }
+    th, td { border: 1px solid var(--color-border); padding: 8px; text-align: left; }
+    th { background: var(--color-surface); }
+    .raw-xml { white-space: pre-wrap; overflow: auto; max-height: 400px; background: var(--color-surface-code); border: 1px solid var(--color-border); padding: 12px; font-size: 13px; }
+    .disclaimer { margin-top: 24px; font-style: italic; color: var(--color-text-muted); }
+    .print-btn { margin-top: 24px; padding: 10px 24px; font-size: 16px; cursor: pointer; background: var(--color-surface); border: 1px solid var(--color-border-input); border-radius: 4px; }
+    .report-timestamp { color: var(--color-text-muted); font-size: 14px; margin-bottom: 16px; }
+    .report-source { color: var(--color-text-passive); font-size: 13px; margin-bottom: 20px; }
+    .site-footer { text-align: center; color: var(--color-text-passive); font-size: 13px; margin-top: 48px; padding-bottom: 24px; }
+    .site-footer hr { border: none; border-top: 1px solid var(--color-border); margin-bottom: 16px; }
     .site-footer p { margin: 4px 0; }
-    .site-footer a { color: #666; text-decoration: none; }
+    .site-footer a { color: var(--color-text-muted); text-decoration: none; }
     .site-footer a:hover { text-decoration: underline; }
-    .site-footer .guardrail { font-style: italic; font-size: 12px; color: #aaa; margin-top: 12px; }
+    .site-footer .guardrail { font-style: italic; font-size: 12px; color: var(--color-text-dim); margin-top: 12px; }
 
     @media print {
       input, button {
@@ -63,7 +62,7 @@
 </head>
 <body>
 
-<a href="/" style="display:inline-block;font-size:13px;color:#666;text-decoration:none;margin-bottom:8px;">&larr; Sprint19 Tools</a>
+<a href="/" class="back-link">&larr; Sprint19 Tools</a>
 <h1>DMARC XML Reader</h1>
 <p>Structured interpretation. No speculation. No data leaves your browser.</p>
 
@@ -76,7 +75,7 @@
   <p>Generated locally in your browser.</p>
   <p>Built by <a href="https://sprint19.com" target="_blank" rel="noopener noreferrer">Sprint19</a>. Product engineering for startups.</p>
   <p class="guardrail">This tool provides interpretation of DMARC aggregate reports and does not perform security assessment.</p>
-  <p style="margin-top: 12px; font-size: 11px; color: #bbb;">&copy; 2026 Sprint19. Code licensed under <a href="/LICENSE.md" style="color: #bbb;">MIT</a>. Sprint19 name and branding may not be used without permission.</p>
+  <p class="copyright">&copy; 2026 Sprint19. Code licensed under <a href="/LICENSE.md">MIT</a>. Sprint19 name and branding may not be used without permission.</p>
 </footer>
 
 <script src="/shared/utils.js"></script>

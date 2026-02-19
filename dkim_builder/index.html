@@ -14,27 +14,18 @@
   <link rel="stylesheet" href="/shared/styles.css">
   <title>DKIM Record Builder – Generate a DKIM DNS TXT Record | Sprint19</title>
   <style>
-    .back-link {
-      display: inline-block;
-      font-size: 13px;
-      color: #666;
-      text-decoration: none;
-      margin-bottom: 8px;
-    }
-    .back-link:hover { color: #0066cc; text-decoration: underline; }
-
     .form-group { margin-bottom: 16px; }
     .form-group label {
       display: block;
       font-weight: 600;
       font-size: 14px;
       margin-bottom: 4px;
-      color: #1a1a1a;
+      color: var(--color-text);
     }
     .form-group .hint {
       display: block;
       font-size: 12px;
-      color: #888;
+      color: var(--color-text-faint);
       margin-bottom: 4px;
     }
     .form-group input[type="text"],
@@ -42,10 +33,12 @@
       width: 100%;
       padding: 8px 10px;
       font-size: 14px;
-      border: 1px solid #ccc;
+      border: 1px solid var(--color-border-input);
       border-radius: 4px;
       box-sizing: border-box;
       font-family: inherit;
+      background: var(--color-card-bg);
+      color: var(--color-text);
     }
     .form-group textarea {
       width: 100%;
@@ -53,10 +46,12 @@
       font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
       font-size: 13px;
       padding: 8px 10px;
-      border: 1px solid #ccc;
+      border: 1px solid var(--color-border-input);
       border-radius: 4px;
       box-sizing: border-box;
       resize: vertical;
+      background: var(--color-card-bg);
+      color: var(--color-text);
     }
     .form-row {
       display: grid;
@@ -72,7 +67,7 @@
     .checkbox-row label {
       font-size: 14px;
       font-weight: normal;
-      color: #1a1a1a;
+      color: var(--color-text);
       display: flex;
       align-items: center;
       gap: 6px;
@@ -80,14 +75,14 @@
     }
     .checkbox-row input[type="checkbox"] { margin: 0; }
 
-    .error-msg { color: #cf222e; font-weight: bold; margin-top: 16px; }
+    .error-msg { color: var(--color-error); font-weight: bold; margin-top: 16px; }
 
     .record-output { margin-top: 24px; }
     .record-output pre {
       white-space: pre-wrap;
       word-wrap: break-word;
-      background: #f9f9f9;
-      border: 1px solid #ddd;
+      background: var(--color-surface-code);
+      border: 1px solid var(--color-border);
       border-radius: 4px;
       padding: 14px;
       font-size: 14px;
@@ -100,20 +95,20 @@
       padding: 6px 16px;
       font-size: 14px;
       cursor: pointer;
-      background: #f5f5f5;
-      border: 1px solid #ccc;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border-input);
       border-radius: 4px;
     }
-    .copy-btn:hover { background: #eaeaea; }
-    .copy-btn.copied { background: #1a7f37; color: #fff; border-color: #1a7f37; }
+    .copy-btn:hover { background: var(--color-surface-hover); }
+    .copy-btn.copied { background: var(--color-success); color: var(--color-btn-text); border-color: var(--color-success); }
 
     .dns-hint {
       margin-top: 12px;
       font-size: 13px;
-      color: #555;
+      color: var(--color-text-secondary);
     }
     .dns-hint code {
-      background: #f5f5f5;
+      background: var(--color-surface);
       padding: 2px 6px;
       border-radius: 3px;
       font-size: 13px;
@@ -127,7 +122,7 @@
     .key-note {
       margin-top: 16px;
       font-size: 13px;
-      color: #666;
+      color: var(--color-text-muted);
       font-style: italic;
     }
   </style>
@@ -194,7 +189,7 @@
   <p>Generated locally in your browser.</p>
   <p>Built by <a href="https://sprint19.com" target="_blank" rel="noopener noreferrer">Sprint19</a>. Product engineering for startups.</p>
   <p class="guardrail">This tool assembles a DKIM DNS record from the values you provide. It does not generate cryptographic keys or verify key validity.</p>
-  <p style="margin-top: 12px; font-size: 11px; color: #bbb;">&copy; 2026 Sprint19. Code licensed under <a href="/LICENSE.md" style="color: #bbb;">MIT</a>. Sprint19 name and branding may not be used without permission.</p>
+  <p class="copyright">&copy; 2026 Sprint19. Code licensed under <a href="/LICENSE.md">MIT</a>. Sprint19 name and branding may not be used without permission.</p>
 </footer>
 
 <script src="/shared/utils.js"></script>

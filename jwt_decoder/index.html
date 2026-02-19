@@ -14,16 +14,16 @@
   <link rel="stylesheet" href="/shared/styles.css">
   <title>JWT Decoder &#8211; Decode Header, Payload &amp; Signature | Sprint19</title>
   <style>
-    .error-msg { color: #cf222e; font-weight: bold; margin-top: 16px; }
-    .claim-timestamp { color: #666; font-size: 12px; margin-left: 6px; }
-    .info-label { font-weight: bold; color: #0066cc; }
+    .error-msg { color: var(--color-error); font-weight: bold; margin-top: 16px; }
+    .claim-timestamp { color: var(--color-text-muted); font-size: 12px; margin-left: 6px; }
+    .info-label { font-weight: bold; color: var(--color-link); }
     .warning-label { font-weight: bold; }
-    .scope-guard { font-style: italic; color: #999; font-size: 13px; margin-top: 12px; padding: 10px; background: #f9f9f9; border: 1px solid #ddd; border-radius: 4px; }
+    .scope-guard { font-style: italic; color: var(--color-text-passive); font-size: 13px; margin-top: 12px; padding: 10px; background: var(--color-surface-code); border: 1px solid var(--color-border); border-radius: 4px; }
   </style>
 </head>
 <body>
 
-<a href="/" style="display:inline-block;font-size:13px;color:#666;text-decoration:none;margin-bottom:8px;">&larr; Sprint19 Tools</a>
+<a href="/" class="back-link">&larr; Sprint19 Tools</a>
 <h1>JWT Decoder</h1>
 <p>Paste a JSON Web Token. Decode only &mdash; no signature verification is performed. No data leaves your browser.</p>
 
@@ -38,7 +38,7 @@
   <p>Decoded locally in your browser.</p>
   <p>Built by <a href="https://sprint19.com" target="_blank" rel="noopener noreferrer">Sprint19</a>. Product engineering for startups.</p>
   <p class="guardrail">This tool decodes JWT structure only and does not verify signatures or perform security assessment.</p>
-  <p style="margin-top: 12px; font-size: 11px; color: #bbb;">&copy; 2026 Sprint19. Code licensed under <a href="/LICENSE.md" style="color: #bbb;">MIT</a>. Sprint19 name and branding may not be used without permission.</p>
+  <p class="copyright">&copy; 2026 Sprint19. Code licensed under <a href="/LICENSE.md">MIT</a>. Sprint19 name and branding may not be used without permission.</p>
 </footer>
 
 <script src="/shared/utils.js"></script>

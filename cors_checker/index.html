@@ -14,15 +14,15 @@
   <link rel="stylesheet" href="/shared/styles.css">
   <title>CORS Header Checker &#8211; Analyze CORS Configuration | Sprint19</title>
   <style>
-    .error-msg { color: #cf222e; font-weight: bold; margin-top: 16px; }
-    .info-label { font-weight: bold; color: #0066cc; }
+    .error-msg { color: var(--color-error); font-weight: bold; margin-top: 16px; }
+    .info-label { font-weight: bold; color: var(--color-link); }
     .warning-label { font-weight: bold; }
-    .not-present { color: #999; font-style: italic; }
+    .not-present { color: var(--color-text-passive); font-style: italic; }
   </style>
 </head>
 <body>
 
-<a href="/" style="display:inline-block;font-size:13px;color:#666;text-decoration:none;margin-bottom:8px;">&larr; Sprint19 Tools</a>
+<a href="/" class="back-link">&larr; Sprint19 Tools</a>
 <h1>CORS Header Checker</h1>
 <p>Paste HTTP response headers. Structured breakdown of CORS configuration. No data leaves your browser.</p>
 
@@ -42,7 +42,7 @@ Access-Control-Max-Age: 3600" rows="8"></textarea>
   <p>Checked locally in your browser.</p>
   <p>Built by <a href="https://sprint19.com" target="_blank" rel="noopener noreferrer">Sprint19</a>. Product engineering for startups.</p>
   <p class="guardrail">This tool interprets CORS headers from pasted text and does not make network requests or perform security assessment.</p>
-  <p style="margin-top: 12px; font-size: 11px; color: #bbb;">&copy; 2026 Sprint19. Code licensed under <a href="/LICENSE.md" style="color: #bbb;">MIT</a>. Sprint19 name and branding may not be used without permission.</p>
+  <p class="copyright">&copy; 2026 Sprint19. Code licensed under <a href="/LICENSE.md">MIT</a>. Sprint19 name and branding may not be used without permission.</p>
 </footer>
 
 <script src="/shared/utils.js"></script>
