@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="A privacy-first, browser-based JWT decoder. Paste a JSON Web Token to decode its header, payload, and signature. No verification performed. No data leaves your browser. Built by Sprint19.">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://tools.sprint19.com/jwt-decoder">
+  <meta property="og:title" content="JWT Decoder — Decode Header, Payload &amp; Signature | Sprint19">
+  <meta property="og:description" content="Paste a JSON Web Token to decode its header, payload, and signature. No verification performed. No data leaves your browser.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://tools.sprint19.com/jwt-decoder">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <link rel="stylesheet" href="/shared/styles.css">
+  <title>JWT Decoder &#8211; Decode Header, Payload &amp; Signature | Sprint19</title>
+  <style>
+    .error-msg { color: #cf222e; font-weight: bold; margin-top: 16px; }
+    .claim-timestamp { color: #666; font-size: 12px; margin-left: 6px; }
+    .info-label { font-weight: bold; color: #0066cc; }
+    .warning-label { font-weight: bold; }
+    .scope-guard { font-style: italic; color: #999; font-size: 13px; margin-top: 12px; padding: 10px; background: #f9f9f9; border: 1px solid #ddd; border-radius: 4px; }
+  </style>
+</head>
+<body>
+
+<a href="/" style="display:inline-block;font-size:13px;color:#666;text-decoration:none;margin-bottom:8px;">&larr; Sprint19 Tools</a>
+<h1>JWT Decoder</h1>
+<p>Paste a JSON Web Token. Decode only &mdash; no signature verification is performed. No data leaves your browser.</p>
+
+<textarea id="jwtInput" class="tool-input" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c" rows="4"></textarea>
+<br>
+<button id="decodeBtn" class="tool-btn">Decode</button>
+
+<div id="output"></div>
+
+<footer class="site-footer">
+  <hr>
+  <p>Decoded locally in your browser.</p>
+  <p>Built by <a href="https://sprint19.com" target="_blank" rel="noopener noreferrer">Sprint19</a>. Product engineering for startups.</p>
+  <p class="guardrail">This tool decodes JWT structure only and does not verify signatures or perform security assessment.</p>
+  <p style="margin-top: 12px; font-size: 11px; color: #bbb;">&copy; 2026 Sprint19. Code licensed under <a href="/LICENSE.md" style="color: #bbb;">MIT</a>. Sprint19 name and branding may not be used without permission.</p>
+</footer>
+
+<script src="/shared/utils.js"></script>
+<script>
+if (typeof escapeHTML === 'undefined') {
+  function escapeHTML(str) {
+    return str.replace(/[&<>'"]/g,
+      tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag])
+    );
+  }
+}
+
+var MAX_INPUT_BYTES = 20480;
+var TIMESTAMP_CLAIMS = ['exp', 'iat', 'nbf', 'auth_time'];
+
+function base64UrlDecode(str) {
+  var padded = str.replace(/-/g, '+').replace(/_/g, '/');
+  switch (padded.length % 4) {
+    case 0: break;
+    case 2: padded += '=='; break;
+    case 3: padded += '='; break;
+    default: throw new Error('Invalid base64url segment length');
+  }
+  return decodeURIComponent(
+    atob(padded).split('').map(function(c) {
+      return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+    }).join('')
+  );
+}
+
+function decodeJWT(input) {
+  var trimmed = input.trim();
+
+  if (trimmed.length > MAX_INPUT_BYTES) {
+    return { error: 'Input exceeds the 20KB limit. Please paste a single JWT.' };
+  }
+  if (!trimmed) {
+    return { error: 'No token provided.' };
+  }
+
+  var parts = trimmed.split('.');
+  if (parts.length !== 3) {
+    return { error: 'Invalid JWT format. A JWT must have exactly three dot-separated segments (header.payload.signature).' };
+  }
+
+  var header, payload;
+
+  try {
+    header = JSON.parse(base64UrlDecode(parts[0]));
+  } catch (e) {
+    return { error: 'Could not decode or parse the header segment. It must be valid base64url-encoded JSON.' };
+  }
+
+  try {
+    payload = JSON.parse(base64UrlDecode(parts[1]));
+  } catch (e) {
+    return { error: 'Could not decode or parse the payload segment. It must be valid base64url-encoded JSON.' };
+  }
+
+  var signature = parts[2];
+  var warnings = [];
+  var infos = [];
+
+  var alg = header.alg || null;
+  var typ = header.typ || null;
+
+  if (!alg) {
+    warnings.push('No "alg" field found in the header.');
+  } else if (alg.toLowerCase() === 'none') {
+    warnings.push('Header uses alg=none. This token may be unsigned.');
+  }
+
+  var expStatus = null;
+  if (typeof payload.exp === 'number') {
+    var now = Math.floor(Date.now() / 1000);
+    if (payload.exp < now) {
+      expStatus = 'Expired';
+      warnings.push('Token is expired. The "exp" claim (' + new Date(payload.exp * 1000).toISOString() + ') is in the past.');
+    } else {
+      expStatus = 'Valid';
+    }
+  } else {
+    expStatus = 'No expiration';
+    infos.push('No "exp" claim present. This token does not have a set expiration.');
+  }
+
+  if (!payload.iss && payload.iss !== '') {
+    infos.push('No "iss" (issuer) claim present.');
+  }
+
+  return {
+    header: header,
+    payload: payload,
+    signature: signature,
+    alg: alg,
+    typ: typ,
+    expStatus: expStatus,
+    warnings: warnings,
+    infos: infos,
+    rawInput: trimmed
+  };
+}
+
+function formatClaimValue(key, value) {
+  if (TIMESTAMP_CLAIMS.indexOf(key) !== -1 && typeof value === 'number') {
+    var dateStr = new Date(value * 1000).toISOString();
+    return escapeHTML(String(value)) + '<span class="claim-timestamp">(' + escapeHTML(dateStr) + ')</span>';
+  }
+  if (typeof value === 'object' && value !== null) {
+    return '<code>' + escapeHTML(JSON.stringify(value)) + '</code>';
+  }
+  return escapeHTML(String(value));
+}
+
+function renderOutput(r) {
+  if (r.error) {
+    return '<p class="error-msg">' + escapeHTML(r.error) + '</p>';
+  }
+
+  var headerKeys = Object.keys(r.header);
+  var payloadKeys = Object.keys(r.payload);
+  var warningCount = r.warnings.length;
+  var infoCount = r.infos.length;
+  var statusClass = warningCount === 0 ? 'green' : (warningCount <= 2 ? 'yellow' : 'red');
+
+  var expClass = r.expStatus === 'Expired' ? 'red' : (r.expStatus === 'Valid' ? 'green' : 'yellow');
+
+  var bullets = [
+    'Algorithm: <strong>' + escapeHTML(r.alg || 'not specified') + '</strong>' + (r.typ ? ' &nbsp;|&nbsp; Type: <strong>' + escapeHTML(r.typ) + '</strong>' : ''),
+    'Expiration: <span class="' + expClass + '"><strong>' + escapeHTML(r.expStatus) + '</strong></span>',
+    headerKeys.length + ' header field' + (headerKeys.length !== 1 ? 's' : '') + ', ' + payloadKeys.length + ' payload claim' + (payloadKeys.length !== 1 ? 's' : '') + '.'
+  ];
+  if (warningCount > 0) {
+    bullets.push('<span class="' + statusClass + '">' + warningCount + ' warning' + (warningCount !== 1 ? 's' : '') + ' detected.</span>');
+  } else {
+    bullets.push('<span class="green">No warnings detected.</span>');
+  }
+
+  var summaryHTML = '<ul>' + bullets.map(function(b) { return '<li>' + b + '</li>'; }).join('') + '</ul>';
+
+  var headerRows = headerKeys.map(function(k) {
+    return '<tr><td><code>' + escapeHTML(k) + '</code></td><td>' + formatClaimValue(k, r.header[k]) + '</td></tr>';
+  }).join('');
+
+  var payloadRows = payloadKeys.map(function(k) {
+    return '<tr><td><code>' + escapeHTML(k) + '</code></td><td>' + formatClaimValue(k, r.payload[k]) + '</td></tr>';
+  }).join('');
+
+  var noticesHTML = '';
+  if (warningCount > 0 || infoCount > 0) {
+    var items = '';
+    items += r.warnings.map(function(w) {
+      return '<li class="yellow"><span class="warning-label">Warning:</span> ' + escapeHTML(w) + '</li>';
+    }).join('');
+    items += r.infos.map(function(i) {
+      return '<li><span class="info-label">Info:</span> ' + escapeHTML(i) + '</li>';
+    }).join('');
+    noticesHTML = '<h2>Notices</h2><div class="card"><ul>' + items + '</ul></div>';
+  }
+
+  var generatedAt = new Date().toLocaleString();
+
+  return '<p class="report-timestamp">Generated on: ' + generatedAt + '</p>' +
+    '<p class="report-source">This summary is generated from the JWT provided.</p>' +
+    '<p class="scope-guard">This tool decodes token structure only. No signature verification is performed. Do not use this output as proof of token validity.</p>' +
+    '<h2>Summary of Findings</h2>' +
+    '<div class="card summary">' + summaryHTML + '</div>' +
+    '<h2>Header</h2>' +
+    '<div class="card"><table><thead><tr><th>Field</th><th>Value</th></tr></thead><tbody>' + headerRows + '</tbody></table></div>' +
+    '<h2>Payload</h2>' +
+    '<div class="card"><table><thead><tr><th>Claim</th><th>Value</th></tr></thead><tbody>' + payloadRows + '</tbody></table></div>' +
+    '<h2>Signature</h2>' +
+    '<div class="card"><pre class="raw-block">' + escapeHTML(r.signature) + '</pre></div>' +
+    noticesHTML +
+    '<div class="raw-block-section">' +
+      '<h2>Raw Input</h2>' +
+      '<div class="card"><pre class="raw-block">' + escapeHTML(r.rawInput) + '</pre></div>' +
+    '</div>' +
+    '<p class="disclaimer">This report decodes JWT structure only and does not verify signatures or determine trust.</p>' +
+    '<button class="print-btn" onclick="window.print()">Print Report</button>';
+}
+
+document.getElementById('decodeBtn').addEventListener('click', function() {
+  var input = document.getElementById('jwtInput').value;
+  var result = decodeJWT(input);
+  document.getElementById('output').innerHTML = renderOutput(result);
+});
+</script>
+
+</body>
+</html>

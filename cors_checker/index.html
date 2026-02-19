@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="A privacy-first, browser-based CORS header checker. Paste HTTP response headers to see CORS configuration at a glance. No data leaves your browser. Built by Sprint19.">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://tools.sprint19.com/cors-checker">
+  <meta property="og:title" content="CORS Header Checker &#8211; Analyze CORS Configuration | Sprint19">
+  <meta property="og:description" content="Paste HTTP response headers to analyze CORS configuration and flag common misconfigurations. No data leaves your browser.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://tools.sprint19.com/cors-checker">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <link rel="stylesheet" href="/shared/styles.css">
+  <title>CORS Header Checker &#8211; Analyze CORS Configuration | Sprint19</title>
+  <style>
+    .error-msg { color: #cf222e; font-weight: bold; margin-top: 16px; }
+    .info-label { font-weight: bold; color: #0066cc; }
+    .warning-label { font-weight: bold; }
+    .not-present { color: #999; font-style: italic; }
+  </style>
+</head>
+<body>
+
+<a href="/" style="display:inline-block;font-size:13px;color:#666;text-decoration:none;margin-bottom:8px;">&larr; Sprint19 Tools</a>
+<h1>CORS Header Checker</h1>
+<p>Paste HTTP response headers. Structured breakdown of CORS configuration. No data leaves your browser.</p>
+
+<textarea id="corsInput" class="tool-input" placeholder="HTTP/1.1 200 OK
+Content-Type: application/json
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Methods: GET, POST, OPTIONS
+Access-Control-Allow-Headers: Content-Type, Authorization
+Access-Control-Max-Age: 3600" rows="8"></textarea>
+<br>
+<button id="checkBtn" class="tool-btn">Check</button>
+
+<div id="output"></div>
+
+<footer class="site-footer">
+  <hr>
+  <p>Checked locally in your browser.</p>
+  <p>Built by <a href="https://sprint19.com" target="_blank" rel="noopener noreferrer">Sprint19</a>. Product engineering for startups.</p>
+  <p class="guardrail">This tool interprets CORS headers from pasted text and does not make network requests or perform security assessment.</p>
+  <p style="margin-top: 12px; font-size: 11px; color: #bbb;">&copy; 2026 Sprint19. Code licensed under <a href="/LICENSE.md" style="color: #bbb;">MIT</a>. Sprint19 name and branding may not be used without permission.</p>
+</footer>
+
+<script src="/shared/utils.js"></script>
+<script>
+if (typeof escapeHTML === 'undefined') {
+  function escapeHTML(str) {
+    return str.replace(/[&<>'"]/g,
+      tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag])
+    );
+  }
+}
+
+var MAX_INPUT_BYTES = 5120;
+
+var CORS_HEADERS = [
+  { key: 'access-control-allow-origin',      display: 'Access-Control-Allow-Origin' },
+  { key: 'access-control-allow-methods',     display: 'Access-Control-Allow-Methods' },
+  { key: 'access-control-allow-headers',     display: 'Access-Control-Allow-Headers' },
+  { key: 'access-control-expose-headers',    display: 'Access-Control-Expose-Headers' },
+  { key: 'access-control-max-age',           display: 'Access-Control-Max-Age' },
+  { key: 'access-control-allow-credentials', display: 'Access-Control-Allow-Credentials' }
+];
+
+function parseHeaders(input) {
+  var lines = input.split(/\r?\n/);
+  var headers = {};
+  var totalCount = 0;
+
+  for (var i = 0; i < lines.length; i++) {
+    var line = lines[i].trim();
+    if (!line) continue;
+    if (/^HTTP\/[\d.]+\s+\d+/.test(line)) continue;
+
+    var colonIdx = line.indexOf(':');
+    if (colonIdx === -1) continue;
+
+    var name = line.substring(0, colonIdx).trim().toLowerCase();
+    var value = line.substring(colonIdx + 1).trim();
+
+    if (name) {
+      headers[name] = value;
+      totalCount++;
+    }
+  }
+
+  return { headers: headers, totalCount: totalCount };
+}
+
+function analyzeCORS(input) {
+  var trimmed = input.trim();
+
+  if (trimmed.length > MAX_INPUT_BYTES) {
+    return { error: 'Input exceeds the 5KB limit. Please paste response headers only.' };
+  }
+  if (!trimmed) {
+    return { error: 'No headers provided.' };
+  }
+
+  var parsed = parseHeaders(trimmed);
+  var headers = parsed.headers;
+  var totalCount = parsed.totalCount;
+
+  if (totalCount === 0) {
+    return { error: 'No valid HTTP headers found. Each header should be in "Name: Value" format, one per line.' };
+  }
+
+  var corsFound = {};
+  var corsCount = 0;
+
+  for (var i = 0; i < CORS_HEADERS.length; i++) {
+    var key = CORS_HEADERS[i].key;
+    if (headers.hasOwnProperty(key)) {
+      corsFound[key] = headers[key];
+      corsCount++;
+    }
+  }
+
+  var warnings = [];
+  var infos = [];
+
+  var origin = corsFound['access-control-allow-origin'];
+  var credentials = corsFound['access-control-allow-credentials'];
+  var methods = corsFound['access-control-allow-methods'];
+  var allowHeaders = corsFound['access-control-allow-headers'];
+  var exposeHeaders = corsFound['access-control-expose-headers'];
+  var maxAge = corsFound['access-control-max-age'];
+
+  if (corsCount === 0) {
+    warnings.push('No CORS headers detected in the input. The server may not support cross-origin requests, or these may not be the relevant response headers.');
+  }
+
+  if (origin === undefined) {
+    if (corsCount > 0) {
+      warnings.push('Access-Control-Allow-Origin is not present, but other CORS headers were found. Browsers will block the response without this header.');
+    }
+  } else if (origin === '*' && credentials && credentials.toLowerCase() === 'true') {
+    warnings.push('Access-Control-Allow-Origin is "*" and Access-Control-Allow-Credentials is "true". Browsers reject this combination per the Fetch specification.');
+  }
+
+  if (allowHeaders !== undefined && allowHeaders.trim() === '*') {
+    infos.push('Access-Control-Allow-Headers uses wildcard (*). This is supported in modern browsers but not in older ones.');
+  }
+
+  if (exposeHeaders !== undefined && exposeHeaders.trim() === '*') {
+    infos.push('Access-Control-Expose-Headers uses wildcard (*). This is supported in modern browsers but not in older ones.');
+  }
+
+  if (methods !== undefined) {
+    infos.push('Methods allowed: ' + escapeHTML(methods) + '.');
+  }
+
+  if (maxAge !== undefined) {
+    var maxAgeNum = parseInt(maxAge, 10);
+    if (!isNaN(maxAgeNum)) {
+      infos.push('Max-Age is set to ' + maxAgeNum + ' second' + (maxAgeNum !== 1 ? 's' : '') + ' (' + formatDuration(maxAgeNum) + ').');
+    } else {
+      warnings.push('Access-Control-Max-Age value "' + escapeHTML(maxAge) + '" is not a valid integer.');
+    }
+  }
+
+  var originPolicy = 'Not set';
+  if (origin === '*') {
+    originPolicy = 'Wildcard (*)';
+  } else if (origin === 'null') {
+    originPolicy = 'Null origin';
+  } else if (origin !== undefined) {
+    originPolicy = 'Specific origin';
+  }
+
+  return {
+    corsFound: corsFound,
+    corsCount: corsCount,
+    totalCount: totalCount,
+    originPolicy: originPolicy,
+    credentialsAllowed: credentials ? credentials.toLowerCase() === 'true' : false,
+    warnings: warnings,
+    infos: infos,
+    rawInput: trimmed
+  };
+}
+
+function formatDuration(seconds) {
+  if (seconds < 60) return seconds + 's';
+  if (seconds < 3600) return Math.floor(seconds / 60) + 'm ' + (seconds % 60) + 's';
+  var h = Math.floor(seconds / 3600);
+  var m = Math.floor((seconds % 3600) / 60);
+  return h + 'h' + (m > 0 ? ' ' + m + 'm' : '');
+}
+
+function renderOutput(r) {
+  if (r.error) {
+    return '<p class="error-msg">' + escapeHTML(r.error) + '</p>';
+  }
+
+  var warningCount = r.warnings.length;
+  var infoCount = r.infos.length;
+  var statusClass = warningCount === 0 ? 'green' : (warningCount <= 2 ? 'yellow' : 'red');
+
+  var bullets = [
+    r.totalCount + ' header' + (r.totalCount !== 1 ? 's' : '') + ' parsed, ' + r.corsCount + ' CORS-related.',
+    'Origin policy: <strong>' + escapeHTML(r.originPolicy) + '</strong>.',
+    'Credentials allowed: <strong>' + (r.credentialsAllowed ? 'Yes' : 'No') + '</strong>.'
+  ];
+  if (warningCount > 0) {
+    bullets.push('<span class="' + statusClass + '">' + warningCount + ' warning' + (warningCount !== 1 ? 's' : '') + ' detected.</span>');
+  } else {
+    bullets.push('<span class="green">No warnings detected.</span>');
+  }
+
+  var summaryHTML = '<ul>' + bullets.map(function(b) { return '<li>' + b + '</li>'; }).join('') + '</ul>';
+
+  var breakdownRows = CORS_HEADERS.map(function(h) {
+    var value = r.corsFound[h.key];
+    var valueCell = value !== undefined
+      ? '<code>' + escapeHTML(value) + '</code>'
+      : '<span class="not-present">Not present</span>';
+    return '<tr><td><code>' + escapeHTML(h.display) + '</code></td><td>' + valueCell + '</td></tr>';
+  }).join('');
+
+  var noticesHTML = '';
+  if (warningCount > 0 || infoCount > 0) {
+    var items = '';
+    items += r.warnings.map(function(w) {
+      return '<li class="yellow"><span class="warning-label">Warning:</span> ' + escapeHTML(w) + '</li>';
+    }).join('');
+    items += r.infos.map(function(i) {
+      return '<li><span class="info-label">Info:</span> ' + i + '</li>';
+    }).join('');
+    noticesHTML = '<h2>Notices</h2><div class="card"><ul>' + items + '</ul></div>';
+  }
+
+  var generatedAt = new Date().toLocaleString();
+
+  return '<p class="report-timestamp">Generated on: ' + generatedAt + '</p>' +
+    '<p class="report-source">This summary is generated from the headers provided.</p>' +
+    '<h2>Summary of Findings</h2>' +
+    '<div class="card summary">' + summaryHTML + '</div>' +
+    '<h2>CORS Headers Breakdown</h2>' +
+    '<div class="card"><table><thead><tr><th>Header</th><th>Value</th></tr></thead><tbody>' + breakdownRows + '</tbody></table></div>' +
+    noticesHTML +
+    '<div class="raw-block-section">' +
+      '<h2>Raw Input</h2>' +
+      '<div class="card"><pre class="raw-block">' + escapeHTML(r.rawInput) + '</pre></div>' +
+    '</div>' +
+    '<p class="disclaimer">This report interprets CORS headers from pasted text and does not make network requests or determine server intent.</p>' +
+    '<button class="print-btn" onclick="window.print()">Print Report</button>';
+}
+
+document.getElementById('checkBtn').addEventListener('click', function() {
+  var input = document.getElementById('corsInput').value;
+  var result = analyzeCORS(input);
+  document.getElementById('output').innerHTML = renderOutput(result);
+});
+</script>
+
+</body>
+</html>
