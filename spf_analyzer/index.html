@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="A privacy-first, browser-based SPF record analyzer. Paste your TXT record and receive a clear syntax breakdown with lookup warnings. No data leaves your browser. Built by Sprint19.">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://tools.sprint19.com/spf-analyzer">
+  <meta property="og:title" content="SPF Record Analyzer — Built by Sprint19">
+  <meta property="og:description" content="Paste your SPF TXT record and receive a clear syntax breakdown with lookup warnings. No data leaves your browser.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://tools.sprint19.com/spf-analyzer">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <link rel="stylesheet" href="/shared/styles.css">
+  <title>SPF Record Analyzer – Syntax Validation &amp; Lookup Warnings | Sprint19</title>
+  <style>
+    .error-msg { color: #cf222e; font-weight: bold; margin-top: 16px; }
+    .scope-guard { font-style: italic; color: #999; font-size: 12px; margin-top: 8px; }
+  </style>
+</head>
+<body>
+
+<h1>SPF Record Analyzer</h1>
+<p>Paste an SPF TXT record. Structured breakdown. No DNS lookups. No data leaves your browser.</p>
+
+<textarea id="spfInput" class="tool-input" placeholder="v=spf1 include:_spf.google.com ip4:203.0.113.0/24 ~all" rows="4"></textarea>
+<br>
+<button id="analyzeBtn" class="tool-btn">Analyze</button>
+
+<div id="output"></div>
+
+<footer class="site-footer">
+  <hr>
+  <p>Analyzed locally in your browser.</p>
+  <p>Built by <a href="https://sprint19.com" target="_blank" rel="noopener noreferrer">Sprint19</a>. Product engineering for startups.</p>
+  <p class="guardrail">This tool validates SPF record syntax and does not perform DNS resolution or security assessment.</p>
+  <p style="margin-top: 12px; font-size: 11px; color: #bbb;">&copy; 2026 Sprint19. Code licensed under <a href="/LICENSE.md" style="color: #bbb;">MIT</a>. Sprint19 name and branding may not be used without permission.</p>
+</footer>
+
+<script src="/shared/utils.js"></script>
+<script>
+if (typeof escapeHTML === 'undefined') {
+  function escapeHTML(str) {
+    return str.replace(/[&<>'"]/g,
+      tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag])
+    );
+  }
+}
+
+var MAX_INPUT_BYTES = 5120;
+var DNS_MECHANISMS = ['include', 'a', 'mx', 'exists', 'ptr'];
+var ALL_MECHANISMS = ['all', 'include', 'a', 'mx', 'ip4', 'ip6', 'exists', 'ptr'];
+var QUALIFIER_LABELS = { '+': 'pass', '-': 'fail', '~': 'softfail', '?': 'neutral' };
+
+function parseSPF(input) {
+  var result = {
+    mechanisms: [], modifiers: [], warnings: [],
+    dnsLookupCount: 0, allQualifier: null, rawInput: input
+  };
+
+  var trimmed = input.trim();
+
+  if (trimmed.length > MAX_INPUT_BYTES) {
+    return { error: 'Input exceeds the 5KB limit. Please paste a single SPF record.' };
+  }
+  if (!trimmed) {
+    return { error: 'No SPF record provided.' };
+  }
+  if (!/^v=spf1(\s|$)/i.test(trimmed)) {
+    return { error: 'Record does not begin with "v=spf1". This may not be a valid SPF record.' };
+  }
+
+  var tokens = trimmed.split(/\s+/).slice(1);
+  var seen = {};
+
+  for (var i = 0; i < tokens.length; i++) {
+    var token = tokens[i];
+
+    var modMatch = token.match(/^(redirect|exp)=(.+)$/i);
+    if (modMatch) {
+      result.modifiers.push({ order: i + 1, type: modMatch[1].toLowerCase(), value: modMatch[2], raw: token });
+      if (modMatch[1].toLowerCase() === 'redirect') result.dnsLookupCount++;
+      continue;
+    }
+
+    var qualifier = '+';
+    var rest = token;
+    if (/^[+\-~?]/.test(token)) {
+      qualifier = token[0];
+      rest = token.slice(1);
+    }
+
+    var mechType, argument;
+    var colonIdx = rest.indexOf(':');
+    var slashIdx = rest.indexOf('/');
+
+    if (colonIdx !== -1) {
+      mechType = rest.substring(0, colonIdx).toLowerCase();
+      argument = rest.substring(colonIdx + 1);
+    } else if (slashIdx !== -1) {
+      mechType = rest.substring(0, slashIdx).toLowerCase();
+      argument = rest.substring(slashIdx);
+    } else {
+      mechType = rest.toLowerCase();
+      argument = '';
+    }
+
+    var isDNS = DNS_MECHANISMS.indexOf(mechType) !== -1;
+    var isKnown = ALL_MECHANISMS.indexOf(mechType) !== -1;
+
+    if (!isKnown) {
+      result.warnings.push('Unrecognized mechanism: "' + escapeHTML(token) + '".');
+    }
+
+    result.mechanisms.push({
+      order: i + 1, raw: token, qualifier: qualifier,
+      qualifierLabel: QUALIFIER_LABELS[qualifier] || qualifier,
+      type: mechType, argument: argument, dnsLookup: isDNS
+    });
+
+    if (isDNS) result.dnsLookupCount++;
+    if (mechType === 'all') result.allQualifier = qualifier;
+
+    var key = mechType + (argument ? ':' + argument : '');
+    if (seen[key]) {
+      result.warnings.push('Duplicate mechanism: "' + escapeHTML(token) + '".');
+    }
+    seen[key] = true;
+  }
+
+  if (result.dnsLookupCount > 10) {
+    result.warnings.push('DNS lookup count (' + result.dnsLookupCount + ') exceeds the RFC 7208 limit of 10. Receiving servers may reject this record.');
+  } else if (result.dnsLookupCount === 10) {
+    result.warnings.push('DNS lookup count is exactly 10 (the RFC 7208 limit). Any additional lookups from nested includes could cause failures.');
+  }
+
+  if (result.allQualifier === '+') {
+    result.warnings.push('The "all" mechanism uses the "+" qualifier (pass), which means all senders are authorized. This effectively disables SPF protection.');
+  }
+
+  var hasAll = result.mechanisms.some(function(m) { return m.type === 'all'; });
+  var hasRedirect = result.modifiers.some(function(m) { return m.type === 'redirect'; });
+
+  if (!hasAll && !hasRedirect) {
+    result.warnings.push('No terminal "all" mechanism or "redirect" modifier found. The record may produce unpredictable results.');
+  }
+  if (hasAll && hasRedirect) {
+    result.warnings.push('Both "all" mechanism and "redirect" modifier are present. The "all" mechanism takes precedence and the redirect will be ignored.');
+  }
+  if (result.mechanisms.some(function(m) { return m.type === 'ptr'; })) {
+    result.warnings.push('The "ptr" mechanism is deprecated per RFC 7208 and should be avoided.');
+  }
+
+  return result;
+}
+
+function renderOutput(r) {
+  if (r.error) {
+    return '<p class="error-msg">' + escapeHTML(r.error) + '</p>';
+  }
+
+  var totalMechanisms = r.mechanisms.length + r.modifiers.length;
+  var warningCount = r.warnings.length;
+  var allDesc = r.allQualifier
+    ? '"all" qualifier is <strong>' + QUALIFIER_LABELS[r.allQualifier] + ' (' + escapeHTML(r.allQualifier) + ')</strong>'
+    : 'No "all" mechanism found';
+
+  var statusClass = warningCount === 0 ? 'green' : (warningCount <= 2 ? 'yellow' : 'red');
+
+  var bullets = [
+    totalMechanisms + ' mechanism' + (totalMechanisms !== 1 ? 's' : '') + ' and modifier' + (r.modifiers.length !== 1 ? 's' : '') + ' found.',
+    r.dnsLookupCount + ' of 10 permitted DNS lookups used.',
+    allDesc + '.'
+  ];
+  if (warningCount > 0) {
+    bullets.push('<span class="' + statusClass + '">' + warningCount + ' warning' + (warningCount !== 1 ? 's' : '') + ' detected.</span>');
+  } else {
+    bullets.push('<span class="green">No warnings detected.</span>');
+  }
+
+  var summaryHTML = '<ul>' + bullets.map(function(b) { return '<li>' + b + '</li>'; }).join('') + '</ul>';
+
+  var mechRows = r.mechanisms.map(function(m) {
+    return '<tr>' +
+      '<td>' + m.order + '</td>' +
+      '<td><code>' + escapeHTML(m.raw) + '</code></td>' +
+      '<td>' + escapeHTML(m.type) + '</td>' +
+      '<td>' + escapeHTML(m.qualifierLabel) + ' (' + escapeHTML(m.qualifier) + ')</td>' +
+      '<td>' + (m.argument ? escapeHTML(m.argument) : '&mdash;') + '</td>' +
+      '<td>' + (m.dnsLookup ? 'Yes' : 'No') + '</td>' +
+      '</tr>';
+  }).join('');
+
+  var modRows = r.modifiers.map(function(m) {
+    return '<tr>' +
+      '<td>' + m.order + '</td>' +
+      '<td><code>' + escapeHTML(m.raw) + '</code></td>' +
+      '<td>' + escapeHTML(m.type) + ' (modifier)</td>' +
+      '<td>&mdash;</td>' +
+      '<td>' + escapeHTML(m.value) + '</td>' +
+      '<td>' + (m.type === 'redirect' ? 'Yes' : 'No') + '</td>' +
+      '</tr>';
+  }).join('');
+
+  var tableHTML = '<table>' +
+    '<thead><tr><th>#</th><th>Token</th><th>Type</th><th>Qualifier</th><th>Argument</th><th>DNS Lookup?</th></tr></thead>' +
+    '<tbody>' + mechRows + modRows + '</tbody></table>';
+
+  var warningsHTML = '';
+  if (r.warnings.length > 0) {
+    var warnItems = r.warnings.map(function(w) { return '<li>' + w + '</li>'; }).join('');
+    warningsHTML = '<h2>Warnings</h2><div class="card"><ul class="' + statusClass + '">' + warnItems + '</ul></div>';
+  }
+
+  var generatedAt = new Date().toLocaleString();
+
+  return '<p class="report-timestamp">Generated on: ' + generatedAt + '</p>' +
+    '<p class="report-source">This summary is generated from the SPF record provided.</p>' +
+    '<h2>Summary of Findings</h2>' +
+    '<div class="card summary">' + summaryHTML + '</div>' +
+    '<h2>Mechanism Breakdown</h2>' +
+    '<div class="card">' + tableHTML + '</div>' +
+    '<p class="scope-guard">DNS lookup count is estimated from visible mechanisms only. This tool does not resolve nested includes.</p>' +
+    warningsHTML +
+    '<div class="raw-block-section">' +
+      '<h2>Raw Input</h2>' +
+      '<div class="card"><pre class="raw-block">' + escapeHTML(r.rawInput) + '</pre></div>' +
+    '</div>' +
+    '<p class="disclaimer">This report validates SPF record syntax only and does not determine sender intent or threat level.</p>' +
+    '<button class="print-btn" onclick="window.print()">Print Report</button>';
+}
+
+document.getElementById('analyzeBtn').addEventListener('click', function() {
+  var input = document.getElementById('spfInput').value;
+  var result = parseSPF(input);
+  document.getElementById('output').innerHTML = renderOutput(result);
+});
+</script>
+
+</body>
+</html>
