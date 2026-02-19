@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="A privacy-first, browser-based DMARC aggregate report reader. Upload your XML and receive a clear, structured interpretation. No data leaves your browser. Built by Sprint19.">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://tools.sprint19.com/dmarc-reader">
+  <meta property="og:title" content="DMARC XML Reader — Built by Sprint19">
+  <meta property="og:description" content="Upload your DMARC XML and receive a clear, structured interpretation. No data leaves your browser.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://tools.sprint19.com/dmarc-reader">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <title>DMARC XML Reader – Clear, Local Report Interpretation | Sprint19</title>
+  <style>
+    body { font-family: Arial; max-width: 800px; margin: 40px auto; }
+    .card { border: 1px solid #ddd; padding: 20px; margin-bottom: 20px; }
+    .green { color: green; }
+    .yellow { color: orange; }
+    .red { color: red; }
+    .summary ul { list-style: disc; padding-left: 20px; }
+    .summary li { margin-bottom: 6px; line-height: 1.5; }
+    .summary p { margin-top: 16px; line-height: 1.5; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+    th { background: #f5f5f5; }
+    .raw-xml { white-space: pre-wrap; overflow: auto; max-height: 400px; background: #f9f9f9; border: 1px solid #ddd; padding: 12px; font-size: 13px; }
+    .disclaimer { margin-top: 24px; font-style: italic; color: #666; }
+    .print-btn { margin-top: 24px; padding: 10px 24px; font-size: 16px; cursor: pointer; }
+    .report-timestamp { color: #666; font-size: 14px; margin-bottom: 16px; }
+    .report-source { color: #999; font-size: 13px; margin-bottom: 20px; }
+    .site-footer { text-align: center; color: #999; font-size: 13px; margin-top: 48px; padding-bottom: 24px; }
+    .site-footer hr { border: none; border-top: 1px solid #ddd; margin-bottom: 16px; }
+    .site-footer p { margin: 4px 0; }
+    .site-footer a { color: #666; text-decoration: none; }
+    .site-footer a:hover { text-decoration: underline; }
+    .site-footer .guardrail { font-style: italic; font-size: 12px; color: #aaa; margin-top: 12px; }
+
+    @media print {
+      input, button {
+        display: none;
+      }
+      body {
+        margin: 0;
+      }
+      .card {
+        border: none;
+        page-break-inside: avoid;
+      }
+      .raw-xml-section {
+        display: none;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-wrap: break-word;
+      }
+      .site-footer {
+        display: block !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<h1>DMARC XML Reader</h1>
+<p>Structured interpretation. No speculation. No data leaves your browser.</p>
+
+<input type="file" id="fileInput" accept=".xml" />
+
+<div id="output"></div>
+
+<footer class="site-footer">
+  <hr>
+  <p>Generated locally in your browser.</p>
+  <p>Built by <a href="https://sprint19.com" target="_blank" rel="noopener noreferrer">Sprint19</a>. Product engineering for startups.</p>
+  <p class="guardrail">This tool provides interpretation of DMARC aggregate reports and does not perform security assessment.</p>
+  <p style="margin-top: 12px; font-size: 11px; color: #bbb;">&copy; 2026 Sprint19. Code licensed under <a href="/LICENSE.md" style="color: #bbb;">MIT</a>. Sprint19 name and branding may not be used without permission.</p>
+</footer>
+
+<script>
+function escapeHTML(str) {
+  return str.replace(/[&<>'"]/g,
+    tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag])
+  );
+}
+
+document.getElementById('fileInput').addEventListener('change', function(event) {
+  const file = event.target.files[0];
+  const reader = new FileReader();
+
+  reader.onload = function(e) {
+    const parser = new DOMParser();
+    const xmlDoc = parser.parseFromString(e.target.result, "application/xml");
+
+    const domain = xmlDoc.getElementsByTagName("domain")[0]?.textContent || "N/A";
+    const policy = xmlDoc.querySelector("policy_published > p")?.textContent || "none";
+    const records = xmlDoc.getElementsByTagName("record");
+
+    let total = 0;
+    let spfPass = 0;
+    let dkimPass = 0;
+    let bothPass = 0;
+    const allIPs = new Set();
+    const passIPs = new Set();
+    const allRows = [];
+    const failedIPMap = new Map();
+
+    for (let i = 0; i < records.length; i++) {
+      const count = parseInt(records[i].getElementsByTagName("count")[0]?.textContent || 0);
+      const spf = records[i].getElementsByTagName("spf")[0]?.textContent;
+      const dkim = records[i].getElementsByTagName("dkim")[0]?.textContent;
+      const sourceIP = records[i].getElementsByTagName("source_ip")[0]?.textContent;
+      const disposition = records[i].querySelector("policy_evaluated > disposition")?.textContent || "none";
+
+      allRows.push({ sourceIP, count, spf, dkim, disposition });
+
+      total += count;
+      if (spf === "pass") spfPass += count;
+      if (dkim === "pass") dkimPass += count;
+
+      if (spf === "pass" && dkim === "pass") {
+        bothPass += count;
+        if (sourceIP) passIPs.add(sourceIP);
+      } else if (sourceIP) {
+        if (failedIPMap.has(sourceIP)) {
+          failedIPMap.get(sourceIP).count += count;
+        } else {
+          failedIPMap.set(sourceIP, { count, spf, dkim, disposition });
+        }
+      }
+      if (sourceIP) allIPs.add(sourceIP);
+    }
+
+    const failCount = total - bothPass;
+    const uniqueIPs = allIPs.size;
+    const passingIPs = passIPs.size;
+
+    const spfRate = total ? ((spfPass / total) * 100).toFixed(1) : 0;
+    const dkimRate = total ? ((dkimPass / total) * 100).toFixed(1) : 0;
+    const failRate = total ? (failCount / total) * 100 : 0;
+
+    const policyLabels = { none: "monitoring only", quarantine: "quarantine", reject: "reject" };
+    const policyLabel = policyLabels[policy] || policy;
+
+    const summaryLines = [];
+    if (total > 0) {
+      summaryLines.push(`${total} total messages were evaluated in this report.`);
+    }
+    if (failCount > 0) {
+      summaryLines.push(`${failCount} messages failed DMARC authentication checks.`);
+    }
+    if (bothPass > 0) {
+      summaryLines.push(`${bothPass} messages passed both SPF and DKIM.`);
+    }
+    if (uniqueIPs > 0) {
+      summaryLines.push(`${uniqueIPs} unique sending IP addresses were detected.`);
+    }
+    const ipPrefix = (uniqueIPs > 1 && passingIPs <= 1) ? "Only " : "";
+    summaryLines.push(`${ipPrefix}${passingIPs} IP address${passingIPs === 1 ? "" : "es"} passed authentication.`);
+    summaryLines.push(`The current DMARC policy is set to <strong>p=${policy} (${policyLabel})</strong>.`);
+
+    let interpretation = "";
+    if (failRate > 50) {
+      interpretation = "Overall, most messages claiming to be from this domain did not pass authentication";
+      if (policy === "none") {
+        interpretation += ", and the current policy does not automatically block failed messages.";
+      } else {
+        interpretation += ".";
+      }
+    } else if (failRate < 10) {
+      interpretation = "Most messages passed authentication successfully.";
+      if (policy === "none") {
+        interpretation += " The current policy monitors authentication results but does not automatically block failed messages.";
+      }
+    } else if (policy === "none") {
+      interpretation = "The current policy monitors authentication results but does not automatically block failed messages.";
+    }
+
+    const summaryBullets = summaryLines.map(line => `<li>${line}</li>`).join("");
+    const interpretationHTML = interpretation ? `<p>${interpretation}</p>` : "";
+
+    let riskClass = "green";
+    if (spfRate < 80 || dkimRate < 80) riskClass = "red";
+    else if (spfRate < 95 || dkimRate < 95) riskClass = "yellow";
+
+    let failedIPHTML = '';
+    if (failedIPMap.size === 0) {
+      failedIPHTML = '<p>No authentication failures detected in this report.</p>';
+    } else {
+      const failedRows = Array.from(failedIPMap.entries())
+        .map(([ip, d]) => `<tr><td>${escapeHTML(ip)}</td><td>${d.count}</td><td>${escapeHTML(d.spf || 'N/A')}</td><td>${escapeHTML(d.dkim || 'N/A')}</td><td>${escapeHTML(d.disposition)}</td></tr>`)
+        .join('');
+      failedIPHTML = `<table>
+        <thead><tr><th>Source IP</th><th>Total Messages</th><th>SPF Result</th><th>DKIM Result</th><th>Disposition</th></tr></thead>
+        <tbody>${failedRows}</tbody>
+      </table>`;
+    }
+
+    const allRecordRows = allRows
+      .map(r => `<tr><td>${escapeHTML(r.sourceIP || 'N/A')}</td><td>${r.count}</td><td>${escapeHTML(r.spf || 'N/A')}</td><td>${escapeHTML(r.dkim || 'N/A')}</td><td>${escapeHTML(r.disposition)}</td></tr>`)
+      .join('');
+
+    const rawXML = escapeHTML(e.target.result);
+
+    const generatedAt = new Date().toLocaleString();
+
+    document.getElementById("output").innerHTML = `
+      <p class="report-timestamp"><strong>${escapeHTML(file.name)}</strong> &mdash; Generated on: ${generatedAt}</p>
+      <p class="report-source">This summary is generated from the DMARC aggregate report provided.</p>
+      <h2>Summary of Findings</h2>
+      <div class="card summary">
+        <ul>${summaryBullets}</ul>
+        ${interpretationHTML}
+      </div>
+
+      <h2>Authentication Overview</h2>
+      <div class="card">
+        <strong>Domain:</strong> ${domain}<br/>
+        <strong>Total Messages:</strong> ${total}<br/>
+        <strong>SPF Pass Rate:</strong> ${spfRate}%<br/>
+        <strong>DKIM Pass Rate:</strong> ${dkimRate}%<br/>
+        <strong class="${riskClass}">Risk Level: ${riskClass.toUpperCase()}</strong>
+      </div>
+
+      <h2>Failed Authentication &mdash; Unique Sending IPs</h2>
+      <div class="card">
+        ${failedIPHTML}
+      </div>
+
+      <h2>All Records</h2>
+      <div class="card">
+        <table>
+          <thead><tr><th>Source IP</th><th>Count</th><th>SPF</th><th>DKIM</th><th>Disposition</th></tr></thead>
+          <tbody>${allRecordRows}</tbody>
+        </table>
+      </div>
+
+      <div class="raw-xml-section">
+        <h2>Raw DMARC Report</h2>
+        <div class="card">
+          <pre class="raw-xml">${rawXML}</pre>
+        </div>
+      </div>
+
+      <p class="disclaimer">This report summarizes authentication results only and does not determine intent or threat level.</p>
+
+      <button class="print-btn" onclick="window.print()">Print Report</button>
+    `;
+  };
+
+  reader.readAsText(file);
+});
+</script>
+
+</body>
+</html>
