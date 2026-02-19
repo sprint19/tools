@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Sprint19 Tools — Privacy-first, browser-based engineering utilities. No data leaves your browser. SPF, DKIM, DMARC, JWT, CORS, webhooks, Postgres JSON, and Rails log tools.">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://tools.sprint19.com/">
+  <meta property="og:title" content="Sprint19 Tools — Engineering Utilities">
+  <meta property="og:description" content="Privacy-first, browser-based engineering utilities. No data leaves your browser.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://tools.sprint19.com/">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <title>Sprint19 Tools — Privacy-First Engineering Utilities</title>
+  <link rel="stylesheet" href="/shared/styles.css">
+  <style>
+    .hero {
+      margin-bottom: 40px;
+    }
+    .hero p {
+      color: #555;
+      font-size: 17px;
+      max-width: 600px;
+    }
+    .tool-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-top: 24px;
+    }
+    .tool-card {
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      padding: 20px;
+      background: #fff;
+      transition: border-color 0.15s, box-shadow 0.15s;
+      text-decoration: none;
+      color: inherit;
+      display: block;
+    }
+    .tool-card:hover {
+      border-color: #999;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+      text-decoration: none;
+    }
+    .tool-card h3 {
+      margin: 0 0 6px 0;
+      font-size: 16px;
+      color: #1a1a1a;
+    }
+    .tool-card p {
+      margin: 0;
+      font-size: 14px;
+      color: #666;
+      line-height: 1.45;
+    }
+    .tool-card .tag {
+      display: inline-block;
+      font-size: 11px;
+      color: #888;
+      background: #f5f5f5;
+      padding: 2px 8px;
+      border-radius: 3px;
+      margin-top: 10px;
+    }
+    .tool-card.coming-soon {
+      opacity: 0.55;
+      pointer-events: none;
+    }
+    .tool-card.coming-soon h3::after {
+      content: " — coming soon";
+      font-weight: normal;
+      font-size: 12px;
+      color: #aaa;
+    }
+    .principles {
+      margin-top: 48px;
+      color: #666;
+      font-size: 14px;
+    }
+    .principles ul {
+      padding-left: 20px;
+    }
+    .principles li {
+      margin-bottom: 4px;
+    }
+    @media (max-width: 600px) {
+      .tool-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="hero">
+  <h1>Sprint19 Tools</h1>
+  <p>Privacy-first, browser-based engineering utilities. No data leaves your browser. No tracking. No backend.</p>
+</div>
+
+<h2>Tools</h2>
+
+<div class="tool-grid">
+
+  <a href="/dmarc_reader/" class="tool-card">
+    <h3>DMARC XML Reader</h3>
+    <p>Upload a DMARC aggregate report and get a clear, structured interpretation of authentication results.</p>
+    <span class="tag">Email Auth</span>
+  </a>
+
+  <a href="/spf_analyzer/" class="tool-card coming-soon">
+    <h3>SPF Analyzer</h3>
+    <p>Paste an SPF record to see mechanism breakdown, lookup count, and configuration warnings.</p>
+    <span class="tag">Email Auth</span>
+  </a>
+
+  <a href="/dkim_inspector/" class="tool-card coming-soon">
+    <h3>DKIM Inspector</h3>
+    <p>Paste a DKIM TXT record or signature header to inspect fields, flags, and key status.</p>
+    <span class="tag">Email Auth</span>
+  </a>
+
+  <a href="/jwt_decoder/" class="tool-card coming-soon">
+    <h3>JWT Decoder</h3>
+    <p>Paste a JWT to decode header, payload, and signature. No verification — decode only.</p>
+    <span class="tag">Auth &amp; Tokens</span>
+  </a>
+
+  <a href="/cors_checker/" class="tool-card coming-soon">
+    <h3>CORS Checker</h3>
+    <p>Paste HTTP response headers to analyze CORS configuration and flag common misconfigurations.</p>
+    <span class="tag">HTTP &amp; APIs</span>
+  </a>
+
+  <a href="/webhook_viewer/" class="tool-card coming-soon">
+    <h3>Webhook Viewer</h3>
+    <p>Paste a JSON webhook payload for formatted display, structure stats, and event detection.</p>
+    <span class="tag">HTTP &amp; APIs</span>
+  </a>
+
+  <a href="/postgres_json_formatter/" class="tool-card coming-soon">
+    <h3>Postgres JSON Formatter</h3>
+    <p>Paste JSON from psql output — handles escaped formats, pretty-prints, and validates.</p>
+    <span class="tag">Data</span>
+  </a>
+
+  <a href="/rails_log_beautifier/" class="tool-card coming-soon">
+    <h3>Rails Log Beautifier</h3>
+    <p>Paste Rails server logs to group requests, extract stats, and color-code status results.</p>
+    <span class="tag">Logs</span>
+  </a>
+
+</div>
+
+<div class="principles">
+  <h2>Principles</h2>
+  <ul>
+    <li>Clear over clever</li>
+    <li>Deterministic over speculative</li>
+    <li>Minimal infrastructure</li>
+    <li>Transparent logic</li>
+  </ul>
+</div>
+
+<footer class="site-footer">
+  <hr>
+  <p>All tools run entirely in your browser.</p>
+  <p>Built by <a href="https://sprint19.com" target="_blank" rel="noopener noreferrer">Sprint19</a>. Product engineering for startups.</p>
+  <p class="guardrail">These tools provide structured interpretation only and do not perform security assessment.</p>
+  <p style="margin-top: 12px; font-size: 11px; color: #bbb;">&copy; 2026 Sprint19. Code licensed under <a href="/LICENSE.md" style="color: #bbb;">MIT</a>. Sprint19 name and branding may not be used without permission.</p>
+</footer>
+
+</body>
+</html>

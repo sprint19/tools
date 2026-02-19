@@ -11,6 +11,7 @@
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://tools.sprint19.com/dmarc-reader">
   <link rel="icon" type="image/png" href="/favicon.png">
+  <link rel="stylesheet" href="/shared/styles.css">
   <title>DMARC XML Reader – Clear, Local Report Interpretation | Sprint19</title>
   <style>
     body { font-family: Arial; max-width: 800px; margin: 40px auto; }
@@ -77,11 +78,14 @@
   <p style="margin-top: 12px; font-size: 11px; color: #bbb;">&copy; 2026 Sprint19. Code licensed under <a href="/LICENSE.md" style="color: #bbb;">MIT</a>. Sprint19 name and branding may not be used without permission.</p>
 </footer>
 
+<script src="/shared/utils.js"></script>
 <script>
-function escapeHTML(str) {
-  return str.replace(/[&<>'"]/g,
-    tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag])
-  );
+if (typeof escapeHTML === 'undefined') {
+  function escapeHTML(str) {
+    return str.replace(/[&<>'"]/g,
+      tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag])
+    );
+  }
 }
 
 document.getElementById('fileInput').addEventListener('change', function(event) {

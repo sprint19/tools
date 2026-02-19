@@ -1,0 +1,171 @@
+/*
+ * Sprint19 Tools — Shared Styles
+ *
+ * Common CSS used across all tool pages.
+ * Each tool links this via <link rel="stylesheet" href="/shared/styles.css">
+ * and may add tool-specific overrides inline.
+ */
+
+/* ── Base ────────────────────────────────────────────── */
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  max-width: 800px;
+  margin: 40px auto;
+  padding: 0 20px;
+  color: #1a1a1a;
+  line-height: 1.5;
+}
+
+h1 { margin-bottom: 4px; }
+h2 { margin-top: 32px; }
+
+a { color: #0066cc; text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ── Cards ───────────────────────────────────────────── */
+
+.card {
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 20px;
+  margin-bottom: 20px;
+  background: #fff;
+}
+
+/* ── Status colors ───────────────────────────────────── */
+
+.green  { color: #1a7f37; }
+.yellow { color: #b35900; }
+.red    { color: #cf222e; }
+
+/* ── Summary lists ───────────────────────────────────── */
+
+.summary ul  { list-style: disc; padding-left: 20px; }
+.summary li  { margin-bottom: 6px; line-height: 1.5; }
+.summary p   { margin-top: 16px; line-height: 1.5; }
+
+/* ── Tables ──────────────────────────────────────────── */
+
+table    { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+th, td   { border: 1px solid #ddd; padding: 8px; text-align: left; }
+th       { background: #f5f5f5; }
+
+/* ── Raw / preformatted blocks ───────────────────────── */
+
+.raw-block {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow: auto;
+  max-height: 400px;
+  background: #f9f9f9;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 12px;
+  font-size: 13px;
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+}
+
+/* Legacy alias from DMARC reader */
+.raw-xml { white-space: pre-wrap; overflow: auto; max-height: 400px; background: #f9f9f9; border: 1px solid #ddd; padding: 12px; font-size: 13px; }
+
+/* ── Disclaimer ──────────────────────────────────────── */
+
+.disclaimer {
+  margin-top: 24px;
+  font-style: italic;
+  color: #666;
+}
+
+/* ── Print button ────────────────────────────────────── */
+
+.print-btn {
+  margin-top: 24px;
+  padding: 10px 24px;
+  font-size: 16px;
+  cursor: pointer;
+  background: #f5f5f5;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+.print-btn:hover { background: #eaeaea; }
+
+/* ── Textarea input (common across tools) ────────────── */
+
+.tool-input {
+  width: 100%;
+  min-height: 120px;
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  font-size: 14px;
+  padding: 12px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box;
+  resize: vertical;
+}
+
+.tool-btn {
+  margin-top: 12px;
+  padding: 10px 28px;
+  font-size: 16px;
+  cursor: pointer;
+  background: #1a1a1a;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+}
+.tool-btn:hover { background: #333; }
+
+/* ── Site footer ─────────────────────────────────────── */
+
+.site-footer {
+  text-align: center;
+  color: #999;
+  font-size: 13px;
+  margin-top: 48px;
+  padding-bottom: 24px;
+}
+.site-footer hr {
+  border: none;
+  border-top: 1px solid #ddd;
+  margin-bottom: 16px;
+}
+.site-footer p { margin: 4px 0; }
+.site-footer a { color: #666; text-decoration: none; }
+.site-footer a:hover { text-decoration: underline; }
+.site-footer .guardrail {
+  font-style: italic;
+  font-size: 12px;
+  color: #aaa;
+  margin-top: 12px;
+}
+
+/* ── Report metadata ─────────────────────────────────── */
+
+.report-timestamp { color: #666; font-size: 14px; margin-bottom: 16px; }
+.report-source    { color: #999; font-size: 13px; margin-bottom: 20px; }
+
+/* ── Print ───────────────────────────────────────────── */
+
+@media print {
+  input, button, textarea, .tool-btn {
+    display: none;
+  }
+  body {
+    margin: 0;
+  }
+  .card {
+    border: none;
+    page-break-inside: avoid;
+  }
+  .raw-xml-section, .raw-block-section {
+    display: none;
+  }
+  pre {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+  }
+  .site-footer {
+    display: block !important;
+  }
+}
