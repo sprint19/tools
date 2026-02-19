@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="A privacy-first, browser-based DKIM record builder. Paste your public key and selector to generate a DKIM DNS TXT record. No data leaves your browser. Built by Sprint19.">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://tools.sprint19.com/dkim-builder">
+  <meta property="og:title" content="DKIM Record Builder — Built by Sprint19">
+  <meta property="og:description" content="Paste your public key and selector to generate a DKIM DNS TXT record. No data leaves your browser.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://tools.sprint19.com/dkim-builder">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <link rel="stylesheet" href="/shared/styles.css">
+  <title>DKIM Record Builder – Generate a DKIM DNS TXT Record | Sprint19</title>
+  <style>
+    .back-link {
+      display: inline-block;
+      font-size: 13px;
+      color: #666;
+      text-decoration: none;
+      margin-bottom: 8px;
+    }
+    .back-link:hover { color: #0066cc; text-decoration: underline; }
+
+    .form-group { margin-bottom: 16px; }
+    .form-group label {
+      display: block;
+      font-weight: 600;
+      font-size: 14px;
+      margin-bottom: 4px;
+      color: #1a1a1a;
+    }
+    .form-group .hint {
+      display: block;
+      font-size: 12px;
+      color: #888;
+      margin-bottom: 4px;
+    }
+    .form-group input[type="text"],
+    .form-group select {
+      width: 100%;
+      padding: 8px 10px;
+      font-size: 14px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-sizing: border-box;
+      font-family: inherit;
+    }
+    .form-group textarea {
+      width: 100%;
+      min-height: 80px;
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+      font-size: 13px;
+      padding: 8px 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-sizing: border-box;
+      resize: vertical;
+    }
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    @media (max-width: 500px) {
+      .form-row { grid-template-columns: 1fr; }
+    }
+    .checkbox-row {
+      margin-bottom: 16px;
+    }
+    .checkbox-row label {
+      font-size: 14px;
+      font-weight: normal;
+      color: #1a1a1a;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+    }
+    .checkbox-row input[type="checkbox"] { margin: 0; }
+
+    .error-msg { color: #cf222e; font-weight: bold; margin-top: 16px; }
+
+    .record-output { margin-top: 24px; }
+    .record-output pre {
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      background: #f9f9f9;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 14px;
+      font-size: 14px;
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+      margin: 0;
+    }
+
+    .copy-btn {
+      margin-top: 8px;
+      padding: 6px 16px;
+      font-size: 14px;
+      cursor: pointer;
+      background: #f5f5f5;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    .copy-btn:hover { background: #eaeaea; }
+    .copy-btn.copied { background: #1a7f37; color: #fff; border-color: #1a7f37; }
+
+    .dns-hint {
+      margin-top: 12px;
+      font-size: 13px;
+      color: #555;
+    }
+    .dns-hint code {
+      background: #f5f5f5;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-size: 13px;
+    }
+
+    .field-table { margin-top: 20px; }
+    .field-table th { font-size: 13px; }
+    .field-table td { font-size: 13px; }
+    .field-table code { font-size: 12px; }
+
+    .key-note {
+      margin-top: 16px;
+      font-size: 13px;
+      color: #666;
+      font-style: italic;
+    }
+  </style>
+</head>
+<body>
+
+<a href="/" class="back-link">&larr; Sprint19 Tools</a>
+<h1>DKIM Record Builder</h1>
+<p>Paste your public key and configure DKIM settings. Get a ready-to-publish DNS TXT record. No data leaves your browser.</p>
+
+<div class="form-row">
+  <div class="form-group">
+    <label for="selector">Selector *</label>
+    <span class="hint">The selector prefix for your DKIM DNS entry.</span>
+    <input type="text" id="selector" placeholder="default">
+  </div>
+  <div class="form-group">
+    <label for="domain">Domain *</label>
+    <span class="hint">Used for the DNS publish hint below.</span>
+    <input type="text" id="domain" placeholder="example.com">
+  </div>
+</div>
+
+<div class="form-group">
+  <label for="publicKey">Public Key (base64) *</label>
+  <span class="hint">Paste the base64-encoded public key from your key generation process. Whitespace and newlines are stripped automatically.</span>
+  <textarea id="publicKey" placeholder="MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC..." rows="4"></textarea>
+</div>
+
+<div class="form-row">
+  <div class="form-group">
+    <label for="keyType">Key Type (k)</label>
+    <select id="keyType">
+      <option value="rsa">rsa</option>
+      <option value="ed25519">ed25519</option>
+    </select>
+  </div>
+  <div class="form-group">
+    <label for="serviceType">Service Type (s)</label>
+    <select id="serviceType">
+      <option value="">omit (all services)</option>
+      <option value="*">* (all)</option>
+      <option value="email">email</option>
+    </select>
+  </div>
+</div>
+
+<div class="checkbox-row">
+  <label><input type="checkbox" id="testingMode"> Testing mode (t=y)</label>
+</div>
+
+<div class="form-group">
+  <label for="notes">Notes (n)</label>
+  <span class="hint">Optional. Admin notes stored in the DNS record.</span>
+  <input type="text" id="notes" placeholder="">
+</div>
+
+<button id="generateBtn" class="tool-btn">Generate Record</button>
+
+<div id="output"></div>
+
+<footer class="site-footer">
+  <hr>
+  <p>Generated locally in your browser.</p>
+  <p>Built by <a href="https://sprint19.com" target="_blank" rel="noopener noreferrer">Sprint19</a>. Product engineering for startups.</p>
+  <p class="guardrail">This tool assembles a DKIM DNS record from the values you provide. It does not generate cryptographic keys or verify key validity.</p>
+  <p style="margin-top: 12px; font-size: 11px; color: #bbb;">&copy; 2026 Sprint19. Code licensed under <a href="/LICENSE.md" style="color: #bbb;">MIT</a>. Sprint19 name and branding may not be used without permission.</p>
+</footer>
+
+<script src="/shared/utils.js"></script>
+<script>
+if (typeof escapeHTML === 'undefined') {
+  function escapeHTML(str) {
+    return str.replace(/[&<>'"]/g,
+      tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag])
+    );
+  }
+}
+
+function copyToClipboard(text, btn) {
+  navigator.clipboard.writeText(text).then(function() {
+    var orig = btn.textContent;
+    btn.textContent = 'Copied!';
+    btn.classList.add('copied');
+    setTimeout(function() {
+      btn.textContent = orig;
+      btn.classList.remove('copied');
+    }, 1500);
+  });
+}
+
+var BASE64_PATTERN = /^[A-Za-z0-9+/=]+$/;
+
+var FIELD_DESCRIPTIONS = {
+  'v': 'Protocol version. Always DKIM1.',
+  'k': 'Key type used for the DKIM signature.',
+  'p': 'Base64-encoded public key.',
+  't': 'Flags. "y" indicates the domain is testing DKIM.',
+  's': 'Service type this key applies to.',
+  'n': 'Notes for administrators. Not interpreted by mail systems.'
+};
+
+document.getElementById('generateBtn').addEventListener('click', function() {
+  var selector = document.getElementById('selector').value.trim();
+  var domain = document.getElementById('domain').value.trim();
+  var rawKey = document.getElementById('publicKey').value;
+  var keyType = document.getElementById('keyType').value;
+  var serviceType = document.getElementById('serviceType').value;
+  var testingMode = document.getElementById('testingMode').checked;
+  var notes = document.getElementById('notes').value.trim();
+
+  var publicKey = rawKey.replace(/[\s\r\n]+/g, '');
+
+  var errors = [];
+  if (!selector) errors.push('Selector is required.');
+  if (!domain) errors.push('Domain is required.');
+  if (!publicKey) {
+    errors.push('Public key is required.');
+  } else if (!BASE64_PATTERN.test(publicKey)) {
+    errors.push('Public key contains invalid characters. Only base64 characters (A-Z, a-z, 0-9, +, /, =) are allowed.');
+  }
+
+  if (errors.length > 0) {
+    document.getElementById('output').innerHTML =
+      '<p class="error-msg">' + errors.map(escapeHTML).join('<br>') + '</p>';
+    return;
+  }
+
+  var parts = ['v=DKIM1'];
+  var fields = [{ tag: 'v', value: 'DKIM1' }];
+
+  parts.push('k=' + keyType);
+  fields.push({ tag: 'k', value: keyType });
+
+  if (testingMode) {
+    parts.push('t=y');
+    fields.push({ tag: 't', value: 'y' });
+  }
+
+  if (serviceType) {
+    parts.push('s=' + serviceType);
+    fields.push({ tag: 's', value: serviceType });
+  }
+
+  if (notes) {
+    parts.push('n=' + notes);
+    fields.push({ tag: 'n', value: notes });
+  }
+
+  parts.push('p=' + publicKey);
+  fields.push({ tag: 'p', value: publicKey.length > 40 ? publicKey.substring(0, 40) + '...' : publicKey });
+
+  var record = parts.join('; ');
+
+  var dnsName = escapeHTML(selector) + '._domainkey.' + escapeHTML(domain);
+
+  var fieldRows = fields.map(function(f) {
+    return '<tr><td><code>' + escapeHTML(f.tag) + '</code></td>' +
+      '<td><code>' + escapeHTML(f.value) + '</code></td>' +
+      '<td>' + (FIELD_DESCRIPTIONS[f.tag] || '') + '</td></tr>';
+  }).join('');
+
+  document.getElementById('output').innerHTML =
+    '<div class="record-output">' +
+      '<h2>Generated Record</h2>' +
+      '<div class="card">' +
+        '<pre id="recordText">' + escapeHTML(record) + '</pre>' +
+        '<button class="copy-btn" id="copyBtn">Copy to Clipboard</button>' +
+      '</div>' +
+      '<p class="dns-hint">Publish this as a TXT record at <code>' + dnsName + '</code></p>' +
+    '</div>' +
+    '<div class="field-table">' +
+      '<h2>Field Explanation</h2>' +
+      '<div class="card">' +
+        '<table><thead><tr><th>Tag</th><th>Value</th><th>Description</th></tr></thead>' +
+        '<tbody>' + fieldRows + '</tbody></table>' +
+      '</div>' +
+    '</div>' +
+    '<p class="key-note">This tool does not generate key pairs. Paste a public key from your mail server or key generation tool.</p>' +
+    '<p class="disclaimer">Generated record does not guarantee correct configuration. Verify with your DNS provider before publishing.</p>' +
+    '<button class="print-btn" onclick="window.print()">Print</button>';
+
+  document.getElementById('copyBtn').addEventListener('click', function() {
+    copyToClipboard(record, this);
+  });
+});
+</script>
+
+</body>
+</html>

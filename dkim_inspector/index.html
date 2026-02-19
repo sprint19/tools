@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="A privacy-first, browser-based DKIM inspector. Paste a DKIM DNS TXT record or DKIM-Signature header for a structured field-by-field breakdown with warnings. No data leaves your browser. Built by Sprint19.">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://tools.sprint19.com/dkim-inspector">
+  <meta property="og:title" content="DKIM Inspector — Built by Sprint19">
+  <meta property="og:description" content="Paste a DKIM DNS TXT record or DKIM-Signature header for a structured field-by-field breakdown with warnings. No data leaves your browser.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://tools.sprint19.com/dkim-inspector">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <link rel="stylesheet" href="/shared/styles.css">
+  <title>DKIM Inspector – Record &amp; Signature Analysis | Sprint19</title>
+  <style>
+    .error-msg { color: #cf222e; font-weight: bold; margin-top: 16px; }
+    .scope-guard { font-style: italic; color: #999; font-size: 12px; margin-top: 8px; }
+  </style>
+</head>
+<body>
+
+<a href="/" style="display:inline-block;font-size:13px;color:#666;text-decoration:none;margin-bottom:8px;">&larr; Sprint19 Tools</a>
+<h1>DKIM Inspector</h1>
+<p>Paste a DKIM DNS TXT record or a DKIM-Signature email header. Structured breakdown. No DNS lookups. No data leaves your browser.</p>
+
+<textarea id="dkimInput" class="tool-input" placeholder="v=DKIM1; k=rsa; p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNA..." rows="6"></textarea>
+<br>
+<button id="inspectBtn" class="tool-btn">Inspect</button>
+
+<div id="output"></div>
+
+<footer class="site-footer">
+  <hr>
+  <p>Inspected locally in your browser.</p>
+  <p>Built by <a href="https://sprint19.com" target="_blank" rel="noopener noreferrer">Sprint19</a>. Product engineering for startups.</p>
+  <p class="guardrail">This tool inspects DKIM record syntax and does not verify signatures, resolve DNS, or perform security assessment.</p>
+  <p style="margin-top: 12px; font-size: 11px; color: #bbb;">&copy; 2026 Sprint19. Code licensed under <a href="/LICENSE.md" style="color: #bbb;">MIT</a>. Sprint19 name and branding may not be used without permission.</p>
+</footer>
+
+<script src="/shared/utils.js"></script>
+<script>
+if (typeof escapeHTML === 'undefined') {
+  function escapeHTML(str) {
+    return str.replace(/[&<>'"]/g,
+      tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag])
+    );
+  }
+}
+
+var MAX_INPUT_BYTES = 10240;
+
+var DNS_TAG_INFO = {
+  v:  { required: true,  desc: 'Protocol version' },
+  p:  { required: true,  desc: 'Base64-encoded public key' },
+  k:  { required: false, desc: 'Key type' },
+  t:  { required: false, desc: 'Flags' },
+  s:  { required: false, desc: 'Service type' },
+  h:  { required: false, desc: 'Acceptable hash algorithms' },
+  g:  { required: false, desc: 'Granularity (deprecated)' },
+  n:  { required: false, desc: 'Notes' }
+};
+
+var SIG_TAG_INFO = {
+  v:  { required: false, desc: 'DKIM-Signature version' },
+  a:  { required: true,  desc: 'Signing algorithm' },
+  b:  { required: true,  desc: 'Signature data (base64)' },
+  bh: { required: true,  desc: 'Body hash (base64)' },
+  c:  { required: false, desc: 'Canonicalization method' },
+  d:  { required: true,  desc: 'Signing domain' },
+  h:  { required: true,  desc: 'Signed header fields' },
+  i:  { required: false, desc: 'Agent or user identifier' },
+  l:  { required: false, desc: 'Body length limit' },
+  q:  { required: false, desc: 'Query method' },
+  s:  { required: true,  desc: 'Selector' },
+  t:  { required: false, desc: 'Signature timestamp' },
+  x:  { required: false, desc: 'Signature expiration' }
+};
+
+var BASE64_RE = /^[A-Za-z0-9+/=\s]*$/;
+
+function normalizeInput(raw) {
+  var s = raw.replace(/\r\n[ \t]+/g, ' ').replace(/\n[ \t]+/g, ' ');
+  s = s.replace(/"([^"]*)"/g, '$1');
+  return s.replace(/\s+/g, ' ').trim();
+}
+
+function parseTags(str) {
+  var parts = str.split(';');
+  var tags = [];
+  for (var i = 0; i < parts.length; i++) {
+    var part = parts[i].trim();
+    if (!part) continue;
+    var eqIdx = part.indexOf('=');
+    if (eqIdx === -1) continue;
+    var tag = part.substring(0, eqIdx).trim().toLowerCase();
+    var value = part.substring(eqIdx + 1).trim();
+    tags.push({ tag: tag, value: value });
+  }
+  return tags;
+}
+
+function detectMode(normalized) {
+  if (/v\s*=\s*DKIM1/i.test(normalized)) return 'dns';
+  if (/v\s*=\s*1/.test(normalized) && /a\s*=/.test(normalized) && (/b\s*=/.test(normalized) || /d\s*=/.test(normalized))) return 'sig';
+  return null;
+}
+
+function formatTimestamp(unix) {
+  var n = parseInt(unix, 10);
+  if (isNaN(n)) return unix;
+  var d = new Date(n * 1000);
+  return unix + ' (' + d.toUTCString() + ')';
+}
+
+function inspectDKIM(input) {
+  var trimmed = input.trim();
+
+  if (!trimmed) return { error: 'No DKIM record or signature provided.' };
+  if (trimmed.length > MAX_INPUT_BYTES) return { error: 'Input exceeds the 10KB limit.' };
+
+  var normalized = normalizeInput(trimmed);
+
+  if (/^dkim-signature\s*:/i.test(normalized)) {
+    normalized = normalized.replace(/^dkim-signature\s*:\s*/i, '');
+  }
+
+  var mode = detectMode(normalized);
+  if (!mode) {
+    return { error: 'Could not identify input as a DKIM DNS TXT record (v=DKIM1) or a DKIM-Signature header (v=1).' };
+  }
+
+  var tags = parseTags(normalized);
+  var tagMap = {};
+  for (var i = 0; i < tags.length; i++) {
+    tagMap[tags[i].tag] = tags[i].value;
+  }
+
+  var warnings = [];
+  var tagInfo = mode === 'dns' ? DNS_TAG_INFO : SIG_TAG_INFO;
+  var modeLabel = mode === 'dns' ? 'DNS TXT Record' : 'Signature Header';
+  var keyOrAlgo = mode === 'dns'
+    ? (tagMap.k || 'rsa')
+    : (tagMap.a || 'unknown');
+
+  var requiredTags = [];
+  for (var key in tagInfo) {
+    if (tagInfo[key].required) requiredTags.push(key);
+  }
+  for (var r = 0; r < requiredTags.length; r++) {
+    if (!(requiredTags[r] in tagMap)) {
+      warnings.push('Missing required tag: ' + requiredTags[r] + '.');
+    }
+  }
+
+  if (mode === 'dns') {
+    if ('p' in tagMap && tagMap.p === '') {
+      warnings.push('Public key is empty. This indicates the key has been revoked.');
+    }
+    if ('t' in tagMap && /\by\b/.test(tagMap.t)) {
+      warnings.push('Testing flag is set. Receiving servers may not enforce DKIM failures.');
+    }
+    if ('h' in tagMap) {
+      var hashes = tagMap.h.toLowerCase().split(':');
+      var onlySha1 = hashes.length > 0 && hashes.every(function(h) { return h.trim() === 'sha1'; });
+      if (onlySha1) {
+        warnings.push('Older hash algorithm detected: sha1.');
+      }
+    }
+    if ('g' in tagMap) {
+      warnings.push('Granularity tag present. Deprecated per RFC 6376.');
+    }
+    if (!('v' in tagMap)) {
+      warnings.push('No version tag found.');
+    }
+    for (var d = 0; d < tags.length; d++) {
+      if (!(tags[d].tag in DNS_TAG_INFO)) {
+        warnings.push('Unrecognized tag: ' + tags[d].tag + '.');
+      }
+    }
+  }
+
+  if (mode === 'sig') {
+    if ('a' in tagMap && tagMap.a.toLowerCase() === 'rsa-sha1') {
+      warnings.push('Older signing algorithm detected: rsa-sha1.');
+    }
+    if ('l' in tagMap) {
+      warnings.push('Body length limit is set. This tag limits how much of the body is covered by the signature.');
+    }
+    if ('x' in tagMap) {
+      var expiry = parseInt(tagMap.x, 10);
+      if (!isNaN(expiry) && expiry * 1000 < Date.now()) {
+        warnings.push('Signature expiration is in the past (' + new Date(expiry * 1000).toUTCString() + ').');
+      }
+    }
+    if ('c' in tagMap && tagMap.c.toLowerCase() === 'simple/simple') {
+      warnings.push('Canonicalization is set to simple/simple. Less tolerant of modifications during mail transit.');
+    }
+    if ('h' in tagMap) {
+      var signedHeaders = tagMap.h.toLowerCase().split(':').map(function(s) { return s.trim(); });
+      if (signedHeaders.indexOf('from') === -1) {
+        warnings.push("The 'from' header is not in the signed headers list. RFC 6376 requires 'from' to be signed.");
+      }
+    }
+    if ('b' in tagMap && !BASE64_RE.test(tagMap.b)) {
+      warnings.push('Value of b= contains characters outside the base64 alphabet.');
+    }
+    if ('bh' in tagMap && !BASE64_RE.test(tagMap.bh)) {
+      warnings.push('Value of bh= contains characters outside the base64 alphabet.');
+    }
+    for (var u = 0; u < tags.length; u++) {
+      if (!(tags[u].tag in SIG_TAG_INFO)) {
+        warnings.push('Unrecognized tag: ' + tags[u].tag + '.');
+      }
+    }
+  }
+
+  return {
+    mode: mode,
+    modeLabel: modeLabel,
+    keyOrAlgo: keyOrAlgo,
+    tags: tags,
+    tagInfo: tagInfo,
+    warnings: warnings,
+    rawInput: input
+  };
+}
+
+function renderOutput(r) {
+  if (r.error) {
+    return '<p class="error-msg">' + escapeHTML(r.error) + '</p>';
+  }
+
+  var warningCount = r.warnings.length;
+  var statusClass = warningCount === 0 ? 'green' : (warningCount <= 2 ? 'yellow' : 'red');
+
+  var scopeHTML = '<p class="scope-guard">This tool parses DKIM text and headers. It does not verify signatures or validate DNS.</p>';
+
+  var bullets = [
+    'Record type detected: <strong>' + escapeHTML(r.modeLabel) + '</strong>.',
+    escapeHTML(String(r.tags.length)) + ' tag' + (r.tags.length !== 1 ? 's' : '') + ' parsed.',
+    (r.mode === 'dns' ? 'Key type' : 'Signing algorithm') + ': <strong>' + escapeHTML(r.keyOrAlgo) + '</strong>.'
+  ];
+  if (warningCount > 0) {
+    bullets.push('<span class="' + statusClass + '">' + warningCount + ' warning' + (warningCount !== 1 ? 's' : '') + ' detected.</span>');
+  } else {
+    bullets.push('<span class="green">No warnings detected.</span>');
+  }
+  var summaryHTML = '<ul>' + bullets.map(function(b) { return '<li>' + b + '</li>'; }).join('') + '</ul>';
+
+  var rows = r.tags.map(function(t) {
+    var info = r.tagInfo[t.tag];
+    var desc = info ? escapeHTML(info.desc) : '<em>Unrecognized</em>';
+    var displayValue = t.value;
+    if (r.mode === 'sig' && (t.tag === 't' || t.tag === 'x')) {
+      displayValue = formatTimestamp(t.value);
+    }
+    return '<tr>' +
+      '<td><code>' + escapeHTML(t.tag) + '</code></td>' +
+      '<td style="word-break:break-all;">' + escapeHTML(displayValue) + '</td>' +
+      '<td>' + desc + '</td>' +
+      '</tr>';
+  }).join('');
+
+  var tableHTML = '<table>' +
+    '<thead><tr><th>Tag</th><th>Value</th><th>Description</th></tr></thead>' +
+    '<tbody>' + rows + '</tbody></table>';
+
+  var warningsHTML = '';
+  if (r.warnings.length > 0) {
+    var warnItems = r.warnings.map(function(w) { return '<li>' + escapeHTML(w) + '</li>'; }).join('');
+    warningsHTML = '<h2>Warnings</h2><div class="card"><ul class="' + statusClass + '">' + warnItems + '</ul></div>';
+  }
+
+  var generatedAt = new Date().toLocaleString();
+
+  return scopeHTML +
+    '<p class="report-timestamp">Generated on: ' + generatedAt + '</p>' +
+    '<p class="report-source">This summary is generated from the DKIM input provided.</p>' +
+    '<h2>Summary of Findings</h2>' +
+    '<div class="card summary">' + summaryHTML + '</div>' +
+    '<h2>Field Breakdown</h2>' +
+    '<div class="card">' + tableHTML + '</div>' +
+    warningsHTML +
+    '<div class="raw-block-section">' +
+      '<h2>Raw Input</h2>' +
+      '<div class="card"><pre class="raw-block">' + escapeHTML(r.rawInput) + '</pre></div>' +
+    '</div>' +
+    '<p class="disclaimer">This report inspects DKIM record syntax only and does not verify signatures or determine sender intent.</p>' +
+    '<button class="print-btn" onclick="window.print()">Print Report</button>';
+}
+
+document.getElementById('inspectBtn').addEventListener('click', function() {
+  var input = document.getElementById('dkimInput').value;
+  var result = inspectDKIM(input);
+  document.getElementById('output').innerHTML = renderOutput(result);
+});
+</script>
+
+</body>
+</html>

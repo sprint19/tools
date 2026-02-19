@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="A privacy-first, browser-based SPF record builder. Enter your authorized senders and IP ranges to generate a complete SPF TXT record. No data leaves your browser. Built by Sprint19.">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://tools.sprint19.com/spf-builder">
+  <meta property="og:title" content="SPF Record Builder — Built by Sprint19">
+  <meta property="og:description" content="Enter your authorized senders and IP ranges to generate a complete SPF TXT record. No data leaves your browser.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://tools.sprint19.com/spf-builder">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <link rel="stylesheet" href="/shared/styles.css">
+  <title>SPF Record Builder – Generate an SPF TXT Record | Sprint19</title>
+  <style>
+    .back-link {
+      display: inline-block;
+      font-size: 13px;
+      color: #666;
+      text-decoration: none;
+      margin-bottom: 8px;
+    }
+    .back-link:hover { color: #0066cc; text-decoration: underline; }
+
+    .form-group { margin-bottom: 16px; }
+    .form-group label {
+      display: block;
+      font-weight: 600;
+      font-size: 14px;
+      margin-bottom: 4px;
+      color: #1a1a1a;
+    }
+    .form-group .hint {
+      display: block;
+      font-size: 12px;
+      color: #888;
+      margin-bottom: 4px;
+    }
+    .form-group textarea {
+      width: 100%;
+      min-height: 60px;
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+      font-size: 13px;
+      padding: 8px 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-sizing: border-box;
+      resize: vertical;
+    }
+    .form-group select {
+      width: 100%;
+      padding: 8px 10px;
+      font-size: 14px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-sizing: border-box;
+      font-family: inherit;
+    }
+    .checkbox-row {
+      display: flex;
+      gap: 24px;
+      margin-bottom: 16px;
+    }
+    .checkbox-row label {
+      font-size: 14px;
+      font-weight: normal;
+      color: #1a1a1a;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+    }
+    .checkbox-row input[type="checkbox"] { margin: 0; }
+
+    .error-msg { color: #cf222e; font-weight: bold; margin-top: 16px; }
+
+    .record-output { margin-top: 24px; }
+    .record-output pre {
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      background: #f9f9f9;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 14px;
+      font-size: 14px;
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+      margin: 0;
+    }
+
+    .copy-btn {
+      margin-top: 8px;
+      padding: 6px 16px;
+      font-size: 14px;
+      cursor: pointer;
+      background: #f5f5f5;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    .copy-btn:hover { background: #eaeaea; }
+    .copy-btn.copied { background: #1a7f37; color: #fff; border-color: #1a7f37; }
+
+    .lookup-count { margin-top: 12px; font-size: 13px; }
+    .mechanism-list { margin-top: 16px; }
+    .mechanism-list li { margin-bottom: 4px; font-size: 13px; }
+    .mechanism-list code { font-size: 12px; background: #f5f5f5; padding: 2px 6px; border-radius: 3px; }
+  </style>
+</head>
+<body>
+
+<a href="/" class="back-link">&larr; Sprint19 Tools</a>
+<h1>SPF Record Builder</h1>
+<p>Enter your authorized senders and IP ranges. Get a ready-to-publish SPF TXT record. No data leaves your browser.</p>
+
+<div class="form-group">
+  <label for="includes">Include Domains</label>
+  <span class="hint">Comma or newline separated. Each becomes an <code>include:</code> mechanism.</span>
+  <textarea id="includes" placeholder="_spf.google.com, servers.mcsv.net" rows="3"></textarea>
+</div>
+
+<div class="form-group">
+  <label for="ip4">IPv4 Addresses / Ranges</label>
+  <span class="hint">Comma or newline separated. CIDR notation supported (e.g. 203.0.113.0/24).</span>
+  <textarea id="ip4" placeholder="203.0.113.0/24, 198.51.100.5" rows="3"></textarea>
+</div>
+
+<div class="form-group">
+  <label for="ip6">IPv6 Addresses / Ranges</label>
+  <span class="hint">Comma or newline separated.</span>
+  <textarea id="ip6" placeholder="2001:db8::/32" rows="2"></textarea>
+</div>
+
+<div class="checkbox-row">
+  <label><input type="checkbox" id="useMechA"> Authorize domain's A record (<code>a</code>)</label>
+  <label><input type="checkbox" id="useMechMX"> Authorize domain's MX hosts (<code>mx</code>)</label>
+</div>
+
+<div class="form-group">
+  <label for="allQualifier">All Qualifier</label>
+  <select id="allQualifier">
+    <option value="-all">-all (fail)</option>
+    <option value="~all">~all (softfail)</option>
+    <option value="?all">?all (neutral)</option>
+    <option value="+all">+all (pass)</option>
+  </select>
+</div>
+
+<button id="generateBtn" class="tool-btn">Generate Record</button>
+
+<div id="output"></div>
+
+<footer class="site-footer">
+  <hr>
+  <p>Generated locally in your browser.</p>
+  <p>Built by <a href="https://sprint19.com" target="_blank" rel="noopener noreferrer">Sprint19</a>. Product engineering for startups.</p>
+  <p class="guardrail">This tool generates an SPF record based on the values you provide. It does not perform DNS resolution or verify that included domains exist.</p>
+  <p style="margin-top: 12px; font-size: 11px; color: #bbb;">&copy; 2026 Sprint19. Code licensed under <a href="/LICENSE.md" style="color: #bbb;">MIT</a>. Sprint19 name and branding may not be used without permission.</p>
+</footer>
+
+<script src="/shared/utils.js"></script>
+<script>
+if (typeof escapeHTML === 'undefined') {
+  function escapeHTML(str) {
+    return str.replace(/[&<>'"]/g,
+      tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag])
+    );
+  }
+}
+
+function copyToClipboard(text, btn) {
+  navigator.clipboard.writeText(text).then(function() {
+    var orig = btn.textContent;
+    btn.textContent = 'Copied!';
+    btn.classList.add('copied');
+    setTimeout(function() {
+      btn.textContent = orig;
+      btn.classList.remove('copied');
+    }, 1500);
+  });
+}
+
+function parseList(raw) {
+  return raw.split(/[,\n]+/).map(function(s) { return s.trim(); }).filter(Boolean);
+}
+
+var IPV4_PATTERN = /^(\d{1,3}\.){3}\d{1,3}(\/\d{1,2})?$/;
+var IPV6_PATTERN = /^[0-9a-fA-F:.]+(\/\d{1,3})?$/;
+
+var MECHANISM_DESCRIPTIONS = {
+  'include': 'Authorizes all senders permitted by the included domain\'s SPF record.',
+  'ip4':     'Authorizes the specified IPv4 address or range.',
+  'ip6':     'Authorizes the specified IPv6 address or range.',
+  'a':       'Authorizes the IP addresses in the domain\'s A record.',
+  'mx':      'Authorizes the IP addresses of the domain\'s MX hosts.',
+  '-all':    'All other senders fail SPF (strict).',
+  '~all':    'All other senders softfail SPF (permissive, used during rollout).',
+  '?all':    'No assertion about other senders (neutral).',
+  '+all':    'All senders pass SPF. Effectively disables SPF protection.'
+};
+
+document.getElementById('generateBtn').addEventListener('click', function() {
+  var includes = parseList(document.getElementById('includes').value);
+  var ip4s = parseList(document.getElementById('ip4').value);
+  var ip6s = parseList(document.getElementById('ip6').value);
+  var useA = document.getElementById('useMechA').checked;
+  var useMX = document.getElementById('useMechMX').checked;
+  var allQual = document.getElementById('allQualifier').value;
+
+  var errors = [];
+  var warnings = [];
+
+  ip4s.forEach(function(ip) {
+    if (!IPV4_PATTERN.test(ip)) {
+      errors.push('"' + ip + '" does not look like a valid IPv4 address or CIDR range.');
+    }
+  });
+  ip6s.forEach(function(ip) {
+    if (!IPV6_PATTERN.test(ip)) {
+      errors.push('"' + ip + '" does not look like a valid IPv6 address or range.');
+    }
+  });
+
+  var mechanismCount = includes.length + ip4s.length + ip6s.length + (useA ? 1 : 0) + (useMX ? 1 : 0);
+  if (mechanismCount === 0) {
+    errors.push('At least one mechanism is required (include, IP address, a, or mx).');
+  }
+
+  if (errors.length > 0) {
+    document.getElementById('output').innerHTML =
+      '<p class="error-msg">' + errors.map(escapeHTML).join('<br>') + '</p>';
+    return;
+  }
+
+  var parts = ['v=spf1'];
+  var mechanisms = [];
+
+  if (useA) {
+    parts.push('a');
+    mechanisms.push({ token: 'a', type: 'a' });
+  }
+  if (useMX) {
+    parts.push('mx');
+    mechanisms.push({ token: 'mx', type: 'mx' });
+  }
+  includes.forEach(function(d) {
+    parts.push('include:' + d);
+    mechanisms.push({ token: 'include:' + d, type: 'include' });
+  });
+  ip4s.forEach(function(ip) {
+    parts.push('ip4:' + ip);
+    mechanisms.push({ token: 'ip4:' + ip, type: 'ip4' });
+  });
+  ip6s.forEach(function(ip) {
+    parts.push('ip6:' + ip);
+    mechanisms.push({ token: 'ip6:' + ip, type: 'ip6' });
+  });
+
+  parts.push(allQual);
+  mechanisms.push({ token: allQual, type: allQual });
+
+  var record = parts.join(' ');
+
+  var dnsLookups = includes.length + (useA ? 1 : 0) + (useMX ? 1 : 0);
+
+  if (allQual === '+all') {
+    warnings.push('The "+all" qualifier means all senders pass SPF. This effectively disables SPF protection.');
+  }
+  if (dnsLookups > 10) {
+    warnings.push('DNS lookup count (' + dnsLookups + ') exceeds the RFC 7208 limit of 10.');
+  } else if (dnsLookups === 10) {
+    warnings.push('DNS lookup count is exactly 10 (the RFC 7208 limit). Nested includes could cause failures.');
+  }
+
+  var lookupClass = dnsLookups > 10 ? 'red' : (dnsLookups >= 8 ? 'yellow' : 'green');
+
+  var mechItems = mechanisms.map(function(m) {
+    var desc = MECHANISM_DESCRIPTIONS[m.type] || MECHANISM_DESCRIPTIONS[m.token] || '';
+    return '<li><code>' + escapeHTML(m.token) + '</code> — ' + desc + '</li>';
+  }).join('');
+
+  var warningsHTML = '';
+  if (warnings.length > 0) {
+    var warnItems = warnings.map(function(w) { return '<li>' + escapeHTML(w) + '</li>'; }).join('');
+    warningsHTML = '<h2>Warnings</h2><div class="card"><ul class="yellow">' + warnItems + '</ul></div>';
+  }
+
+  document.getElementById('output').innerHTML =
+    '<div class="record-output">' +
+      '<h2>Generated Record</h2>' +
+      '<div class="card">' +
+        '<pre id="recordText">' + escapeHTML(record) + '</pre>' +
+        '<button class="copy-btn" id="copyBtn">Copy to Clipboard</button>' +
+      '</div>' +
+      '<p class="lookup-count">Estimated DNS lookups: <strong class="' + lookupClass + '">' + dnsLookups + ' of 10</strong></p>' +
+    '</div>' +
+    warningsHTML +
+    '<div class="mechanism-list">' +
+      '<h2>Mechanism Breakdown</h2>' +
+      '<div class="card"><ul>' + mechItems + '</ul></div>' +
+    '</div>' +
+    '<p class="disclaimer">Generated record does not guarantee correct configuration. Verify with your DNS provider before publishing.</p>' +
+    '<button class="print-btn" onclick="window.print()">Print</button>';
+
+  document.getElementById('copyBtn').addEventListener('click', function() {
+    copyToClipboard(record, this);
+  });
+});
+</script>
+
+</body>
+</html>

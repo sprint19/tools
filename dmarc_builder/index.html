@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="A privacy-first, browser-based DMARC record builder. Fill in your policy settings and get a ready-to-publish TXT record. No data leaves your browser. Built by Sprint19.">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://tools.sprint19.com/dmarc-builder">
+  <meta property="og:title" content="DMARC Record Builder — Built by Sprint19">
+  <meta property="og:description" content="Fill in your DMARC policy settings and get a ready-to-publish TXT record. No data leaves your browser.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://tools.sprint19.com/dmarc-builder">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <link rel="stylesheet" href="/shared/styles.css">
+  <title>DMARC Record Builder – Generate a DMARC TXT Record | Sprint19</title>
+  <style>
+    .back-link {
+      display: inline-block;
+      font-size: 13px;
+      color: #666;
+      text-decoration: none;
+      margin-bottom: 8px;
+    }
+    .back-link:hover { color: #0066cc; text-decoration: underline; }
+
+    .form-group { margin-bottom: 16px; }
+    .form-group label {
+      display: block;
+      font-weight: 600;
+      font-size: 14px;
+      margin-bottom: 4px;
+      color: #1a1a1a;
+    }
+    .form-group .hint {
+      display: block;
+      font-size: 12px;
+      color: #888;
+      margin-bottom: 4px;
+    }
+    .form-group input[type="text"],
+    .form-group input[type="number"],
+    .form-group select {
+      width: 100%;
+      padding: 8px 10px;
+      font-size: 14px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-sizing: border-box;
+      font-family: inherit;
+    }
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    @media (max-width: 500px) {
+      .form-row { grid-template-columns: 1fr; }
+    }
+
+    .error-msg { color: #cf222e; font-weight: bold; margin-top: 16px; }
+
+    .record-output { margin-top: 24px; }
+    .record-output pre {
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      background: #f9f9f9;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 14px;
+      font-size: 14px;
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+      margin: 0;
+    }
+
+    .copy-btn {
+      margin-top: 8px;
+      padding: 6px 16px;
+      font-size: 14px;
+      cursor: pointer;
+      background: #f5f5f5;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    .copy-btn:hover { background: #eaeaea; }
+    .copy-btn.copied { background: #1a7f37; color: #fff; border-color: #1a7f37; }
+
+    .dns-hint {
+      margin-top: 12px;
+      font-size: 13px;
+      color: #555;
+    }
+    .dns-hint code {
+      background: #f5f5f5;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-size: 13px;
+    }
+
+    .field-table { margin-top: 20px; }
+    .field-table th { font-size: 13px; }
+    .field-table td { font-size: 13px; }
+    .field-table code { font-size: 12px; }
+  </style>
+</head>
+<body>
+
+<a href="/" class="back-link">&larr; Sprint19 Tools</a>
+<h1>DMARC Record Builder</h1>
+<p>Fill in your DMARC policy settings. Get a ready-to-publish TXT record. No data leaves your browser.</p>
+
+<div class="form-group">
+  <label for="domain">Domain</label>
+  <span class="hint">Used for the DNS publish hint below. Not embedded in the record.</span>
+  <input type="text" id="domain" placeholder="example.com">
+</div>
+
+<div class="form-row">
+  <div class="form-group">
+    <label for="policy">Policy (p) *</label>
+    <select id="policy">
+      <option value="">— select —</option>
+      <option value="none">none</option>
+      <option value="quarantine">quarantine</option>
+      <option value="reject">reject</option>
+    </select>
+  </div>
+  <div class="form-group">
+    <label for="sp">Subdomain Policy (sp)</label>
+    <select id="sp">
+      <option value="">omit</option>
+      <option value="none">none</option>
+      <option value="quarantine">quarantine</option>
+      <option value="reject">reject</option>
+    </select>
+  </div>
+</div>
+
+<div class="form-group">
+  <label for="rua">Aggregate Report Email (rua) *</label>
+  <span class="hint">Email address for aggregate reports. "mailto:" is added automatically.</span>
+  <input type="text" id="rua" placeholder="dmarc-reports@example.com">
+</div>
+
+<div class="form-group">
+  <label for="ruf">Forensic Report Email (ruf)</label>
+  <span class="hint">Optional. Email address for forensic reports.</span>
+  <input type="text" id="ruf" placeholder="">
+</div>
+
+<div class="form-row">
+  <div class="form-group">
+    <label for="pct">Percentage (pct)</label>
+    <input type="number" id="pct" min="1" max="100" value="100">
+  </div>
+</div>
+
+<div class="form-row">
+  <div class="form-group">
+    <label for="adkim">DKIM Alignment (adkim)</label>
+    <select id="adkim">
+      <option value="r">r — relaxed</option>
+      <option value="s">s — strict</option>
+    </select>
+  </div>
+  <div class="form-group">
+    <label for="aspf">SPF Alignment (aspf)</label>
+    <select id="aspf">
+      <option value="r">r — relaxed</option>
+      <option value="s">s — strict</option>
+    </select>
+  </div>
+</div>
+
+<button id="generateBtn" class="tool-btn">Generate Record</button>
+
+<div id="output"></div>
+
+<footer class="site-footer">
+  <hr>
+  <p>Generated locally in your browser.</p>
+  <p>Built by <a href="https://sprint19.com" target="_blank" rel="noopener noreferrer">Sprint19</a>. Product engineering for startups.</p>
+  <p class="guardrail">This tool generates a DMARC record based on the values you provide. It does not validate DNS configuration or guarantee correct delivery behavior.</p>
+  <p style="margin-top: 12px; font-size: 11px; color: #bbb;">&copy; 2026 Sprint19. Code licensed under <a href="/LICENSE.md" style="color: #bbb;">MIT</a>. Sprint19 name and branding may not be used without permission.</p>
+</footer>
+
+<script src="/shared/utils.js"></script>
+<script>
+if (typeof escapeHTML === 'undefined') {
+  function escapeHTML(str) {
+    return str.replace(/[&<>'"]/g,
+      tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag])
+    );
+  }
+}
+
+function copyToClipboard(text, btn) {
+  navigator.clipboard.writeText(text).then(function() {
+    var orig = btn.textContent;
+    btn.textContent = 'Copied!';
+    btn.classList.add('copied');
+    setTimeout(function() {
+      btn.textContent = orig;
+      btn.classList.remove('copied');
+    }, 1500);
+  });
+}
+
+var FIELD_DESCRIPTIONS = {
+  'v':     'Protocol version. Always DMARC1.',
+  'p':     'Policy applied to messages that fail DMARC checks.',
+  'sp':    'Policy applied to messages from subdomains that fail DMARC checks.',
+  'pct':   'Percentage of messages the policy applies to.',
+  'rua':   'Address where aggregate reports are sent.',
+  'ruf':   'Address where forensic (failure) reports are sent.',
+  'adkim': 'DKIM identifier alignment mode. "r" = relaxed, "s" = strict.',
+  'aspf':  'SPF identifier alignment mode. "r" = relaxed, "s" = strict.'
+};
+
+document.getElementById('generateBtn').addEventListener('click', function() {
+  var policy = document.getElementById('policy').value;
+  var rua = document.getElementById('rua').value.trim();
+  var ruf = document.getElementById('ruf').value.trim();
+  var sp = document.getElementById('sp').value;
+  var pct = parseInt(document.getElementById('pct').value, 10);
+  var adkim = document.getElementById('adkim').value;
+  var aspf = document.getElementById('aspf').value;
+  var domain = document.getElementById('domain').value.trim();
+
+  var errors = [];
+  if (!policy) errors.push('Policy (p) is required.');
+  if (!rua) {
+    errors.push('Aggregate report email (rua) is required.');
+  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(rua)) {
+    errors.push('Aggregate report email (rua) does not look like a valid email address.');
+  }
+  if (ruf && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(ruf)) {
+    errors.push('Forensic report email (ruf) does not look like a valid email address.');
+  }
+  if (isNaN(pct) || pct < 1 || pct > 100) {
+    errors.push('Percentage (pct) must be between 1 and 100.');
+  }
+
+  if (errors.length > 0) {
+    document.getElementById('output').innerHTML =
+      '<p class="error-msg">' + errors.map(escapeHTML).join('<br>') + '</p>';
+    return;
+  }
+
+  var parts = ['v=DMARC1'];
+  var fields = [{ tag: 'v', value: 'DMARC1' }];
+
+  parts.push('p=' + policy);
+  fields.push({ tag: 'p', value: policy });
+
+  if (sp) {
+    parts.push('sp=' + sp);
+    fields.push({ tag: 'sp', value: sp });
+  }
+
+  parts.push('rua=mailto:' + rua);
+  fields.push({ tag: 'rua', value: 'mailto:' + rua });
+
+  if (ruf) {
+    parts.push('ruf=mailto:' + ruf);
+    fields.push({ tag: 'ruf', value: 'mailto:' + ruf });
+  }
+
+  parts.push('pct=' + pct);
+  fields.push({ tag: 'pct', value: String(pct) });
+
+  parts.push('adkim=' + adkim);
+  fields.push({ tag: 'adkim', value: adkim });
+
+  parts.push('aspf=' + aspf);
+  fields.push({ tag: 'aspf', value: aspf });
+
+  var record = parts.join('; ');
+
+  var dnsName = domain ? '_dmarc.' + escapeHTML(domain) : '_dmarc.&lt;your-domain&gt;';
+
+  var fieldRows = fields.map(function(f) {
+    return '<tr><td><code>' + escapeHTML(f.tag) + '</code></td>' +
+      '<td><code>' + escapeHTML(f.value) + '</code></td>' +
+      '<td>' + (FIELD_DESCRIPTIONS[f.tag] || '') + '</td></tr>';
+  }).join('');
+
+  document.getElementById('output').innerHTML =
+    '<div class="record-output">' +
+      '<h2>Generated Record</h2>' +
+      '<div class="card">' +
+        '<pre id="recordText">' + escapeHTML(record) + '</pre>' +
+        '<button class="copy-btn" id="copyBtn">Copy to Clipboard</button>' +
+      '</div>' +
+      '<p class="dns-hint">Publish this as a TXT record at <code>' + dnsName + '</code></p>' +
+    '</div>' +
+    '<div class="field-table">' +
+      '<h2>Field Explanation</h2>' +
+      '<div class="card">' +
+        '<table><thead><tr><th>Tag</th><th>Value</th><th>Description</th></tr></thead>' +
+        '<tbody>' + fieldRows + '</tbody></table>' +
+      '</div>' +
+    '</div>' +
+    '<p class="disclaimer">Generated record does not guarantee correct configuration. Verify with your DNS provider before publishing.</p>' +
+    '<button class="print-btn" onclick="window.print()">Print</button>';
+
+  document.getElementById('copyBtn').addEventListener('click', function() {
+    copyToClipboard(record, this);
+  });
+});
+</script>
+
+</body>
+</html>
