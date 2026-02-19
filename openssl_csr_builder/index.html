@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="A privacy-first, browser-based OpenSSL CSR command builder. Enter your domain and organization details to generate an OpenSSL command with optional SAN support. No data leaves your browser. Built by Sprint19.">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://tools.sprint19.com/openssl-csr-builder">
+  <meta property="og:title" content="OpenSSL CSR Command Builder — Built by Sprint19">
+  <meta property="og:description" content="Enter your domain and organization details to generate an OpenSSL CSR command with optional SAN support. No data leaves your browser.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://tools.sprint19.com/openssl-csr-builder">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <link rel="stylesheet" href="/shared/styles.css">
+  <title>OpenSSL CSR Command Builder – Generate CSR Commands | Sprint19</title>
+  <style>
+    .back-link {
+      display: inline-block;
+      font-size: 13px;
+      color: #666;
+      text-decoration: none;
+      margin-bottom: 8px;
+    }
+    .back-link:hover { color: #0066cc; text-decoration: underline; }
+
+    .form-group { margin-bottom: 16px; }
+    .form-group label {
+      display: block;
+      font-weight: 600;
+      font-size: 14px;
+      margin-bottom: 4px;
+      color: #1a1a1a;
+    }
+    .form-group .hint {
+      display: block;
+      font-size: 12px;
+      color: #888;
+      margin-bottom: 4px;
+    }
+    .form-group input[type="text"],
+    .form-group select {
+      width: 100%;
+      padding: 8px 10px;
+      font-size: 14px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-sizing: border-box;
+      font-family: inherit;
+    }
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    @media (max-width: 500px) {
+      .form-row { grid-template-columns: 1fr; }
+    }
+
+    .error-msg { color: #cf222e; font-weight: bold; margin-top: 16px; }
+
+    .record-output { margin-top: 24px; }
+    .record-output pre {
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      background: #f9f9f9;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 14px;
+      font-size: 14px;
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+      margin: 0;
+    }
+
+    .copy-btn {
+      margin-top: 8px;
+      padding: 6px 16px;
+      font-size: 14px;
+      cursor: pointer;
+      background: #f5f5f5;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    .copy-btn:hover { background: #eaeaea; }
+    .copy-btn.copied { background: #1a7f37; color: #fff; border-color: #1a7f37; }
+
+    .how-to-use {
+      margin: 16px 0;
+      padding: 14px 20px;
+      background: #f9f9f9;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+    .how-to-use ol {
+      margin: 0;
+      padding-left: 20px;
+    }
+    .how-to-use li {
+      margin-bottom: 4px;
+    }
+    .how-to-use code {
+      background: #eee;
+      padding: 1px 5px;
+      border-radius: 3px;
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+
+<a href="/" class="back-link">&larr; Sprint19 Tools</a>
+<h1>OpenSSL CSR Command Builder</h1>
+<p>Enter your domain and organization details to generate an OpenSSL CSR command. Supports Subject Alternative Names. No data leaves your browser.</p>
+
+<div class="form-row">
+  <div class="form-group">
+    <label for="domain">Domain (CN) *</label>
+    <span class="hint">The primary domain for the certificate.</span>
+    <input type="text" id="domain" placeholder="example.com">
+  </div>
+  <div class="form-group">
+    <label for="email">Email</label>
+    <span class="hint">Included in the CSR subject line.</span>
+    <input type="text" id="email" placeholder="admin@example.com">
+  </div>
+</div>
+
+<div class="form-group">
+  <label for="sanDomains">SAN Domains</label>
+  <span class="hint">Comma-separated. Leave blank if no SANs needed. The primary domain is included automatically.</span>
+  <input type="text" id="sanDomains" placeholder="www.example.com, api.example.com">
+</div>
+
+<div class="form-row">
+  <div class="form-group">
+    <label for="country">Country</label>
+    <span class="hint">2-letter country code.</span>
+    <input type="text" id="country" placeholder="US" maxlength="2">
+  </div>
+  <div class="form-group">
+    <label for="state">State</label>
+    <input type="text" id="state" placeholder="California">
+  </div>
+</div>
+
+<div class="form-row">
+  <div class="form-group">
+    <label for="city">City</label>
+    <input type="text" id="city" placeholder="San Francisco">
+  </div>
+  <div class="form-group">
+    <label for="org">Organization</label>
+    <input type="text" id="org" placeholder="Example Inc">
+  </div>
+</div>
+
+<div class="form-group">
+  <label for="keySize">Key Size</label>
+  <select id="keySize">
+    <option value="2048">RSA 2048 (default)</option>
+    <option value="4096">RSA 4096 (slower)</option>
+  </select>
+</div>
+
+<button id="generateBtn" class="tool-btn">Generate Command</button>
+
+<div id="output"></div>
+
+<footer class="site-footer">
+  <hr>
+  <p>Generated locally in your browser.</p>
+  <p>Built by <a href="https://sprint19.com" target="_blank" rel="noopener noreferrer">Sprint19</a>. Product engineering for startups.</p>
+  <p class="guardrail">This tool generates OpenSSL command templates only. It does not run commands, generate files in your browser, or validate domain ownership.</p>
+  <p style="margin-top: 12px; font-size: 11px; color: #bbb;">&copy; 2026 Sprint19. Code licensed under <a href="/LICENSE.md" style="color: #bbb;">MIT</a>. Sprint19 name and branding may not be used without permission.</p>
+</footer>
+
+<script src="/shared/utils.js"></script>
+<script>
+if (typeof escapeHTML === 'undefined') {
+  function escapeHTML(str) {
+    return str.replace(/[&<>'"]/g,
+      tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag])
+    );
+  }
+}
+
+function copyToClipboard(text, btn) {
+  navigator.clipboard.writeText(text).then(function() {
+    var orig = btn.textContent;
+    btn.textContent = 'Copied!';
+    btn.classList.add('copied');
+    setTimeout(function() {
+      btn.textContent = orig;
+      btn.classList.remove('copied');
+    }, 1500);
+  });
+}
+
+function sanitizeFilename(domain) {
+  return domain.replace(/\*/g, 'wildcard').replace(/[^a-zA-Z0-9.\-]/g, '');
+}
+
+document.getElementById('generateBtn').addEventListener('click', function() {
+  var domain = document.getElementById('domain').value.trim();
+  var email = document.getElementById('email').value.trim();
+  var sanRaw = document.getElementById('sanDomains').value.trim();
+  var country = document.getElementById('country').value.trim().toUpperCase();
+  var state = document.getElementById('state').value.trim();
+  var city = document.getElementById('city').value.trim();
+  var org = document.getElementById('org').value.trim();
+  var keySize = document.getElementById('keySize').value;
+
+  var errors = [];
+  if (!domain) errors.push('Domain is required.');
+  if (country && country.length !== 2) errors.push('Country must be a 2-letter code.');
+
+  if (errors.length > 0) {
+    document.getElementById('output').innerHTML =
+      '<p class="error-msg">' + errors.map(escapeHTML).join('<br>') + '</p>';
+    return;
+  }
+
+  var sanDomains = [];
+  if (sanRaw) {
+    var parts = sanRaw.split(',');
+    var seen = {};
+    seen[domain.toLowerCase()] = true;
+    for (var i = 0; i < parts.length; i++) {
+      var d = parts[i].trim();
+      if (!d) continue;
+      var key = d.toLowerCase();
+      if (seen[key]) continue;
+      seen[key] = true;
+      sanDomains.push(d);
+    }
+  }
+
+  var safeFilename = sanitizeFilename(domain);
+  if (!safeFilename) safeFilename = 'server';
+
+  var subjectParts = [];
+  if (country) subjectParts.push('C=' + country);
+  if (state) subjectParts.push('ST=' + state);
+  if (city) subjectParts.push('L=' + city);
+  if (org) subjectParts.push('O=' + org);
+  if (email) subjectParts.push('emailAddress=' + email);
+  subjectParts.push('CN=' + domain);
+  var subjectLine = '/' + subjectParts.join('/');
+
+  var hasSANs = sanDomains.length > 0;
+  var html = '<div class="record-output">';
+
+  if (hasSANs) {
+    var allSanDomains = [domain].concat(sanDomains);
+    var configLines = [
+      '[req]',
+      'default_bits = ' + keySize,
+      'prompt = no',
+      'default_md = sha256',
+      'distinguished_name = dn',
+      'req_extensions = v3_req',
+      '',
+      '[dn]'
+    ];
+    if (country) configLines.push('C = ' + country);
+    if (state) configLines.push('ST = ' + state);
+    if (city) configLines.push('L = ' + city);
+    if (org) configLines.push('O = ' + org);
+    if (email) configLines.push('emailAddress = ' + email);
+    configLines.push('CN = ' + domain);
+    configLines.push('');
+    configLines.push('[v3_req]');
+    configLines.push('subjectAltName = @alt_names');
+    configLines.push('');
+    configLines.push('[alt_names]');
+    for (var s = 0; s < allSanDomains.length; s++) {
+      configLines.push('DNS.' + (s + 1) + ' = ' + allSanDomains[s]);
+    }
+
+    var configText = configLines.join('\n');
+
+    var command = 'openssl req -new -newkey rsa:' + keySize + ' -nodes \\\n' +
+      '  -keyout ' + safeFilename + '.key \\\n' +
+      '  -out ' + safeFilename + '.csr \\\n' +
+      '  -config san.cnf';
+
+    html += '<h2>OpenSSL Config File</h2>' +
+      '<div class="card">' +
+        '<pre id="configText">' + escapeHTML(configText) + '</pre>' +
+        '<button class="copy-btn" id="copyConfigBtn">Copy Config</button>' +
+      '</div>';
+
+    html += '<div class="how-to-use">' +
+      '<strong>How to use:</strong>' +
+      '<ol>' +
+        '<li>Save the config above as <code>san.cnf</code></li>' +
+        '<li>Run the command below in the same directory</li>' +
+        '<li>Submit the generated <code>.csr</code> file to your certificate authority</li>' +
+      '</ol>' +
+    '</div>';
+
+    html += '<h2>OpenSSL Command</h2>' +
+      '<div class="card">' +
+        '<pre id="commandText">' + escapeHTML(command) + '</pre>' +
+        '<button class="copy-btn" id="copyCommandBtn">Copy Command</button>' +
+      '</div>';
+  } else {
+    var command = 'openssl req -new -newkey rsa:' + keySize + ' -nodes \\\n' +
+      '  -keyout ' + safeFilename + '.key \\\n' +
+      '  -out ' + safeFilename + '.csr \\\n' +
+      '  -subj "' + subjectLine + '"';
+
+    html += '<h2>OpenSSL Command</h2>' +
+      '<div class="card">' +
+        '<pre id="commandText">' + escapeHTML(command) + '</pre>' +
+        '<button class="copy-btn" id="copyCommandBtn">Copy Command</button>' +
+      '</div>';
+  }
+
+  html += '<p class="disclaimer">These commands are templates. Review before running on your server.</p>' +
+    '<button class="print-btn" onclick="window.print()">Print</button>';
+
+  html += '</div>';
+
+  document.getElementById('output').innerHTML = html;
+
+  if (hasSANs) {
+    document.getElementById('copyConfigBtn').addEventListener('click', function() {
+      copyToClipboard(configText, this);
+    });
+  }
+  document.getElementById('copyCommandBtn').addEventListener('click', function() {
+    copyToClipboard(command, this);
+  });
+});
+</script>
+
+</body>
+</html>

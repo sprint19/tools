@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="A privacy-first, browser-based Let's Encrypt command builder. Select your web server and domain to generate a ready-to-run Certbot command. No data leaves your browser. Built by Sprint19.">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://tools.sprint19.com/letsencrypt-builder">
+  <meta property="og:title" content="Let's Encrypt Command Builder — Built by Sprint19">
+  <meta property="og:description" content="Select your web server and domain to generate a ready-to-run Certbot command. No data leaves your browser.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://tools.sprint19.com/letsencrypt-builder">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <link rel="stylesheet" href="/shared/styles.css">
+  <title>Let's Encrypt Command Builder – Generate Certbot Commands | Sprint19</title>
+  <style>
+    .back-link {
+      display: inline-block;
+      font-size: 13px;
+      color: #666;
+      text-decoration: none;
+      margin-bottom: 8px;
+    }
+    .back-link:hover { color: #0066cc; text-decoration: underline; }
+
+    .form-group { margin-bottom: 16px; }
+    .form-group label {
+      display: block;
+      font-weight: 600;
+      font-size: 14px;
+      margin-bottom: 4px;
+      color: #1a1a1a;
+    }
+    .form-group .hint {
+      display: block;
+      font-size: 12px;
+      color: #888;
+      margin-bottom: 4px;
+    }
+    .form-group input[type="text"],
+    .form-group select {
+      width: 100%;
+      padding: 8px 10px;
+      font-size: 14px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-sizing: border-box;
+      font-family: inherit;
+    }
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    @media (max-width: 500px) {
+      .form-row { grid-template-columns: 1fr; }
+    }
+
+    .error-msg { color: #cf222e; font-weight: bold; margin-top: 16px; }
+    .warning-msg { color: #b35900; margin-top: 8px; font-size: 14px; }
+
+    .record-output { margin-top: 24px; }
+    .record-output pre {
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      background: #f9f9f9;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 14px;
+      font-size: 14px;
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+      margin: 0;
+    }
+
+    .copy-btn {
+      margin-top: 8px;
+      padding: 6px 16px;
+      font-size: 14px;
+      cursor: pointer;
+      background: #f5f5f5;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    .copy-btn:hover { background: #eaeaea; }
+    .copy-btn.copied { background: #1a7f37; color: #fff; border-color: #1a7f37; }
+
+    .explanation-card {
+      margin-top: 20px;
+    }
+    .explanation-card ul {
+      list-style: disc;
+      padding-left: 20px;
+      margin: 0;
+    }
+    .explanation-card li {
+      margin-bottom: 6px;
+      line-height: 1.5;
+      font-size: 14px;
+    }
+    .explanation-card code {
+      background: #f5f5f5;
+      padding: 1px 5px;
+      border-radius: 3px;
+      font-size: 13px;
+    }
+
+    #webrootGroup { display: none; }
+    #webrootGroup.visible { display: block; }
+  </style>
+</head>
+<body>
+
+<a href="/" class="back-link">&larr; Sprint19 Tools</a>
+<h1>Let's Encrypt Command Builder</h1>
+<p>Select your web server type and enter your domain to generate a Certbot command. No data leaves your browser.</p>
+
+<div class="form-row">
+  <div class="form-group">
+    <label for="domains">Domain(s) *</label>
+    <span class="hint">Comma-separated for multiple domains.</span>
+    <input type="text" id="domains" placeholder="example.com, www.example.com">
+  </div>
+  <div class="form-group">
+    <label for="email">Email *</label>
+    <span class="hint">Used for renewal notices from Let's Encrypt.</span>
+    <input type="text" id="email" placeholder="admin@example.com">
+  </div>
+</div>
+
+<div class="form-group">
+  <label for="method">Method</label>
+  <select id="method">
+    <option value="nginx">Nginx (certbot --nginx)</option>
+    <option value="apache">Apache (certbot --apache)</option>
+    <option value="standalone">Standalone (certbot certonly --standalone)</option>
+    <option value="webroot">Webroot (certbot certonly --webroot)</option>
+  </select>
+</div>
+
+<div class="form-group" id="webrootGroup">
+  <label for="webrootPath">Webroot Path *</label>
+  <span class="hint">The document root served by your web server.</span>
+  <input type="text" id="webrootPath" placeholder="/var/www/html">
+</div>
+
+<button id="generateBtn" class="tool-btn">Generate Command</button>
+
+<div id="output"></div>
+
+<footer class="site-footer">
+  <hr>
+  <p>Generated locally in your browser.</p>
+  <p>Built by <a href="https://sprint19.com" target="_blank" rel="noopener noreferrer">Sprint19</a>. Product engineering for startups.</p>
+  <p class="guardrail">This tool generates Certbot command templates only. It does not run commands or validate domain ownership.</p>
+  <p style="margin-top: 12px; font-size: 11px; color: #bbb;">&copy; 2026 Sprint19. Code licensed under <a href="/LICENSE.md" style="color: #bbb;">MIT</a>. Sprint19 name and branding may not be used without permission.</p>
+</footer>
+
+<script src="/shared/utils.js"></script>
+<script>
+if (typeof escapeHTML === 'undefined') {
+  function escapeHTML(str) {
+    return str.replace(/[&<>'"]/g,
+      tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag])
+    );
+  }
+}
+
+function copyToClipboard(text, btn) {
+  navigator.clipboard.writeText(text).then(function() {
+    var orig = btn.textContent;
+    btn.textContent = 'Copied!';
+    btn.classList.add('copied');
+    setTimeout(function() {
+      btn.textContent = orig;
+      btn.classList.remove('copied');
+    }, 1500);
+  });
+}
+
+function parseDomains(raw) {
+  var parts = raw.split(',');
+  var seen = {};
+  var result = [];
+  for (var i = 0; i < parts.length; i++) {
+    var d = parts[i].trim();
+    if (!d) continue;
+    var key = d.toLowerCase();
+    if (seen[key]) continue;
+    seen[key] = true;
+    result.push(d);
+  }
+  return result;
+}
+
+var METHOD_EXPLANATIONS = {
+  nginx: [
+    '<code>--nginx</code> lets Certbot automatically configure your Nginx server blocks for HTTPS.',
+    'Certbot will obtain and install the certificate in one step.',
+    'Nginx must be running and the domain must already resolve to this server.',
+    'Certificates auto-renew if <code>certbot renew</code> is configured (e.g. via cron or systemd timer).'
+  ],
+  apache: [
+    '<code>--apache</code> lets Certbot automatically configure your Apache virtual hosts for HTTPS.',
+    'Certbot will obtain and install the certificate in one step.',
+    'Apache must be running and the domain must already resolve to this server.',
+    'Certificates auto-renew if <code>certbot renew</code> is configured (e.g. via cron or systemd timer).'
+  ],
+  standalone: [
+    '<code>certonly --standalone</code> spins up a temporary web server on port 80 to verify domain ownership.',
+    'No existing web server is needed, but port 80 must be free (stop Nginx/Apache first).',
+    'The certificate is saved to disk but not installed — you configure your web server manually.',
+    'Certificates auto-renew if <code>certbot renew</code> is configured (e.g. via cron or systemd timer).'
+  ],
+  webroot: [
+    '<code>certonly --webroot</code> places a verification file in your existing web server\'s document root.',
+    'Your web server must be running and serving the webroot path over HTTP.',
+    'The certificate is saved to disk but not installed — you configure your web server manually.',
+    'Certificates auto-renew if <code>certbot renew</code> is configured (e.g. via cron or systemd timer).'
+  ]
+};
+
+document.getElementById('method').addEventListener('change', function() {
+  var group = document.getElementById('webrootGroup');
+  if (this.value === 'webroot') {
+    group.classList.add('visible');
+  } else {
+    group.classList.remove('visible');
+  }
+});
+
+document.getElementById('generateBtn').addEventListener('click', function() {
+  var domainsRaw = document.getElementById('domains').value.trim();
+  var email = document.getElementById('email').value.trim();
+  var method = document.getElementById('method').value;
+  var webrootPath = document.getElementById('webrootPath').value.trim();
+
+  var errors = [];
+  var warnings = [];
+
+  var domains = parseDomains(domainsRaw);
+  if (domains.length === 0) {
+    errors.push('At least one domain is required.');
+  } else if (domains.length > 20) {
+    errors.push('Too many domains (max 20).');
+  }
+
+  if (!email) {
+    errors.push('Email is required.');
+  } else {
+    var atIdx = email.indexOf('@');
+    if (atIdx < 1 || email.indexOf('.', atIdx) === -1) {
+      warnings.push('Email format looks unusual. Double-check before running.');
+    }
+  }
+
+  if (method === 'webroot' && !webrootPath) {
+    errors.push('Webroot path is required when using the webroot method.');
+  }
+
+  if (errors.length > 0) {
+    document.getElementById('output').innerHTML =
+      '<p class="error-msg">' + errors.map(escapeHTML).join('<br>') + '</p>';
+    return;
+  }
+
+  var domainFlags = domains.map(function(d) { return '-d ' + d; }).join(' ');
+
+  var commandParts = [];
+  if (method === 'nginx') {
+    commandParts.push('sudo certbot --nginx \\');
+  } else if (method === 'apache') {
+    commandParts.push('sudo certbot --apache \\');
+  } else if (method === 'standalone') {
+    commandParts.push('sudo certbot certonly --standalone \\');
+  } else if (method === 'webroot') {
+    commandParts.push('sudo certbot certonly --webroot \\');
+    commandParts.push('  -w ' + webrootPath + ' \\');
+  }
+
+  commandParts.push('  ' + domainFlags + ' \\');
+  commandParts.push('  --email ' + email + ' \\');
+  commandParts.push('  --agree-tos --no-eff-email');
+
+  var command = commandParts.join('\n');
+
+  var warningHTML = '';
+  if (warnings.length > 0) {
+    warningHTML = '<p class="warning-msg">' + warnings.map(escapeHTML).join('<br>') + '</p>';
+  }
+
+  var explanationItems = METHOD_EXPLANATIONS[method].map(function(item) {
+    return '<li>' + item + '</li>';
+  }).join('');
+
+  var html = '<div class="record-output">' +
+    '<h2>Certbot Command</h2>' +
+    '<div class="card">' +
+      '<pre id="commandText">' + escapeHTML(command) + '</pre>' +
+      '<button class="copy-btn" id="copyCommandBtn">Copy Command</button>' +
+    '</div>' +
+    warningHTML +
+    '<div class="explanation-card">' +
+      '<h2>What This Does</h2>' +
+      '<div class="card">' +
+        '<ul>' + explanationItems + '</ul>' +
+      '</div>' +
+    '</div>' +
+    '<p class="disclaimer">Review and adapt this command for your server environment before running.</p>' +
+    '<button class="print-btn" onclick="window.print()">Print</button>' +
+  '</div>';
+
+  document.getElementById('output').innerHTML = html;
+
+  document.getElementById('copyCommandBtn').addEventListener('click', function() {
+    copyToClipboard(command, this);
+  });
+});
+</script>
+
+</body>
+</html>
