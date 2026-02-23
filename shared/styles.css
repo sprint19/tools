@@ -34,7 +34,7 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --color-bg: #0d0d0d;
     --color-text: #e8e8e8;
     --color-text-secondary: #aaa;
@@ -57,6 +57,68 @@
     --color-warning: #d97706;
     --color-error: #f85149;
     --color-shadow: rgba(255, 255, 255, 0.04);
+  }
+}
+
+:root[data-theme="dark"] {
+    --color-bg: #0d0d0d;
+    --color-text: #e8e8e8;
+    --color-text-secondary: #aaa;
+    --color-text-muted: #999;
+    --color-text-faint: #777;
+    --color-text-passive: #666;
+    --color-text-dim: #555;
+    --color-text-ghost: #444;
+    --color-card-bg: #161616;
+    --color-surface: #1e1e1e;
+    --color-surface-code: #141414;
+    --color-surface-hover: #2a2a2a;
+    --color-border: #2a2a2a;
+    --color-border-input: #3a3a3a;
+    --color-link: #5fa8ff;
+    --color-btn-bg: #e8e8e8;
+    --color-btn-text: #0d0d0d;
+    --color-btn-hover: #d0d0d0;
+    --color-success: #2ea043;
+    --color-warning: #d97706;
+    --color-error: #f85149;
+    --color-shadow: rgba(255, 255, 255, 0.04);
+}
+
+/* ── Theme toggle ────────────────────────────────────── */
+
+.theme-toggle-wrap {
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: var(--color-card-bg);
+  box-shadow: 0 2px 8px var(--color-shadow);
+  color: var(--color-text-muted);
+  font-size: 12px;
+  user-select: none;
+}
+
+.theme-toggle-wrap input[type="checkbox"] {
+  margin: 0;
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+}
+
+.theme-toggle-wrap label {
+  cursor: pointer;
+}
+
+@media print {
+  .theme-toggle-wrap {
+    display: none !important;
   }
 }
 
