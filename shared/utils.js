@@ -13,10 +13,12 @@ function escapeHTML(str) {
 (function initThemeToggle() {
   var STORAGE_KEY = 'sprint19-theme';
   var ROOT = document.documentElement;
+  var VALID_THEMES = { light: true, dark: true };
 
   function getStoredTheme() {
     try {
-      return localStorage.getItem(STORAGE_KEY);
+      var theme = localStorage.getItem(STORAGE_KEY);
+      return VALID_THEMES[theme] ? theme : null;
     } catch (e) {
       return null;
     }
@@ -35,8 +37,8 @@ function escapeHTML(str) {
   }
 
   function applyTheme(theme) {
-    if (theme === 'dark') {
-      ROOT.setAttribute('data-theme', 'dark');
+    if (theme === 'dark' || theme === 'light') {
+      ROOT.setAttribute('data-theme', theme);
     } else {
       ROOT.removeAttribute('data-theme');
     }
@@ -49,26 +51,29 @@ function escapeHTML(str) {
     wrap.className = 'theme-toggle-wrap';
     wrap.id = 'theme-toggle-wrap';
 
-    var input = document.createElement('input');
-    input.type = 'checkbox';
-    input.id = 'theme-toggle-input';
-    input.setAttribute('aria-label', 'Enable dark mode override');
-
     var label = document.createElement('label');
-    label.setAttribute('for', 'theme-toggle-input');
-    label.textContent = 'Dark mode';
+    label.setAttribute('for', 'theme-toggle-select');
+    label.textContent = 'Theme';
 
-    wrap.appendChild(input);
+    var select = document.createElement('select');
+    select.id = 'theme-toggle-select';
+    select.setAttribute('aria-label', 'Choose theme');
+    select.innerHTML =
+      '<option value="system">System</option>' +
+      '<option value="light">Light</option>' +
+      '<option value="dark">Dark</option>';
+
     wrap.appendChild(label);
+    wrap.appendChild(select);
     document.body.appendChild(wrap);
 
     var storedTheme = getStoredTheme();
-    input.checked = storedTheme === 'dark';
+    select.value = storedTheme || 'system';
 
-    input.addEventListener('change', function () {
-      if (input.checked) {
-        setStoredTheme('dark');
-        applyTheme('dark');
+    select.addEventListener('change', function () {
+      if (select.value === 'light' || select.value === 'dark') {
+        setStoredTheme(select.value);
+        applyTheme(select.value);
       } else {
         setStoredTheme(null);
         applyTheme(null);

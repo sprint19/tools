@@ -105,14 +105,17 @@
   user-select: none;
 }
 
-.theme-toggle-wrap input[type="checkbox"] {
-  margin: 0;
-  width: 14px;
-  height: 14px;
+.theme-toggle-wrap label {
   cursor: pointer;
 }
 
-.theme-toggle-wrap label {
+.theme-toggle-wrap select {
+  font-size: 12px;
+  border: 1px solid var(--color-border-input);
+  border-radius: 999px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  padding: 2px 8px;
   cursor: pointer;
 }
 
