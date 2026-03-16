@@ -1,4 +1,5 @@
 User-agent: *
 Allow: /
+Disallow: /filament_swatch_matcher/
 
 Sitemap: https://tools.sprint19.com/sitemap.xml

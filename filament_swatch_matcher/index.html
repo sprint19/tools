@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Internal Sprint19 tool for previewing 3D printer filament combinations for clicker casing, keycaps, and font readability.">
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="canonical" href="https://tools.sprint19.com/filament_swatch_matcher/">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <link rel="stylesheet" href="/shared/styles.css">
+  <title>Filament Swatch Matcher (Internal) | Sprint19</title>
+  <style>
+    .internal-badge {
+      display: inline-block;
+      font-size: 12px;
+      color: var(--color-warning);
+      border: 1px solid var(--color-warning);
+      border-radius: 999px;
+      padding: 2px 10px;
+      margin-bottom: 8px;
+    }
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 12px;
+    }
+    .form-field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .form-field label {
+      font-size: 13px;
+      color: var(--color-text-muted);
+      font-weight: 600;
+    }
+    .form-field select,
+    .form-field input {
+      width: 100%;
+      border: 1px solid var(--color-border-input);
+      border-radius: 4px;
+      background: var(--color-card-bg);
+      color: var(--color-text);
+      font-size: 14px;
+      padding: 8px 10px;
+      box-sizing: border-box;
+    }
+    .row-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+      align-items: center;
+    }
+    .toggle-row {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+    .toggle-option {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--color-text-muted);
+      user-select: none;
+    }
+    .toggle-option input {
+      margin: 0;
+    }
+    .subtle-btn {
+      border: 1px solid var(--color-border-input);
+      background: var(--color-surface);
+      color: var(--color-text-muted);
+      border-radius: 4px;
+      padding: 8px 12px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .subtle-btn:hover {
+      background: var(--color-surface-hover);
+    }
+    .status {
+      font-size: 13px;
+      color: var(--color-text-muted);
+      min-height: 20px;
+      margin-top: 8px;
+    }
+    .status.error {
+      color: var(--color-error);
+    }
+    .status.success {
+      color: var(--color-success);
+    }
+    .palette-selectors {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 12px;
+    }
+    .selectors-heading {
+      margin-top: 0;
+      margin-bottom: 8px;
+      font-size: 15px;
+    }
+    .preview-card {
+      border: 1px solid var(--color-border);
+      background: var(--color-card-bg);
+      border-radius: 6px;
+      padding: 12px;
+    }
+    .clicker-shell {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border-radius: 10px;
+      padding: 10px;
+      border: 1px solid rgba(0, 0, 0, 0.2);
+      min-height: 58px;
+      box-sizing: border-box;
+      overflow: hidden;
+      max-width: 100%;
+    }
+    .keycap {
+      width: 36px;
+      height: 36px;
+      border-radius: 6px;
+      border: 1px solid rgba(0, 0, 0, 0.25);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 16px;
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+      box-sizing: border-box;
+      flex-shrink: 0;
+      user-select: none;
+    }
+    .keycap.empty {
+      font-size: 0;
+    }
+    .results-meta {
+      margin-top: 8px;
+      font-size: 13px;
+      color: var(--color-text-muted);
+    }
+    .result-list {
+      margin-top: 12px;
+      display: grid;
+      gap: 10px;
+    }
+    .result-row {
+      border: 1px solid var(--color-border);
+      background: var(--color-card-bg);
+      border-radius: 6px;
+      padding: 10px;
+      display: grid;
+      grid-template-columns: minmax(260px, 1.1fr) 1fr;
+      gap: 10px;
+      align-items: center;
+    }
+    .result-labels {
+      display: grid;
+      gap: 4px;
+      font-size: 13px;
+      color: var(--color-text-muted);
+    }
+    .chips {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-top: 4px;
+    }
+    .chip {
+      font-size: 11px;
+      border: 1px solid var(--color-border);
+      background: var(--color-surface);
+      border-radius: 999px;
+      padding: 2px 8px;
+      color: var(--color-text-muted);
+      white-space: nowrap;
+    }
+    .chip.strong {
+      color: var(--color-success);
+      border-color: var(--color-success);
+      background: transparent;
+    }
+    .chip.moderate {
+      color: var(--color-warning);
+      border-color: var(--color-warning);
+      background: transparent;
+    }
+    .chip.low {
+      color: var(--color-error);
+      border-color: var(--color-error);
+      background: transparent;
+    }
+    @media (max-width: 860px) {
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+      .palette-selectors {
+        grid-template-columns: 1fr;
+      }
+      .result-row {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<a href="/" class="back-link">&larr; Sprint19 Tools</a>
+<span class="internal-badge">Internal Tool</span>
+<h1>Filament Swatch Matcher</h1>
+<p>Preview casing, keycap, and font filament combinations for readability before printing clicker sets.</p>
+
+<section class="card">
+  <h2 class="selectors-heading">Controls</h2>
+
+  <div class="form-grid">
+    <div class="form-field">
+      <label for="paletteCount">Filament count (2-8)</label>
+      <select id="paletteCount"></select>
+    </div>
+    <div class="form-field">
+      <label for="sampleText">Sample text (max 10 chars)</label>
+      <input id="sampleText" type="text" maxlength="10" value="CLICKER" autocomplete="off" spellcheck="false">
+    </div>
+    <div class="form-field">
+      <label for="sortMode">Sort combinations</label>
+      <select id="sortMode">
+        <option value="readability">Best readability first</option>
+        <option value="none">Natural generation order</option>
+      </select>
+    </div>
+  </div>
+  <div class="toggle-row">
+    <label class="toggle-option">
+      <input id="excludeKeycapFontSame" type="checkbox">
+      Exclude keycap/font same color
+    </label>
+    <label class="toggle-option">
+      <input id="excludeCasingKeycapSame" type="checkbox">
+      Exclude casing/keycap same color
+    </label>
+    <label class="toggle-option">
+      <input id="excludeAllSame" type="checkbox">
+      Exclude all three colors same
+    </label>
+  </div>
+
+  <h3 class="selectors-heading">Filament palette (selected colors only)</h3>
+  <div id="paletteSelectors" class="palette-selectors"></div>
+
+  <h3 class="selectors-heading">Base reference preview</h3>
+  <div class="form-grid">
+    <div class="form-field">
+      <label for="baseCasing">Base casing color</label>
+      <select id="baseCasing"></select>
+    </div>
+    <div class="form-field">
+      <label for="baseKeycap">Base keycap color</label>
+      <select id="baseKeycap"></select>
+    </div>
+    <div class="form-field">
+      <label for="baseFont">Base font color</label>
+      <select id="baseFont"></select>
+    </div>
+  </div>
+
+  <div class="row-actions">
+    <button id="generateBtn" class="tool-btn" type="button">Generate combinations</button>
+    <button id="resetBtn" class="subtle-btn" type="button">Reset</button>
+  </div>
+  <div id="status" class="status" role="status" aria-live="polite"></div>
+</section>
+
+<section class="card">
+  <h2>Manual Base Preview</h2>
+  <div class="preview-card">
+    <div id="basePreview"></div>
+    <div id="baseMeta" class="results-meta"></div>
+  </div>
+</section>
+
+<section class="card">
+  <h2>Generated Combinations</h2>
+  <div id="resultsMeta" class="results-meta"></div>
+  <div id="results" class="result-list"></div>
+</section>
+
+<footer class="site-footer">
+  <hr>
+  <p>Runs fully client-side for internal evaluation.</p>
+  <p>Built by <a href="https://sprint19.com" target="_blank" rel="noopener noreferrer">Sprint19</a>. Product engineering for startups.</p>
+  <p class="guardrail">Internal utility for visual readability evaluation only.</p>
+  <p class="copyright">&copy; 2026 Sprint19. Code licensed under <a href="/LICENSE.md">MIT</a>. Sprint19 name and branding may not be used without permission.</p>
+</footer>
+
+<script src="/shared/utils.js"></script>
+<script>
+(function () {
+  var FILAMENT_COLORS = [
+    { name: "Matte Black", hex: "#111111", tag: "black" },
+    { name: "Ivory White", hex: "#F2F2EE", tag: "white" },
+    { name: "Slate Gray", hex: "#646B73", tag: "gray" },
+    { name: "Navy Blue", hex: "#1E3A8A", tag: "blue" },
+    { name: "Sky Blue", hex: "#4BA3FF", tag: "blue" },
+    { name: "Signal Red", hex: "#D62828", tag: "red" },
+    { name: "Sunset Orange", hex: "#F97316", tag: "orange" },
+    { name: "Safety Yellow", hex: "#FACC15", tag: "yellow" },
+    { name: "Forest Green", hex: "#2E7D32", tag: "green" },
+    { name: "Mint Green", hex: "#5CCF9B", tag: "green" },
+    { name: "Sand Beige", hex: "#D6C6A8", tag: "beige" },
+    { name: "Coffee Brown", hex: "#7B4B2A", tag: "brown" }
+  ];
+
+  var DEFAULT_PALETTE = [
+    "Matte Black",
+    "Ivory White",
+    "Signal Red",
+    "Sky Blue"
+  ];
+
+  var paletteCountEl = document.getElementById("paletteCount");
+  var paletteSelectorsEl = document.getElementById("paletteSelectors");
+  var sampleTextEl = document.getElementById("sampleText");
+  var sortModeEl = document.getElementById("sortMode");
+  var excludeKeycapFontSameEl = document.getElementById("excludeKeycapFontSame");
+  var excludeCasingKeycapSameEl = document.getElementById("excludeCasingKeycapSame");
+  var excludeAllSameEl = document.getElementById("excludeAllSame");
+  var baseCasingEl = document.getElementById("baseCasing");
+  var baseKeycapEl = document.getElementById("baseKeycap");
+  var baseFontEl = document.getElementById("baseFont");
+  var basePreviewEl = document.getElementById("basePreview");
+  var baseMetaEl = document.getElementById("baseMeta");
+  var statusEl = document.getElementById("status");
+  var resultsEl = document.getElementById("results");
+  var resultsMetaEl = document.getElementById("resultsMeta");
+  var generateBtn = document.getElementById("generateBtn");
+  var resetBtn = document.getElementById("resetBtn");
+
+  function hasGeneratedResults() {
+    return resultsEl.children.length > 0;
+  }
+
+  function colorByName(name) {
+    for (var i = 0; i < FILAMENT_COLORS.length; i++) {
+      if (FILAMENT_COLORS[i].name === name) return FILAMENT_COLORS[i];
+    }
+    return null;
+  }
+
+  function normalizeText(raw) {
+    return raw.toUpperCase().slice(0, 10);
+  }
+
+  function escapeText(s) {
+    return s.replace(/[&<>'"]/g, function (ch) {
+      return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[ch];
+    });
+  }
+
+  function luminance(hex) {
+    var rgb = hexToRgb(hex);
+    var r = channelLum(rgb.r);
+    var g = channelLum(rgb.g);
+    var b = channelLum(rgb.b);
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  }
+
+  function channelLum(v) {
+    var n = v / 255;
+    return n <= 0.03928 ? n / 12.92 : Math.pow((n + 0.055) / 1.055, 2.4);
+  }
+
+  function hexToRgb(hex) {
+    var n = parseInt(hex.slice(1), 16);
+    return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
+  }
+
+  function contrastRatio(hexA, hexB) {
+    var a = luminance(hexA);
+    var b = luminance(hexB);
+    var lighter = Math.max(a, b);
+    var darker = Math.min(a, b);
+    return (lighter + 0.05) / (darker + 0.05);
+  }
+
+  function readabilityLabel(ratio) {
+    if (ratio >= 4.5) return "Strong contrast";
+    if (ratio >= 3) return "Moderate contrast";
+    return "Low contrast";
+  }
+
+  function readabilityClass(label) {
+    if (label === "Strong contrast") return "strong";
+    if (label === "Moderate contrast") return "moderate";
+    return "low";
+  }
+
+  function getPaletteSelections() {
+    var selects = paletteSelectorsEl.querySelectorAll("select[data-palette-slot]");
+    var out = [];
+    for (var i = 0; i < selects.length; i++) {
+      var c = colorByName(selects[i].value);
+      if (c) out.push(c);
+    }
+    return out;
+  }
+
+  function validatePalette(palette) {
+    if (palette.length < 2 || palette.length > 8) {
+      return "Select between 2 and 8 filament colors.";
+    }
+    var seen = {};
+    for (var i = 0; i < palette.length; i++) {
+      if (seen[palette[i].name]) {
+        return "Palette colors must be unique. Remove duplicate selections.";
+      }
+      seen[palette[i].name] = true;
+    }
+    return "";
+  }
+
+  function setStatus(text, type) {
+    statusEl.textContent = text || "";
+    statusEl.className = "status" + (type ? (" " + type) : "");
+  }
+
+  function buildColorOptions(selectedName) {
+    var html = "";
+    for (var i = 0; i < FILAMENT_COLORS.length; i++) {
+      var c = FILAMENT_COLORS[i];
+      var selected = c.name === selectedName ? " selected" : "";
+      html += "<option value=\"" + escapeText(c.name) + "\"" + selected + ">" +
+        escapeText(c.name) + " (" + c.hex + ")" +
+      "</option>";
+    }
+    return html;
+  }
+
+  function buildPaletteSelectors() {
+    var count = Number(paletteCountEl.value);
+    var previous = getPaletteSelections();
+    var previousNames = previous.map(function (c) { return c.name; });
+    var fallback = FILAMENT_COLORS.map(function (c) { return c.name; });
+    var html = "";
+
+    for (var i = 0; i < count; i++) {
+      var value = previousNames[i] || DEFAULT_PALETTE[i] || fallback[i];
+      html += "<div class=\"form-field\">" +
+        "<label for=\"paletteSlot" + i + "\">Filament " + (i + 1) + "</label>" +
+        "<select id=\"paletteSlot" + i + "\" data-palette-slot=\"1\">" +
+          buildColorOptions(value) +
+        "</select>" +
+      "</div>";
+    }
+    paletteSelectorsEl.innerHTML = html;
+  }
+
+  function buildPaletteBoundOptions(palette, preferred) {
+    var html = "";
+    for (var i = 0; i < palette.length; i++) {
+      var c = palette[i];
+      var selected = c.name === preferred ? " selected" : "";
+      html += "<option value=\"" + escapeText(c.name) + "\"" + selected + ">" +
+        escapeText(c.name) + " (" + c.hex + ")" +
+      "</option>";
+    }
+    return html;
+  }
+
+  function syncBaseSelectors() {
+    var palette = getPaletteSelections();
+    var error = validatePalette(palette);
+    if (error) {
+      setStatus(error, "error");
+      return;
+    }
+
+    var casingCurrent = baseCasingEl.value;
+    var keycapCurrent = baseKeycapEl.value;
+    var fontCurrent = baseFontEl.value;
+
+    baseCasingEl.innerHTML = buildPaletteBoundOptions(palette, casingCurrent || palette[0].name);
+    baseKeycapEl.innerHTML = buildPaletteBoundOptions(palette, keycapCurrent || palette[Math.min(1, palette.length - 1)].name);
+    baseFontEl.innerHTML = buildPaletteBoundOptions(palette, fontCurrent || palette[0].name);
+
+    if (!colorByName(baseCasingEl.value)) baseCasingEl.value = palette[0].name;
+    if (!colorByName(baseKeycapEl.value)) baseKeycapEl.value = palette[Math.min(1, palette.length - 1)].name;
+    if (!colorByName(baseFontEl.value)) baseFontEl.value = palette[0].name;
+
+    setStatus("", "");
+    renderBasePreview();
+  }
+
+  function clickerMarkup(text, casingHex, keycapHex, fontHex) {
+    var chars = text.split("");
+    var keys = "";
+
+    for (var i = 0; i < chars.length; i++) {
+      var ch = chars[i];
+      var isSpace = ch === " ";
+      keys += "<div class=\"keycap" + (isSpace ? " empty" : "") + "\" style=\"background:" + keycapHex + ";color:" + fontHex + "\">" +
+        (isSpace ? "&nbsp;" : escapeText(ch)) +
+      "</div>";
+    }
+
+    return "<div class=\"clicker-shell\" style=\"background:" + casingHex + "\">" + keys + "</div>";
+  }
+
+  function getSafeSampleText() {
+    var text = normalizeText(sampleTextEl.value || "");
+    sampleTextEl.value = text;
+    if (text.length < 1) return "";
+    return text;
+  }
+
+  function renderBasePreview() {
+    var text = getSafeSampleText();
+    var casing = colorByName(baseCasingEl.value);
+    var keycap = colorByName(baseKeycapEl.value);
+    var font = colorByName(baseFontEl.value);
+
+    if (!text || !casing || !keycap || !font) {
+      basePreviewEl.innerHTML = "";
+      baseMetaEl.textContent = "Enter sample text (1-10 chars) and choose valid colors.";
+      return;
+    }
+
+    var score = contrastRatio(keycap.hex, font.hex);
+    var separation = contrastRatio(casing.hex, keycap.hex);
+    var label = readabilityLabel(score);
+
+    basePreviewEl.innerHTML = clickerMarkup(text, casing.hex, keycap.hex, font.hex);
+    baseMetaEl.textContent =
+      "Casing: " + casing.name +
+      " | Keycap: " + keycap.name +
+      " | Font: " + font.name +
+      " | Readability: " + label + " (" + score.toFixed(2) + ":1)" +
+      " | Casing/Keycap separation: " + separation.toFixed(2) + ":1";
+  }
+
+  function generateCombinations() {
+    var palette = getPaletteSelections();
+    var paletteError = validatePalette(palette);
+    if (paletteError) {
+      setStatus(paletteError, "error");
+      return;
+    }
+
+    var text = getSafeSampleText();
+    if (!text) {
+      setStatus("Sample text is required (1-10 characters).", "error");
+      return;
+    }
+
+    setStatus("Generating combinations...", "");
+
+    var rawCount = palette.length * palette.length * palette.length;
+    var combos = [];
+    for (var i = 0; i < palette.length; i++) {
+      for (var j = 0; j < palette.length; j++) {
+        for (var k = 0; k < palette.length; k++) {
+          var casing = palette[i];
+          var keycap = palette[j];
+          var font = palette[k];
+          var isAllSame = casing.name === keycap.name && keycap.name === font.name;
+          if (excludeAllSameEl.checked && isAllSame) continue;
+          if (excludeCasingKeycapSameEl.checked && casing.name === keycap.name) continue;
+          if (excludeKeycapFontSameEl.checked && keycap.name === font.name) continue;
+          var readRatio = contrastRatio(keycap.hex, font.hex);
+          var shellRatio = contrastRatio(casing.hex, keycap.hex);
+          var label = readabilityLabel(readRatio);
+          combos.push({
+            casing: casing,
+            keycap: keycap,
+            font: font,
+            readRatio: readRatio,
+            shellRatio: shellRatio,
+            label: label
+          });
+        }
+      }
+    }
+
+    if (sortModeEl.value === "readability") {
+      combos.sort(function (a, b) {
+        if (b.readRatio !== a.readRatio) return b.readRatio - a.readRatio;
+        if (b.shellRatio !== a.shellRatio) return b.shellRatio - a.shellRatio;
+        var ca = a.casing.name + a.keycap.name + a.font.name;
+        var cb = b.casing.name + b.keycap.name + b.font.name;
+        return ca.localeCompare(cb);
+      });
+    }
+
+    var html = "";
+    for (var c = 0; c < combos.length; c++) {
+      var item = combos[c];
+      var labelClass = readabilityClass(item.label);
+      html += "<div class=\"result-row\">" +
+        "<div class=\"result-labels\">" +
+          "<div>Casing: <strong>" + escapeText(item.casing.name) + "</strong> (" + item.casing.hex + ")</div>" +
+          "<div>Keycap: <strong>" + escapeText(item.keycap.name) + "</strong> (" + item.keycap.hex + ")</div>" +
+          "<div>Font: <strong>" + escapeText(item.font.name) + "</strong> (" + item.font.hex + ")</div>" +
+          "<div class=\"chips\">" +
+            "<span class=\"chip " + labelClass + "\">" + item.label + "</span>" +
+            "<span class=\"chip\">Keycap/Font: " + item.readRatio.toFixed(2) + ":1</span>" +
+            "<span class=\"chip\">Casing/Keycap: " + item.shellRatio.toFixed(2) + ":1</span>" +
+          "</div>" +
+        "</div>" +
+        "<div>" + clickerMarkup(text, item.casing.hex, item.keycap.hex, item.font.hex) + "</div>" +
+      "</div>";
+    }
+
+    resultsEl.innerHTML = html;
+    if (
+      excludeKeycapFontSameEl.checked ||
+      excludeCasingKeycapSameEl.checked ||
+      excludeAllSameEl.checked
+    ) {
+      resultsMetaEl.textContent =
+        "Generated " + combos.length + " combinations after filters (raw " + rawCount +
+        " from " + palette.length + " selected filaments, " + palette.length + "^3).";
+    } else {
+      resultsMetaEl.textContent = "Generated " + combos.length + " combinations from " + palette.length + " selected filaments (" + palette.length + "^3).";
+    }
+    setStatus("Generated " + combos.length + " combinations.", "success");
+  }
+
+  function resetDefaults() {
+    paletteCountEl.value = "4";
+    sampleTextEl.value = "CLICKER";
+    sortModeEl.value = "readability";
+    excludeKeycapFontSameEl.checked = false;
+    excludeCasingKeycapSameEl.checked = false;
+    excludeAllSameEl.checked = false;
+    buildPaletteSelectors();
+    syncBaseSelectors();
+    resultsMetaEl.textContent = "";
+    resultsEl.innerHTML = "";
+    setStatus("", "");
+  }
+
+  function init() {
+    var options = "";
+    for (var i = 2; i <= 8; i++) {
+      options += "<option value=\"" + i + "\">" + i + "</option>";
+    }
+    paletteCountEl.innerHTML = options;
+    resetDefaults();
+
+    paletteCountEl.addEventListener("change", function () {
+      buildPaletteSelectors();
+      syncBaseSelectors();
+    });
+
+    paletteSelectorsEl.addEventListener("change", function (event) {
+      if (event.target && event.target.matches("select[data-palette-slot]")) {
+        syncBaseSelectors();
+      }
+    });
+
+    sampleTextEl.addEventListener("input", function () {
+      sampleTextEl.value = normalizeText(sampleTextEl.value);
+      renderBasePreview();
+    });
+
+    baseCasingEl.addEventListener("change", renderBasePreview);
+    baseKeycapEl.addEventListener("change", renderBasePreview);
+    baseFontEl.addEventListener("change", renderBasePreview);
+    excludeKeycapFontSameEl.addEventListener("change", function () {
+      if (hasGeneratedResults()) generateCombinations();
+    });
+    excludeCasingKeycapSameEl.addEventListener("change", function () {
+      if (hasGeneratedResults()) generateCombinations();
+    });
+    excludeAllSameEl.addEventListener("change", function () {
+      if (hasGeneratedResults()) generateCombinations();
+    });
+    generateBtn.addEventListener("click", generateCombinations);
+    resetBtn.addEventListener("click", resetDefaults);
+  }
+
+  init();
+})();
+</script>
+
+</body>
+</html>
