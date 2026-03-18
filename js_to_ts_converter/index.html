@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Convert JavaScript source to TypeScript-oriented output locally in your browser using a bundled TypeScript compiler.">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://tools.sprint19.com/js_to_ts_converter/">
+  <meta property="og:title" content="JavaScript to TypeScript Converter — Built by Sprint19">
+  <meta property="og:description" content="Browser-only JavaScript to TypeScript-oriented conversion with local compiler diagnostics and copy-ready output.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://tools.sprint19.com/js_to_ts_converter/">
+  <meta property="og:image" content="https://tools.sprint19.com/og-image.png">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <link rel="stylesheet" href="/shared/styles.css">
+  <title>JavaScript to TypeScript Converter | Sprint19</title>
+  <style>
+    .error-msg { color: var(--color-error); font-weight: 600; margin: 0; }
+    .notice { color: var(--color-warning); margin: 0; }
+    .copy-row {
+      margin-top: 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .copy-btn {
+      padding: 8px 14px;
+      font-size: 14px;
+      cursor: pointer;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border-input);
+      border-radius: 4px;
+      color: var(--color-text);
+    }
+    .copy-btn:hover { background: var(--color-surface-hover); }
+    .copy-feedback { font-size: 13px; color: var(--color-text-muted); }
+  </style>
+</head>
+<body data-affiliate-cta="true">
+
+<a href="/" class="back-link">&larr; Sprint19 Tools</a>
+<h1>JavaScript to TypeScript Converter</h1>
+<p>Convert JavaScript source into a TypeScript-oriented draft using a bundled TypeScript compiler in your browser.</p>
+
+<textarea id="sourceInput" class="tool-input" rows="16" placeholder="function add(a, b) {&#10;  return a + b;&#10;}&#10;&#10;const enabled = true;&#10;const label = 'hello';&#10;const values = [1, 2, 3];"></textarea>
+<button id="convertBtn" class="tool-btn">Convert to TypeScript</button>
+<div id="output"></div>
+
+<footer class="site-footer">
+  <hr>
+  <p>Processed locally in your browser.</p>
+  <p>Built by <a href="https://sprint19.com" target="_blank" rel="noopener noreferrer">Sprint19</a>. Product engineering for startups.</p>
+  <p class="guardrail">This tool converts source text in your browser using a bundled TypeScript compiler. It does not execute code or guarantee production-ready migration.</p>
+  <p class="copyright">&copy; 2026 Sprint19. Code licensed under <a href="/LICENSE.md">MIT</a>. Sprint19 name and branding may not be used without permission.</p>
+</footer>
+
+<script src="/shared/utils.js"></script>
+<script src="/shared/vendor/typescript.js"></script>
+<script>
+var MAX_INPUT_BYTES = 102400;
+
+function copyTextWithFallback(text) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    return navigator.clipboard.writeText(text).then(function() {
+      return true;
+    }).catch(function() {
+      return fallbackCopy(text);
+    });
+  }
+  return Promise.resolve(fallbackCopy(text));
+}
+
+function fallbackCopy(text) {
+  var ta = document.createElement('textarea');
+  ta.value = text;
+  ta.setAttribute('readonly', '');
+  ta.style.position = 'fixed';
+  ta.style.opacity = '0';
+  document.body.appendChild(ta);
+  ta.focus();
+  ta.select();
+  var copied = false;
+  try {
+    copied = document.execCommand('copy');
+  } catch (e) {
+    copied = false;
+  }
+  document.body.removeChild(ta);
+  return copied;
+}
+
+function inferPrimitiveTypeFromExpression(ts, expr) {
+  if (!expr) return '';
+  if (ts.isStringLiteral(expr) || expr.kind === ts.SyntaxKind.NoSubstitutionTemplateLiteral) return 'string';
+  if (ts.isNumericLiteral(expr)) return 'number';
+  if (expr.kind === ts.SyntaxKind.TrueKeyword || expr.kind === ts.SyntaxKind.FalseKeyword) return 'boolean';
+  if (expr.kind === ts.SyntaxKind.NullKeyword) return 'null';
+  if (ts.isArrayLiteralExpression(expr)) {
+    if (expr.elements.length === 0) return 'unknown[]';
+    var first = inferPrimitiveTypeFromExpression(ts, expr.elements[0]);
+    if (!first || first === 'null') return 'unknown[]';
+    for (var i = 1; i < expr.elements.length; i++) {
+      var next = inferPrimitiveTypeFromExpression(ts, expr.elements[i]);
+      if (next !== first) return 'unknown[]';
+    }
+    return first + '[]';
+  }
+  if (ts.isObjectLiteralExpression(expr)) {
+    var parts = [];
+    for (var p = 0; p < expr.properties.length; p++) {
+      var prop = expr.properties[p];
+      if (!ts.isPropertyAssignment(prop) || !ts.isIdentifier(prop.name)) return '{ [key: string]: unknown }';
+      var pType = inferPrimitiveTypeFromExpression(ts, prop.initializer) || 'unknown';
+      parts.push(prop.name.text + ': ' + pType + ';');
+    }
+    if (parts.length === 0) return '{ [key: string]: unknown }';
+    return '{ ' + parts.join(' ') + ' }';
+  }
+  return '';
+}
+
+function gatherReturnType(ts, fnNode) {
+  var hasReturnValue = false;
+  function walk(node) {
+    if (ts.isReturnStatement(node) && node.expression) hasReturnValue = true;
+    ts.forEachChild(node, walk);
+  }
+  if (fnNode.body) ts.forEachChild(fnNode.body, walk);
+  return hasReturnValue ? 'unknown' : 'void';
+}
+
+function applyEdits(text, edits) {
+  var sorted = edits.slice().sort(function(a, b) {
+    return b.pos - a.pos;
+  });
+  var out = text;
+  for (var i = 0; i < sorted.length; i++) {
+    var e = sorted[i];
+    out = out.slice(0, e.pos) + e.insert + out.slice(e.pos);
+  }
+  return out;
+}
+
+function collectCompilerDiagnostics(ts, sourceText) {
+  var result = ts.transpileModule(sourceText, {
+    compilerOptions: {
+      target: ts.ScriptTarget.ES2020,
+      allowJs: true,
+      checkJs: true
+    },
+    reportDiagnostics: true,
+    fileName: 'input.js'
+  });
+  var diagnostics = result.diagnostics || [];
+  return diagnostics.map(function(d) {
+    var text = ts.flattenDiagnosticMessageText(d.messageText, ' ');
+    var line = 0;
+    if (typeof d.start === 'number') {
+      line = ts.getLineAndCharacterOfPosition(ts.createSourceFile('input.js', sourceText, ts.ScriptTarget.ES2020, true), d.start).line + 1;
+    }
+    return line > 0 ? ('Line ' + line + ': ' + text) : text;
+  });
+}
+
+function convertJsToTsDraft(sourceText) {
+  if (!window.ts) return { error: 'Bundled TypeScript compiler failed to load.' };
+  var ts = window.ts;
+
+  var source = ts.createSourceFile('input.js', sourceText, ts.ScriptTarget.ES2020, true, ts.ScriptKind.JS);
+  var edits = [];
+  var notes = [];
+
+  function visit(node) {
+    if (ts.isVariableDeclaration(node) && ts.isIdentifier(node.name) && !node.type) {
+      var inferred = inferPrimitiveTypeFromExpression(ts, node.initializer);
+      if (inferred) {
+        edits.push({ pos: node.name.end, insert: ': ' + inferred });
+      } else {
+        notes.push('Line ' + (source.getLineAndCharacterOfPosition(node.getStart(source)).line + 1) + ': variable "' + node.name.text + '" kept without explicit type (ambiguous initializer).');
+      }
+    }
+
+    if (ts.isFunctionDeclaration(node) && node.name) {
+      for (var p = 0; p < node.parameters.length; p++) {
+        var param = node.parameters[p];
+        if (ts.isIdentifier(param.name) && !param.type) {
+          edits.push({ pos: param.name.end, insert: ': unknown' });
+        }
+      }
+      if (!node.type) {
+        var returnType = gatherReturnType(ts, node);
+        var closeParen = node.parameters.end;
+        edits.push({ pos: closeParen, insert: ': ' + returnType });
+      }
+    }
+
+    ts.forEachChild(node, visit);
+  }
+
+  visit(source);
+  var transformed = applyEdits(sourceText, edits);
+  var diagnostics = collectCompilerDiagnostics(ts, sourceText);
+
+  if (edits.length === 0) {
+    notes.push('No conservative type insertions were applied. Source may require manual migration for advanced patterns.');
+  }
+  notes.push('Conversion is conservative and does not guarantee complete semantic migration.');
+
+  return {
+    output: transformed,
+    notes: notes,
+    diagnostics: diagnostics
+  };
+}
+
+function runConversion(input) {
+  if (!input || !input.trim()) return { error: 'Enter JavaScript source text to convert.' };
+  if (input.length > MAX_INPUT_BYTES) return { error: 'Input exceeds the 100KB limit.' };
+  return convertJsToTsDraft(input);
+}
+
+function renderResult(result) {
+  var output = document.getElementById('output');
+  output.innerHTML = '';
+
+  if (result.error) {
+    var errCard = document.createElement('div');
+    errCard.className = 'card';
+    var errLine = document.createElement('p');
+    errLine.className = 'error-msg';
+    errLine.textContent = result.error;
+    errCard.appendChild(errLine);
+    output.appendChild(errCard);
+    return;
+  }
+
+  var tsLine = document.createElement('p');
+  tsLine.className = 'report-timestamp';
+  tsLine.textContent = 'Generated on: ' + new Date().toLocaleString();
+  output.appendChild(tsLine);
+
+  var outTitle = document.createElement('h2');
+  outTitle.textContent = 'Converted TypeScript-Oriented Output';
+  output.appendChild(outTitle);
+
+  var outCard = document.createElement('div');
+  outCard.className = 'card';
+  var pre = document.createElement('pre');
+  pre.className = 'raw-block';
+  pre.textContent = result.output;
+  outCard.appendChild(pre);
+
+  var copyRow = document.createElement('div');
+  copyRow.className = 'copy-row';
+  var btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'copy-btn';
+  btn.textContent = 'Copy Converted Output';
+  var feedback = document.createElement('span');
+  feedback.className = 'copy-feedback';
+  btn.addEventListener('click', function() {
+    copyTextWithFallback(result.output).then(function(ok) {
+      feedback.textContent = ok ? 'Copied converted output.' : 'Copy failed. Please copy manually.';
+    });
+  });
+  copyRow.appendChild(btn);
+  copyRow.appendChild(feedback);
+  outCard.appendChild(copyRow);
+  output.appendChild(outCard);
+
+  var notesTitle = document.createElement('h2');
+  notesTitle.textContent = 'Informational Notes';
+  output.appendChild(notesTitle);
+  var notesCard = document.createElement('div');
+  notesCard.className = 'card';
+  var ul = document.createElement('ul');
+  for (var i = 0; i < result.notes.length; i++) {
+    var li = document.createElement('li');
+    var p = document.createElement('p');
+    p.className = 'notice';
+    p.textContent = result.notes[i];
+    li.appendChild(p);
+    ul.appendChild(li);
+  }
+  if (result.notes.length === 0) {
+    var liNone = document.createElement('li');
+    liNone.textContent = 'No informational notes for this input.';
+    ul.appendChild(liNone);
+  }
+  notesCard.appendChild(ul);
+  output.appendChild(notesCard);
+
+  var diagTitle = document.createElement('h2');
+  diagTitle.textContent = 'Compiler Diagnostics';
+  output.appendChild(diagTitle);
+  var diagCard = document.createElement('div');
+  diagCard.className = 'card';
+  if (result.diagnostics.length === 0) {
+    var dNone = document.createElement('p');
+    dNone.textContent = 'No compiler diagnostics for this source.';
+    diagCard.appendChild(dNone);
+  } else {
+    var dList = document.createElement('ul');
+    for (var d = 0; d < result.diagnostics.length; d++) {
+      var dItem = document.createElement('li');
+      dItem.textContent = result.diagnostics[d];
+      dList.appendChild(dItem);
+    }
+    diagCard.appendChild(dList);
+  }
+  output.appendChild(diagCard);
+}
+
+document.getElementById('convertBtn').addEventListener('click', function() {
+  renderResult(runConversion(document.getElementById('sourceInput').value));
+});
+</script>
+
+</body>
+</html>

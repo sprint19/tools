@@ -52,7 +52,7 @@ Tracked work for Sprint19 Tools.
 
 ### Utilities
 
-- [ ] JavaScript to TypeScript Converter — basic type annotations and interface scaffolding from JS input
+- [x] JavaScript to TypeScript Converter — basic type annotations and interface scaffolding from JS input
 - [x] Encode / Decode — deterministic Base64, URL, and HTML entity conversion
 - [x] IDN Converter — Unicode and punycode conversion for domain labels
 
