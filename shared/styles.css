@@ -154,6 +154,55 @@ a:hover { text-decoration: underline; }
 }
 .back-link:hover { color: var(--color-link); text-decoration: underline; }
 
+/* ── Affiliate CTA (opt-in pages only) ──────────────── */
+
+.affiliate-cta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  padding: 10px 12px;
+  margin-bottom: 14px;
+  background: var(--color-card-bg);
+}
+
+.affiliate-cta-text {
+  margin: 0;
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+.affiliate-cta-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 12px;
+  border-radius: 4px;
+  border: 1px solid var(--color-border-input);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 13px;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.affiliate-cta-btn:hover {
+  text-decoration: none;
+  background: var(--color-surface-hover);
+}
+
+@media (max-width: 640px) {
+  .affiliate-cta {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .affiliate-cta-btn {
+    width: 100%;
+  }
+}
+
 /* ── Cards ───────────────────────────────────────────── */
 
 .card {

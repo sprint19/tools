@@ -4,12 +4,23 @@ Tracked work for Sprint19 Tools.
 
 ---
 
+## Recently Shipped
+
+- [x] Message Header Analyzer
+- [x] EML Viewer
+- [x] IDN Converter
+- [x] Encode / Decode
+- [x] Calendar File Viewer
+- [x] Port Check (command generator only)
+
+---
+
 ## Coming Soon — Tools to Build
 
 ### Email & DNS
 
 - [ ] DNS TXT Record Inspector — parse key/value pairs from DMARC, SPF, DKIM, and domain verification records
-- [ ] Email Header Analyzer — extract sender info, Return-Path, SPF/DKIM/DMARC results, and sending IP from raw headers
+- [x] Message Header Analyzer — parse sender info, Return-Path, SPF/DKIM/DMARC indicators, and transfer hops from raw headers
 
 ### SSL & Certificates
 
@@ -31,6 +42,7 @@ Tracked work for Sprint19 Tools.
 - [ ] ENV File Formatter — structured table from .env files with optional value masking
 - [ ] Redis URL Parser — extract host, port, database, and auth details from a Redis connection URL
 - [ ] Postgres JSON Formatter — pretty-print and validate JSON from psql output
+- [x] Calendar File Viewer — parse ICS calendar files into structured event output
 
 ### DevOps & Logs
 
@@ -41,6 +53,8 @@ Tracked work for Sprint19 Tools.
 ### Utilities
 
 - [ ] JavaScript to TypeScript Converter — basic type annotations and interface scaffolding from JS input
+- [x] Encode / Decode — deterministic Base64, URL, and HTML entity conversion
+- [x] IDN Converter — Unicode and punycode conversion for domain labels
 
 ---
 

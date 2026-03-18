@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Generate command-line checks for host and port connectivity. Build nc, telnet, curl, and nmap commands without executing network requests in the browser.">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://tools.sprint19.com/port_check/">
+  <meta property="og:title" content="Port Check Command Generator — Built by Sprint19">
+  <meta property="og:description" content="Generate command snippets for TCP/UDP connectivity checks with local-only processing.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://tools.sprint19.com/port_check/">
+  <meta property="og:image" content="https://tools.sprint19.com/og-image.png">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <link rel="stylesheet" href="/shared/styles.css">
+  <title>Port Check Command Generator | Sprint19</title>
+  <style>
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .form-grid label { display: block; font-size: 13px; color: var(--color-text-muted); margin-bottom: 4px; }
+    .form-grid input, .form-grid select {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 8px;
+      border: 1px solid var(--color-border-input);
+      border-radius: 4px;
+      background: var(--color-card-bg);
+      color: var(--color-text);
+    }
+    .error-msg { color: var(--color-error); font-weight: 600; margin-top: 10px; }
+    @media (max-width: 700px) {
+      .form-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<a href="/" class="back-link">&larr; Sprint19 Tools</a>
+<h1>Port Check Command Generator</h1>
+<p>Generate command-line checks for network ports. This page does not execute checks or make network requests.</p>
+
+<div class="form-grid">
+  <div>
+    <label for="hostInput">Host / IP</label>
+    <input id="hostInput" type="text" placeholder="example.com">
+  </div>
+  <div>
+    <label for="portInput">Port</label>
+    <input id="portInput" type="number" min="1" max="65535" placeholder="443">
+  </div>
+  <div>
+    <label for="protocolSelect">Protocol</label>
+    <select id="protocolSelect">
+      <option value="tcp">TCP</option>
+      <option value="udp">UDP</option>
+    </select>
+  </div>
+  <div>
+    <label for="serviceSelect">Common service (optional)</label>
+    <select id="serviceSelect">
+      <option value="">Custom</option>
+      <option value="80">HTTP (80)</option>
+      <option value="443">HTTPS (443)</option>
+      <option value="25">SMTP (25)</option>
+      <option value="53">DNS (53)</option>
+      <option value="143">IMAP (143)</option>
+      <option value="993">IMAPS (993)</option>
+      <option value="587">SMTP Submission (587)</option>
+    </select>
+  </div>
+</div>
+
+<button id="generateBtn" class="tool-btn">Generate Commands</button>
+
+<div id="output"></div>
+
+<footer class="site-footer">
+  <hr>
+  <p>Generated locally in your browser.</p>
+  <p>Built by <a href="https://sprint19.com" target="_blank" rel="noopener noreferrer">Sprint19</a>. Product engineering for startups.</p>
+  <p class="guardrail">This tool generates command suggestions only and does not run network scans or perform security assessment.</p>
+  <p class="copyright">&copy; 2026 Sprint19. Code licensed under <a href="/LICENSE.md">MIT</a>. Sprint19 name and branding may not be used without permission.</p>
+</footer>
+
+<script src="/shared/utils.js"></script>
+<script>
+if (typeof escapeHTML === 'undefined') {
+  function escapeHTML(str) {
+    return str.replace(/[&<>'"]/g, function(tag) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag];
+    });
+  }
+}
+
+function isValidHost(host) {
+  return /^[a-zA-Z0-9._:-]+$/.test(host);
+}
+
+function buildCommands(host, port, protocol) {
+  var udpFlag = protocol === 'udp' ? '-u ' : '';
+  var commands = [
+    { label: 'Netcat', value: 'nc -vz ' + udpFlag + host + ' ' + port },
+    { label: 'Telnet (TCP only)', value: protocol === 'tcp' ? 'telnet ' + host + ' ' + port : 'N/A for UDP' },
+    { label: 'Nmap', value: 'nmap -Pn -p ' + port + ' ' + (protocol === 'udp' ? '-sU ' : '-sT ') + host },
+    { label: 'Curl (HTTP-like checks)', value: protocol === 'tcp' ? 'curl -vk --connect-timeout 5 ' + host + ':' + port : 'N/A for UDP' }
+  ];
+  return commands;
+}
+
+function renderError(message) {
+  return '<p class="error-msg">' + escapeHTML(message) + '</p>';
+}
+
+function renderCommands(host, port, protocol) {
+  var commands = buildCommands(host, port, protocol);
+  var rows = commands.map(function(c) {
+    return '<tr><td>' + escapeHTML(c.label) + '</td><td><code>' + escapeHTML(c.value) + '</code></td></tr>';
+  }).join('');
+  return '' +
+    '<h2>Summary of Findings</h2>' +
+    '<div class="card">' +
+      '<p><strong>Host:</strong> ' + escapeHTML(host) + '</p>' +
+      '<p><strong>Port:</strong> ' + escapeHTML(String(port)) + '</p>' +
+      '<p><strong>Protocol:</strong> ' + escapeHTML(protocol.toUpperCase()) + '</p>' +
+    '</div>' +
+    '<h2>Generated Commands</h2>' +
+    '<div class="card"><table><thead><tr><th>Tool</th><th>Command</th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
+    '<p class="disclaimer">These commands are suggestions for local terminal use. Review before execution in your own environment.</p>';
+}
+
+document.getElementById('serviceSelect').addEventListener('change', function() {
+  if (this.value) document.getElementById('portInput').value = this.value;
+});
+
+document.getElementById('generateBtn').addEventListener('click', function() {
+  var host = document.getElementById('hostInput').value.trim();
+  var portRaw = document.getElementById('portInput').value.trim();
+  var protocol = document.getElementById('protocolSelect').value;
+
+  if (!host) {
+    document.getElementById('output').innerHTML = renderError('Host is required.');
+    return;
+  }
+  if (!isValidHost(host)) {
+    document.getElementById('output').innerHTML = renderError('Host contains unsupported characters.');
+    return;
+  }
+  var port = parseInt(portRaw, 10);
+  if (isNaN(port) || port < 1 || port > 65535) {
+    document.getElementById('output').innerHTML = renderError('Port must be between 1 and 65535.');
+    return;
+  }
+
+  document.getElementById('output').innerHTML = renderCommands(host, port, protocol);
+});
+</script>
+
+</body>
+</html>

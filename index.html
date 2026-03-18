@@ -184,7 +184,7 @@
     }
   </style>
 </head>
-<body>
+<body data-affiliate-cta="true">
 
 <div class="page-layout">
 
@@ -245,9 +245,19 @@
           <p>Paste a DNS TXT record to parse key/value pairs. Works with DMARC, SPF, DKIM, and domain verification records.</p>
           <span class="tag">Email Auth</span>
         </a>
-        <a href="/email_header_analyzer/" class="tool-card coming-soon">
-          <h3>Email Header Analyzer</h3>
-          <p>Paste raw email headers to extract sender info, Return-Path, SPF/DKIM/DMARC results, and sending IP.</p>
+        <a href="/message_header_analyzer/" class="tool-card">
+          <h3>Message Header Analyzer</h3>
+          <p>Paste message headers for a structured field breakdown, authentication signals, and transfer hop summary.</p>
+          <span class="tag">Email Auth</span>
+        </a>
+        <a href="/eml_viewer/" class="tool-card">
+          <h3>EML Viewer</h3>
+          <p>Open or paste EML source to inspect headers, body preview, MIME structure, and attachment hints.</p>
+          <span class="tag">Email</span>
+        </a>
+        <a href="/idn_converter/" class="tool-card">
+          <h3>IDN Converter</h3>
+          <p>Convert internationalized domain names between Unicode and punycode formats for DNS-safe use.</p>
           <span class="tag">Email Auth</span>
         </a>
       </div>
@@ -339,6 +349,11 @@
           <p>Paste JSON from psql output — handles escaped formats, pretty-prints, and validates.</p>
           <span class="tag">Data</span>
         </a>
+        <a href="/calendar_file_viewer/" class="tool-card">
+          <h3>Calendar File Viewer</h3>
+          <p>Upload or paste ICS calendar content to parse VEVENT entries into a readable event table.</p>
+          <span class="tag">Data</span>
+        </a>
       </div>
     </section>
 
@@ -360,6 +375,11 @@
           <p>Paste Rails server logs to group requests, extract stats, and color-code status results.</p>
           <span class="tag">Logs</span>
         </a>
+        <a href="/port_check/" class="tool-card">
+          <h3>Port Check Command Generator</h3>
+          <p>Generate terminal commands for host/port checks with TCP or UDP options. Command snippets only.</p>
+          <span class="tag">DevOps</span>
+        </a>
       </div>
     </section>
 
@@ -375,6 +395,11 @@
           <h3>JavaScript to TypeScript Converter</h3>
           <p>Paste JavaScript code to get a TypeScript version with basic type annotations and interface scaffolding.</p>
           <span class="tag">Code</span>
+        </a>
+        <a href="/encode_decode/" class="tool-card">
+          <h3>Encode / Decode</h3>
+          <p>Encode and decode text as Base64, URL, or HTML entities with deterministic local conversion.</p>
+          <span class="tag">Utility</span>
         </a>
       </div>
     </section>

@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="View and parse EML files locally in your browser. Inspect headers, multipart boundaries, and message body safely with no data leaving your browser.">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://tools.sprint19.com/eml_viewer/">
+  <meta property="og:title" content="EML Viewer — Built by Sprint19">
+  <meta property="og:description" content="Open and inspect EML messages with structured header and body views. No data leaves your browser.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://tools.sprint19.com/eml_viewer/">
+  <meta property="og:image" content="https://tools.sprint19.com/og-image.png">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <link rel="stylesheet" href="/shared/styles.css">
+  <title>EML Viewer | Sprint19</title>
+  <style>
+    .error-msg { color: var(--color-error); font-weight: 600; margin-top: 12px; }
+    .helper { font-size: 13px; color: var(--color-text-muted); margin-top: 8px; }
+    .file-row { margin: 12px 0; }
+  </style>
+</head>
+<body data-affiliate-cta="true">
+
+<a href="/" class="back-link">&larr; Sprint19 Tools</a>
+<h1>EML Viewer</h1>
+<p>Upload an <code>.eml</code> file or paste raw source to inspect message headers, body, and multipart structure.</p>
+
+<div class="file-row">
+  <input type="file" id="fileInput" accept=".eml,.txt,message/rfc822">
+</div>
+<textarea id="emlInput" class="tool-input" rows="10" placeholder="Paste raw EML source here..."></textarea>
+<br>
+<button id="parseBtn" class="tool-btn">Parse EML</button>
+<p class="helper">Files are parsed locally only.</p>
+
+<div id="output"></div>
+
+<footer class="site-footer">
+  <hr>
+  <p>Parsed locally in your browser.</p>
+  <p>Built by <a href="https://sprint19.com" target="_blank" rel="noopener noreferrer">Sprint19</a>. Product engineering for startups.</p>
+  <p class="guardrail">This tool parses message source text only and does not verify sender identity or perform security assessment.</p>
+  <p class="copyright">&copy; 2026 Sprint19. Code licensed under <a href="/LICENSE.md">MIT</a>. Sprint19 name and branding may not be used without permission.</p>
+</footer>
+
+<script src="/shared/utils.js"></script>
+<script>
+if (typeof escapeHTML === 'undefined') {
+  function escapeHTML(str) {
+    return str.replace(/[&<>'"]/g, function(tag) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag];
+    });
+  }
+}
+
+var MAX_EML_BYTES = 800000;
+
+function splitEml(raw) {
+  var normalized = raw.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  var splitIdx = normalized.indexOf('\n\n');
+  if (splitIdx === -1) return { headers: normalized, body: '' };
+  return {
+    headers: normalized.slice(0, splitIdx),
+    body: normalized.slice(splitIdx + 2)
+  };
+}
+
+function unfoldHeaderLines(rawHeaders) {
+  var lines = rawHeaders.split('\n');
+  var out = [];
+  for (var i = 0; i < lines.length; i++) {
+    var line = lines[i];
+    if ((line.charAt(0) === ' ' || line.charAt(0) === '\t') && out.length > 0) {
+      out[out.length - 1] += ' ' + line.trim();
+    } else {
+      out.push(line);
+    }
+  }
+  return out.filter(function(l) { return l.trim() !== ''; });
+}
+
+function parseHeaders(rawHeaders) {
+  var lines = unfoldHeaderLines(rawHeaders);
+  var rows = [];
+  var map = {};
+  for (var i = 0; i < lines.length; i++) {
+    var idx = lines[i].indexOf(':');
+    if (idx <= 0) continue;
+    var key = lines[i].slice(0, idx).trim();
+    var value = lines[i].slice(idx + 1).trim();
+    rows.push({ key: key, value: value });
+    var lower = key.toLowerCase();
+    if (!map[lower]) map[lower] = [];
+    map[lower].push(value);
+  }
+  return { rows: rows, map: map };
+}
+
+function extractBoundary(contentType) {
+  if (!contentType) return null;
+  var m = /boundary\s*=\s*(?:"([^"]+)"|([^;]+))/i.exec(contentType);
+  if (!m) return null;
+  return (m[1] || m[2] || '').trim();
+}
+
+function inspectMultipart(body, boundary) {
+  if (!boundary) return { parts: 0 };
+  var marker = '--' + boundary;
+  var endMarker = marker + '--';
+  var count = 0;
+  var lines = body.replace(/\r\n/g, '\n').split('\n');
+  for (var i = 0; i < lines.length; i++) {
+    if (lines[i] === marker) count++;
+    if (lines[i] === endMarker) break;
+  }
+  return { parts: count };
+}
+
+function getAttachmentNames(body) {
+  var names = [];
+  var re = /filename\s*=\s*(?:"([^"]+)"|([^;\r\n]+))/ig;
+  var m;
+  while ((m = re.exec(body)) !== null) {
+    names.push((m[1] || m[2] || '').trim());
+    if (names.length >= 12) break;
+  }
+  return names;
+}
+
+function parseEml(raw) {
+  var trimmed = raw.trim();
+  if (!trimmed) return { error: 'No EML content provided.' };
+  if (trimmed.length > MAX_EML_BYTES) return { error: 'Input exceeds 800KB limit.' };
+
+  var split = splitEml(raw);
+  var parsed = parseHeaders(split.headers);
+  if (parsed.rows.length === 0) return { error: 'Could not parse headers from EML source.' };
+
+  var map = parsed.map;
+  var contentType = (map['content-type'] && map['content-type'][0]) || '';
+  var boundary = extractBoundary(contentType);
+  var multipart = inspectMultipart(split.body, boundary);
+
+  return {
+    summary: {
+      from: (map.from && map.from[0]) || 'N/A',
+      to: (map.to && map.to[0]) || 'N/A',
+      subject: (map.subject && map.subject[0]) || 'N/A',
+      date: (map.date && map.date[0]) || 'N/A',
+      messageId: (map['message-id'] && map['message-id'][0]) || 'N/A',
+      contentType: contentType || 'N/A',
+      transferEncoding: (map['content-transfer-encoding'] && map['content-transfer-encoding'][0]) || 'N/A'
+    },
+    headers: parsed.rows,
+    multipartParts: multipart.parts,
+    attachmentNames: getAttachmentNames(split.body),
+    bodyPreview: split.body.slice(0, 12000),
+    raw: raw
+  };
+}
+
+function renderResult(result) {
+  if (result.error) return '<p class="error-msg">' + escapeHTML(result.error) + '</p>';
+
+  var tableRows = result.headers.map(function(h) {
+    return '<tr><td>' + escapeHTML(h.key) + '</td><td style="word-break:break-word;">' + escapeHTML(h.value) + '</td></tr>';
+  }).join('');
+
+  var attachmentHtml = result.attachmentNames.length === 0
+    ? '<p>No attachment filenames detected.</p>'
+    : '<ul>' + result.attachmentNames.map(function(n) {
+      return '<li>' + escapeHTML(n) + '</li>';
+    }).join('') + '</ul>';
+
+  return '' +
+    '<h2>Summary of Findings</h2>' +
+    '<div class="card">' +
+      '<p><strong>From:</strong> ' + escapeHTML(result.summary.from) + '</p>' +
+      '<p><strong>To:</strong> ' + escapeHTML(result.summary.to) + '</p>' +
+      '<p><strong>Subject:</strong> ' + escapeHTML(result.summary.subject) + '</p>' +
+      '<p><strong>Date:</strong> ' + escapeHTML(result.summary.date) + '</p>' +
+      '<p><strong>Message-ID:</strong> ' + escapeHTML(result.summary.messageId) + '</p>' +
+      '<p><strong>Content-Type:</strong> ' + escapeHTML(result.summary.contentType) + '</p>' +
+      '<p><strong>Transfer-Encoding:</strong> ' + escapeHTML(result.summary.transferEncoding) + '</p>' +
+      '<p><strong>Multipart parts detected:</strong> ' + result.multipartParts + '</p>' +
+    '</div>' +
+    '<h2>Attachment Hints</h2><div class="card">' + attachmentHtml + '</div>' +
+    '<h2>Header Breakdown</h2><div class="card"><table><thead><tr><th>Header</th><th>Value</th></tr></thead><tbody>' + tableRows + '</tbody></table></div>' +
+    '<h2>Body Preview</h2><div class="card"><pre class="raw-block">' + escapeHTML(result.bodyPreview) + '</pre></div>' +
+    '<div class="raw-block-section"><h2>Raw EML Input</h2><div class="card"><pre class="raw-block">' + escapeHTML(result.raw) + '</pre></div></div>' +
+    '<p class="disclaimer">Interpretation only. MIME structure and sender fields should be reviewed with full mailbox context.</p>';
+}
+
+document.getElementById('parseBtn').addEventListener('click', function() {
+  var value = document.getElementById('emlInput').value;
+  document.getElementById('output').innerHTML = renderResult(parseEml(value));
+});
+
+document.getElementById('fileInput').addEventListener('change', function(event) {
+  var file = event.target.files[0];
+  if (!file) return;
+  if (file.size > MAX_EML_BYTES) {
+    document.getElementById('output').innerHTML = '<p class="error-msg">Selected file exceeds 800KB limit.</p>';
+    return;
+  }
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    document.getElementById('emlInput').value = String(e.target.result || '');
+  };
+  reader.readAsText(file);
+});
+</script>
+
+</body>
+</html>

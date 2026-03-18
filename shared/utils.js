@@ -89,3 +89,36 @@ function escapeHTML(str) {
     mountToggle();
   }
 })();
+
+(function initAffiliateCTA() {
+  function mountCTA() {
+    if (!document.body) return;
+    if (document.getElementById('affiliate-cta')) return;
+    if (document.body.getAttribute('data-affiliate-cta') !== 'true') return;
+
+    var wrapper = document.createElement('div');
+    wrapper.className = 'affiliate-cta';
+    wrapper.id = 'affiliate-cta';
+
+    var text = document.createElement('p');
+    text.className = 'affiliate-cta-text';
+    text.textContent = 'Need hosted email? Use Zoho Workplace.';
+
+    var link = document.createElement('a');
+    link.className = 'affiliate-cta-btn';
+    link.href = 'https://go.zoho.com/EpSd';
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer sponsored';
+    link.textContent = 'Create business email';
+
+    wrapper.appendChild(text);
+    wrapper.appendChild(link);
+    document.body.insertBefore(wrapper, document.body.firstChild);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', mountCTA);
+  } else {
+    mountCTA();
+  }
+})();

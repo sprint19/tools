@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Analyze raw email message headers locally in your browser. Parse key fields, authentication signals, and mail transfer hops. No data leaves your browser.">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://tools.sprint19.com/message_header_analyzer/">
+  <meta property="og:title" content="Message Header Analyzer — Built by Sprint19">
+  <meta property="og:description" content="Parse email headers into structured fields, auth indicators, and transfer hops. No data leaves your browser.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://tools.sprint19.com/message_header_analyzer/">
+  <meta property="og:image" content="https://tools.sprint19.com/og-image.png">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <link rel="stylesheet" href="/shared/styles.css">
+  <title>Message Header Analyzer | Sprint19</title>
+  <style>
+    .error-msg { color: var(--color-error); font-weight: 600; margin-top: 12px; }
+    .muted { color: var(--color-text-muted); font-size: 13px; }
+    .field-grid {
+      display: grid;
+      grid-template-columns: 180px 1fr;
+      gap: 8px 10px;
+      font-size: 14px;
+    }
+    .field-grid dt { color: var(--color-text-muted); }
+    .field-grid dd { margin: 0; word-break: break-word; }
+  </style>
+</head>
+<body data-affiliate-cta="true">
+
+<a href="/" class="back-link">&larr; Sprint19 Tools</a>
+<h1>Message Header Analyzer</h1>
+<p>Paste raw email headers to get a structured view of common fields, authentication results, and message route hints.</p>
+
+<textarea id="headerInput" class="tool-input" rows="11" placeholder="From: sender@example.com&#10;To: team@example.com&#10;Subject: Test&#10;..."></textarea>
+<br>
+<button id="analyzeBtn" class="tool-btn">Analyze Headers</button>
+
+<div id="output"></div>
+
+<footer class="site-footer">
+  <hr>
+  <p>Analyzed locally in your browser.</p>
+  <p>Built by <a href="https://sprint19.com" target="_blank" rel="noopener noreferrer">Sprint19</a>. Product engineering for startups.</p>
+  <p class="guardrail">This tool parses header text only and does not validate sender legitimacy or perform security assessment.</p>
+  <p class="copyright">&copy; 2026 Sprint19. Code licensed under <a href="/LICENSE.md">MIT</a>. Sprint19 name and branding may not be used without permission.</p>
+</footer>
+
+<script src="/shared/utils.js"></script>
+<script>
+if (typeof escapeHTML === 'undefined') {
+  function escapeHTML(str) {
+    return str.replace(/[&<>'"]/g, function(tag) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag];
+    });
+  }
+}
+
+var MAX_HEADER_BYTES = 50000;
+
+function unfoldHeaderLines(raw) {
+  var normalized = raw.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  var lines = normalized.split('\n');
+  var out = [];
+  for (var i = 0; i < lines.length; i++) {
+    var line = lines[i];
+    if ((line.charAt(0) === ' ' || line.charAt(0) === '\t') && out.length > 0) {
+      out[out.length - 1] += ' ' + line.trim();
+    } else {
+      out.push(line);
+    }
+  }
+  return out.filter(function(l) { return l.trim() !== ''; });
+}
+
+function parseHeaderMap(lines) {
+  var headers = [];
+  var map = {};
+  for (var i = 0; i < lines.length; i++) {
+    var idx = lines[i].indexOf(':');
+    if (idx <= 0) continue;
+    var key = lines[i].slice(0, idx).trim();
+    var value = lines[i].slice(idx + 1).trim();
+    var lower = key.toLowerCase();
+    headers.push({ key: key, value: value });
+    if (!map[lower]) map[lower] = [];
+    map[lower].push(value);
+  }
+  return { headers: headers, map: map };
+}
+
+function extractAuthSignals(map) {
+  var auth = { spf: 'not found', dkim: 'not found', dmarc: 'not found' };
+  var authLines = (map['authentication-results'] || []).concat(map['received-spf'] || []);
+  var combined = authLines.join(' ; ').toLowerCase();
+  if (/spf\s*=\s*(pass|fail|softfail|neutral|none)/.test(combined)) {
+    auth.spf = combined.match(/spf\s*=\s*(pass|fail|softfail|neutral|none)/)[1];
+  }
+  if (/dkim\s*=\s*(pass|fail|temperror|permerror|none)/.test(combined)) {
+    auth.dkim = combined.match(/dkim\s*=\s*(pass|fail|temperror|permerror|none)/)[1];
+  }
+  if (/dmarc\s*=\s*(pass|fail|bestguesspass|none)/.test(combined)) {
+    auth.dmarc = combined.match(/dmarc\s*=\s*(pass|fail|bestguesspass|none)/)[1];
+  }
+  return auth;
+}
+
+function analyzeHeaders(raw) {
+  var trimmed = raw.trim();
+  if (!trimmed) return { error: 'No header input provided.' };
+  if (trimmed.length > MAX_HEADER_BYTES) return { error: 'Input exceeds 50KB limit.' };
+
+  var lines = unfoldHeaderLines(trimmed);
+  var parsed = parseHeaderMap(lines);
+  if (parsed.headers.length === 0) return { error: 'No valid header lines found. Each line should follow "Name: value".' };
+
+  var m = parsed.map;
+  var summary = {
+    from: (m.from && m.from[0]) || 'N/A',
+    to: (m.to && m.to[0]) || 'N/A',
+    subject: (m.subject && m.subject[0]) || 'N/A',
+    date: (m.date && m.date[0]) || 'N/A',
+    returnPath: (m['return-path'] && m['return-path'][0]) || 'N/A',
+    messageId: (m['message-id'] && m['message-id'][0]) || 'N/A'
+  };
+  var received = m.received || [];
+  return {
+    summary: summary,
+    auth: extractAuthSignals(m),
+    receivedCount: received.length,
+    receivedSample: received.slice(0, 6),
+    rows: parsed.headers,
+    raw: raw
+  };
+}
+
+function renderResult(result) {
+  if (result.error) return '<p class="error-msg">' + escapeHTML(result.error) + '</p>';
+
+  var authClass = function(v) {
+    if (v === 'pass' || v === 'bestguesspass') return 'green';
+    if (v === 'fail' || v === 'softfail') return 'red';
+    return 'yellow';
+  };
+
+  var fields = [
+    ['From', result.summary.from],
+    ['To', result.summary.to],
+    ['Subject', result.summary.subject],
+    ['Date', result.summary.date],
+    ['Return-Path', result.summary.returnPath],
+    ['Message-ID', result.summary.messageId]
+  ];
+
+  var fieldHtml = '<dl class="field-grid">' + fields.map(function(pair) {
+    return '<dt>' + escapeHTML(pair[0]) + '</dt><dd>' + escapeHTML(pair[1]) + '</dd>';
+  }).join('') + '</dl>';
+
+  var authHtml = '<ul>' +
+    '<li>SPF: <strong class="' + authClass(result.auth.spf) + '">' + escapeHTML(result.auth.spf) + '</strong></li>' +
+    '<li>DKIM: <strong class="' + authClass(result.auth.dkim) + '">' + escapeHTML(result.auth.dkim) + '</strong></li>' +
+    '<li>DMARC: <strong class="' + authClass(result.auth.dmarc) + '">' + escapeHTML(result.auth.dmarc) + '</strong></li>' +
+  '</ul>';
+
+  var routeRows = result.receivedSample.length === 0
+    ? '<p class="muted">No Received headers found.</p>'
+    : '<ol>' + result.receivedSample.map(function(v) {
+      return '<li><span style="word-break:break-word;">' + escapeHTML(v) + '</span></li>';
+    }).join('') + '</ol>';
+
+  var tableRows = result.rows.map(function(r) {
+    return '<tr><td>' + escapeHTML(r.key) + '</td><td style="word-break:break-word;">' + escapeHTML(r.value) + '</td></tr>';
+  }).join('');
+
+  return '' +
+    '<h2>Summary of Findings</h2>' +
+    '<div class="card">' + fieldHtml + '</div>' +
+    '<h2>Authentication Signals</h2>' +
+    '<div class="card">' + authHtml + '</div>' +
+    '<h2>Message Route</h2>' +
+    '<div class="card"><p><strong>Received hop count:</strong> ' + result.receivedCount + '</p>' + routeRows + '</div>' +
+    '<h2>All Parsed Headers</h2>' +
+    '<div class="card"><table><thead><tr><th>Header</th><th>Value</th></tr></thead><tbody>' + tableRows + '</tbody></table></div>' +
+    '<div class="raw-block-section"><h2>Raw Input</h2><div class="card"><pre class="raw-block">' + escapeHTML(result.raw) + '</pre></div></div>' +
+    '<p class="disclaimer">Interpretation only. Header content can be spoofed or incomplete and should be reviewed in context.</p>';
+}
+
+document.getElementById('analyzeBtn').addEventListener('click', function() {
+  var value = document.getElementById('headerInput').value;
+  document.getElementById('output').innerHTML = renderResult(analyzeHeaders(value));
+});
+</script>
+
+</body>
+</html>

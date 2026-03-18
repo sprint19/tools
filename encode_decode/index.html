@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Encode or decode text in Base64, URL, and HTML entity formats locally in your browser. Deterministic output and safe error handling.">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://tools.sprint19.com/encode_decode/">
+  <meta property="og:title" content="Encode / Decode — Built by Sprint19">
+  <meta property="og:description" content="Convert text between Base64, URL, and HTML entity formats with local-only processing.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://tools.sprint19.com/encode_decode/">
+  <meta property="og:image" content="https://tools.sprint19.com/og-image.png">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <link rel="stylesheet" href="/shared/styles.css">
+  <title>Encode / Decode | Sprint19</title>
+  <style>
+    .controls { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+    .controls select { padding: 8px; border: 1px solid var(--color-border-input); border-radius: 4px; background: var(--color-card-bg); color: var(--color-text); }
+    .error-msg { color: var(--color-error); font-weight: 600; margin-top: 10px; }
+  </style>
+</head>
+<body>
+
+<a href="/" class="back-link">&larr; Sprint19 Tools</a>
+<h1>Encode / Decode</h1>
+<p>Convert text using deterministic Base64, URL, and HTML entity encoding/decoding. No network requests.</p>
+
+<div class="controls">
+  <select id="formatSelect" aria-label="Format">
+    <option value="base64">Base64</option>
+    <option value="url">URL</option>
+    <option value="html">HTML Entities</option>
+  </select>
+  <select id="actionSelect" aria-label="Action">
+    <option value="encode">Encode</option>
+    <option value="decode">Decode</option>
+  </select>
+</div>
+
+<textarea id="textInput" class="tool-input" rows="9" placeholder="Enter text..."></textarea>
+<br>
+<button id="runBtn" class="tool-btn">Run Conversion</button>
+
+<div id="output"></div>
+
+<footer class="site-footer">
+  <hr>
+  <p>Converted locally in your browser.</p>
+  <p>Built by <a href="https://sprint19.com" target="_blank" rel="noopener noreferrer">Sprint19</a>. Product engineering for startups.</p>
+  <p class="guardrail">This tool transforms text formats only and does not send content to external services.</p>
+  <p class="copyright">&copy; 2026 Sprint19. Code licensed under <a href="/LICENSE.md">MIT</a>. Sprint19 name and branding may not be used without permission.</p>
+</footer>
+
+<script src="/shared/utils.js"></script>
+<script>
+if (typeof escapeHTML === 'undefined') {
+  function escapeHTML(str) {
+    return str.replace(/[&<>'"]/g, function(tag) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag];
+    });
+  }
+}
+
+var MAX_TEXT_BYTES = 150000;
+
+function encodeBase64(str) {
+  return btoa(unescape(encodeURIComponent(str)));
+}
+
+function decodeBase64(str) {
+  return decodeURIComponent(escape(atob(str)));
+}
+
+function encodeHtml(str) {
+  return str.replace(/[&<>'"]/g, function(tag) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag];
+  });
+}
+
+function decodeHtml(str) {
+  var ta = document.createElement('textarea');
+  ta.innerHTML = str;
+  return ta.value;
+}
+
+function convert(value, format, action) {
+  if (!value) return { error: 'No input provided.' };
+  if (value.length > MAX_TEXT_BYTES) return { error: 'Input exceeds 150KB limit.' };
+  try {
+    if (format === 'base64') return { output: action === 'encode' ? encodeBase64(value) : decodeBase64(value) };
+    if (format === 'url') return { output: action === 'encode' ? encodeURIComponent(value) : decodeURIComponent(value) };
+    if (format === 'html') return { output: action === 'encode' ? encodeHtml(value) : decodeHtml(value) };
+    return { error: 'Unknown format selected.' };
+  } catch (err) {
+    return { error: 'Conversion failed. Check input format for decoding mode.' };
+  }
+}
+
+function render(result, format, action, input) {
+  if (result.error) return '<p class="error-msg">' + escapeHTML(result.error) + '</p>';
+  return '' +
+    '<div class="card">' +
+      '<p><strong>Format:</strong> ' + escapeHTML(format) + '</p>' +
+      '<p><strong>Action:</strong> ' + escapeHTML(action) + '</p>' +
+    '</div>' +
+    '<h2>Output</h2>' +
+    '<div class="card"><pre class="raw-block">' + escapeHTML(result.output) + '</pre></div>' +
+    '<h2>Raw Input</h2>' +
+    '<div class="card"><pre class="raw-block">' + escapeHTML(input) + '</pre></div>';
+}
+
+document.getElementById('runBtn').addEventListener('click', function() {
+  var input = document.getElementById('textInput').value;
+  var format = document.getElementById('formatSelect').value;
+  var action = document.getElementById('actionSelect').value;
+  document.getElementById('output').innerHTML = render(convert(input, format, action), format, action, input);
+});
+</script>
+
+</body>
+</html>

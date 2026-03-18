@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="View and parse ICS calendar files locally. Extract calendar events with title, start, end, and location fields.">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://tools.sprint19.com/calendar_file_viewer/">
+  <meta property="og:title" content="Calendar File Viewer — Built by Sprint19">
+  <meta property="og:description" content="Parse ICS calendar files and inspect events with local-only processing.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://tools.sprint19.com/calendar_file_viewer/">
+  <meta property="og:image" content="https://tools.sprint19.com/og-image.png">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <link rel="stylesheet" href="/shared/styles.css">
+  <title>Calendar File Viewer | Sprint19</title>
+  <style>
+    .error-msg { color: var(--color-error); font-weight: 600; margin-top: 10px; }
+    .file-row { margin-bottom: 12px; }
+  </style>
+</head>
+<body>
+
+<a href="/" class="back-link">&larr; Sprint19 Tools</a>
+<h1>Calendar File Viewer</h1>
+<p>Upload a calendar file (<code>.ics</code>) or paste source text to inspect events in a readable table.</p>
+
+<div class="file-row">
+  <input type="file" id="fileInput" accept=".ics,text/calendar">
+</div>
+<textarea id="icsInput" class="tool-input" rows="10" placeholder="BEGIN:VCALENDAR&#10;..."></textarea>
+<br>
+<button id="parseBtn" class="tool-btn">Parse Calendar File</button>
+
+<div id="output"></div>
+
+<footer class="site-footer">
+  <hr>
+  <p>Parsed locally in your browser.</p>
+  <p>Built by <a href="https://sprint19.com" target="_blank" rel="noopener noreferrer">Sprint19</a>. Product engineering for startups.</p>
+  <p class="guardrail">This tool interprets calendar file content only and does not modify calendar systems or perform security assessment.</p>
+  <p class="copyright">&copy; 2026 Sprint19. Code licensed under <a href="/LICENSE.md">MIT</a>. Sprint19 name and branding may not be used without permission.</p>
+</footer>
+
+<script src="/shared/utils.js"></script>
+<script>
+if (typeof escapeHTML === 'undefined') {
+  function escapeHTML(str) {
+    return str.replace(/[&<>'"]/g, function(tag) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag];
+    });
+  }
+}
+
+var MAX_ICS_BYTES = 500000;
+
+function unfoldIcsLines(raw) {
+  var normalized = raw.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  var lines = normalized.split('\n');
+  var out = [];
+  for (var i = 0; i < lines.length; i++) {
+    if ((lines[i].charAt(0) === ' ' || lines[i].charAt(0) === '\t') && out.length > 0) {
+      out[out.length - 1] += lines[i].slice(1);
+    } else {
+      out.push(lines[i]);
+    }
+  }
+  return out;
+}
+
+function parseLine(line) {
+  var idx = line.indexOf(':');
+  if (idx === -1) return null;
+  return { key: line.slice(0, idx), value: line.slice(idx + 1) };
+}
+
+function formatIcsDate(raw) {
+  if (!raw) return 'N/A';
+  if (/^\d{8}T\d{6}Z$/.test(raw)) {
+    return raw.slice(0, 4) + '-' + raw.slice(4, 6) + '-' + raw.slice(6, 8) + ' ' + raw.slice(9, 11) + ':' + raw.slice(11, 13) + ':' + raw.slice(13, 15) + ' UTC';
+  }
+  if (/^\d{8}$/.test(raw)) {
+    return raw.slice(0, 4) + '-' + raw.slice(4, 6) + '-' + raw.slice(6, 8);
+  }
+  return raw;
+}
+
+function parseIcs(raw) {
+  var trimmed = raw.trim();
+  if (!trimmed) return { error: 'No calendar content provided.' };
+  if (trimmed.length > MAX_ICS_BYTES) return { error: 'Input exceeds 500KB limit.' };
+
+  var lines = unfoldIcsLines(raw);
+  var events = [];
+  var current = null;
+
+  for (var i = 0; i < lines.length; i++) {
+    var line = lines[i].trim();
+    if (line === 'BEGIN:VEVENT') {
+      current = {};
+      continue;
+    }
+    if (line === 'END:VEVENT') {
+      if (current) events.push(current);
+      current = null;
+      continue;
+    }
+    if (!current) continue;
+    var parsed = parseLine(line);
+    if (!parsed) continue;
+    var key = parsed.key.split(';')[0].toUpperCase();
+    if (key === 'SUMMARY') current.summary = parsed.value;
+    if (key === 'DTSTART') current.dtstart = parsed.value;
+    if (key === 'DTEND') current.dtend = parsed.value;
+    if (key === 'LOCATION') current.location = parsed.value;
+    if (key === 'UID') current.uid = parsed.value;
+    if (key === 'DESCRIPTION') current.description = parsed.value;
+  }
+
+  return { events: events, raw: raw };
+}
+
+function render(result) {
+  if (result.error) return '<p class="error-msg">' + escapeHTML(result.error) + '</p>';
+  if (result.events.length === 0) return '<p class="error-msg">No VEVENT blocks detected in this file.</p>';
+
+  var rows = result.events.map(function(e, idx) {
+    return '<tr>' +
+      '<td>' + (idx + 1) + '</td>' +
+      '<td>' + escapeHTML(e.summary || 'N/A') + '</td>' +
+      '<td>' + escapeHTML(formatIcsDate(e.dtstart || '')) + '</td>' +
+      '<td>' + escapeHTML(formatIcsDate(e.dtend || '')) + '</td>' +
+      '<td>' + escapeHTML(e.location || 'N/A') + '</td>' +
+      '</tr>';
+  }).join('');
+
+  return '' +
+    '<h2>Summary of Findings</h2>' +
+    '<div class="card"><p><strong>Events found:</strong> ' + result.events.length + '</p></div>' +
+    '<h2>Event Table</h2>' +
+    '<div class="card"><table><thead><tr><th>#</th><th>Summary</th><th>Start</th><th>End</th><th>Location</th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
+    '<h2>Raw Calendar Content</h2>' +
+    '<div class="card"><pre class="raw-block">' + escapeHTML(result.raw) + '</pre></div>' +
+    '<p class="disclaimer">Interpretation only. Time zone normalization and recurrence expansion are not applied in this viewer.</p>';
+}
+
+document.getElementById('parseBtn').addEventListener('click', function() {
+  var value = document.getElementById('icsInput').value;
+  document.getElementById('output').innerHTML = render(parseIcs(value));
+});
+
+document.getElementById('fileInput').addEventListener('change', function(event) {
+  var file = event.target.files[0];
+  if (!file) return;
+  if (file.size > MAX_ICS_BYTES) {
+    document.getElementById('output').innerHTML = '<p class="error-msg">Selected file exceeds 500KB limit.</p>';
+    return;
+  }
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    document.getElementById('icsInput').value = String(e.target.result || '');
+  };
+  reader.readAsText(file);
+});
+</script>
+
+</body>
+</html>
