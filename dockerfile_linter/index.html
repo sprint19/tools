@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Lint Dockerfile text locally for deterministic informational findings. No build execution or network calls.">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://tools.sprint19.com/dockerfile_linter/">
+  <meta property="og:title" content="Dockerfile Linter — Built by Sprint19">
+  <meta property="og:description" content="Parse Dockerfile instructions with continuation-line support and local-only informational checks.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://tools.sprint19.com/dockerfile_linter/">
+  <meta property="og:image" content="https://tools.sprint19.com/og-image.png">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <link rel="stylesheet" href="/shared/styles.css">
+  <title>Dockerfile Linter | Sprint19</title>
+  <style>
+    .error-msg { color: var(--color-error); font-weight: 600; margin: 0; }
+    .notice { color: var(--color-warning); margin: 0; }
+    .copy-row {
+      margin-top: 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .copy-btn {
+      padding: 8px 14px;
+      font-size: 14px;
+      cursor: pointer;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border-input);
+      border-radius: 4px;
+      color: var(--color-text);
+    }
+    .copy-btn:hover { background: var(--color-surface-hover); }
+    .copy-feedback { font-size: 13px; color: var(--color-text-muted); }
+  </style>
+</head>
+<body data-affiliate-cta="true">
+
+<a href="/" class="back-link">&larr; Sprint19 Tools</a>
+<h1>Dockerfile Linter</h1>
+<p>Paste Dockerfile text to get deterministic informational notes. Parsing is local-only and interpretation-only.</p>
+
+<textarea id="dockerInput" class="tool-input" rows="14" placeholder="FROM node:latest&#10;RUN apt-get update && \&#10;    apt-get install -y curl&#10;ADD . /app"></textarea>
+<button id="lintBtn" class="tool-btn">Lint Dockerfile</button>
+<div id="output"></div>
+
+<footer class="site-footer">
+  <hr>
+  <p>Processed locally in your browser.</p>
+  <p>Built by <a href="https://sprint19.com" target="_blank" rel="noopener noreferrer">Sprint19</a>. Product engineering for startups.</p>
+  <p class="guardrail">This tool parses Dockerfile text only. It does not build images or verify runtime security behavior.</p>
+  <p class="copyright">&copy; 2026 Sprint19. Code licensed under <a href="/LICENSE.md">MIT</a>. Sprint19 name and branding may not be used without permission.</p>
+</footer>
+
+<script src="/shared/utils.js"></script>
+<script>
+var MAX_INPUT_BYTES = 51200;
+
+function copyTextWithFallback(text) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    return navigator.clipboard.writeText(text).then(function() {
+      return true;
+    }).catch(function() {
+      return fallbackCopy(text);
+    });
+  }
+  return Promise.resolve(fallbackCopy(text));
+}
+
+function fallbackCopy(text) {
+  var ta = document.createElement('textarea');
+  ta.value = text;
+  ta.setAttribute('readonly', '');
+  ta.style.position = 'fixed';
+  ta.style.opacity = '0';
+  document.body.appendChild(ta);
+  ta.focus();
+  ta.select();
+  var copied = false;
+  try {
+    copied = document.execCommand('copy');
+  } catch (e) {
+    copied = false;
+  }
+  document.body.removeChild(ta);
+  return copied;
+}
+
+function hasContinuation(line) {
+  var i = line.length - 1;
+  while (i >= 0 && /\s/.test(line.charAt(i))) i -= 1;
+  var slashCount = 0;
+  while (i >= 0 && line.charAt(i) === '\\') {
+    slashCount += 1;
+    i -= 1;
+  }
+  return slashCount % 2 === 1;
+}
+
+function logicalInstructions(raw) {
+  var normalized = raw.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  var lines = normalized.split('\n');
+  var out = [];
+  var current = '';
+  var startLine = 0;
+
+  for (var i = 0; i < lines.length; i++) {
+    var lineNo = i + 1;
+    var physicalLine = lines[i];
+    if (current === '') {
+      current = physicalLine;
+      startLine = lineNo;
+    } else {
+      current += '\n' + physicalLine;
+    }
+    if (hasContinuation(physicalLine)) {
+      continue;
+    }
+    out.push({ startLine: startLine, text: current });
+    current = '';
+    startLine = 0;
+  }
+
+  if (current !== '') {
+    out.push({ startLine: startLine, text: current });
+  }
+  return out;
+}
+
+function parseInstruction(text) {
+  var flattened = text.replace(/\s*\\\s*\n\s*/g, ' ').trim();
+  if (!flattened) return null;
+  if (flattened.charAt(0) === '#') return null;
+  var match = flattened.match(/^([A-Za-z]+)\b(.*)$/);
+  if (!match) return null;
+  return {
+    instruction: match[1].toUpperCase(),
+    args: (match[2] || '').trim(),
+    normalized: flattened
+  };
+}
+
+function extractFromImage(argsText) {
+  var tokens = argsText.split(/\s+/).filter(Boolean);
+  for (var i = 0; i < tokens.length; i++) {
+    if (tokens[i].indexOf('--') === 0) continue;
+    if (tokens[i].toUpperCase() === 'AS') break;
+    return tokens[i];
+  }
+  return '';
+}
+
+function lintDockerfile(raw) {
+  if (!raw || !raw.trim()) return { error: 'No Dockerfile input provided.' };
+  if (raw.length > MAX_INPUT_BYTES) return { error: 'Input exceeds the 50KB limit.' };
+
+  var joined = logicalInstructions(raw);
+  var parsed = [];
+  for (var i = 0; i < joined.length; i++) {
+    var parsedRow = parseInstruction(joined[i].text);
+    if (!parsedRow) continue;
+    parsed.push({
+      line: joined[i].startLine,
+      instruction: parsedRow.instruction,
+      args: parsedRow.args,
+      normalized: parsedRow.normalized
+    });
+  }
+
+  if (parsed.length === 0) {
+    return { error: 'No parseable Dockerfile instructions found.' };
+  }
+
+  var findings = [];
+  var runCount = 0;
+  var hasWorkdir = false;
+  var summary = {
+    unpinnedBase: 0,
+    missingWorkdir: 0,
+    multipleRun: 0,
+    addUsage: 0
+  };
+
+  for (var p = 0; p < parsed.length; p++) {
+    var row = parsed[p];
+    if (row.instruction === 'RUN') runCount += 1;
+    if (row.instruction === 'WORKDIR') hasWorkdir = true;
+    if (row.instruction === 'ADD') {
+      summary.addUsage += 1;
+      findings.push({
+        line: row.line,
+        instruction: row.instruction,
+        message: 'ADD instruction detected (informational).'
+      });
+    }
+    if (row.instruction === 'FROM') {
+      var imageRef = extractFromImage(row.args);
+      if (imageRef) {
+        var hasDigest = imageRef.indexOf('@sha256:') !== -1;
+        var hasTag = imageRef.lastIndexOf(':') > imageRef.lastIndexOf('/');
+        var isLatest = /:latest$/i.test(imageRef);
+        if (isLatest || (!hasDigest && !hasTag)) {
+          summary.unpinnedBase += 1;
+          findings.push({
+            line: row.line,
+            instruction: row.instruction,
+            message: 'Base image appears unpinned in this line.'
+          });
+        }
+      }
+    }
+  }
+
+  if (!hasWorkdir) {
+    summary.missingWorkdir = 1;
+    findings.push({ line: '-', instruction: 'WORKDIR', message: 'WORKDIR instruction not present in pasted input.' });
+  }
+  if (runCount > 1) {
+    summary.multipleRun = 1;
+    findings.push({ line: '-', instruction: 'RUN', message: 'Multiple RUN instructions detected.' });
+  }
+
+  return {
+    parsed: parsed,
+    findings: findings,
+    runCount: runCount,
+    hasWorkdir: hasWorkdir,
+    summary: summary,
+    normalizedInstructionBlock: parsed.map(function(r) { return r.normalized; }).join('\n')
+  };
+}
+
+function renderResult(result) {
+  var output = document.getElementById('output');
+  output.innerHTML = '';
+
+  if (result.error) {
+    var cardErr = document.createElement('div');
+    cardErr.className = 'card';
+    var pErr = document.createElement('p');
+    pErr.className = 'error-msg';
+    pErr.textContent = result.error;
+    cardErr.appendChild(pErr);
+    output.appendChild(cardErr);
+    return;
+  }
+
+  var ts = document.createElement('p');
+  ts.className = 'report-timestamp';
+  ts.textContent = 'Generated on: ' + new Date().toLocaleString();
+  output.appendChild(ts);
+
+  var summaryTitle = document.createElement('h2');
+  summaryTitle.textContent = 'Summary';
+  output.appendChild(summaryTitle);
+  var summaryCard = document.createElement('div');
+  summaryCard.className = 'card';
+  var list = document.createElement('ul');
+  var items = [
+    'Parsed instructions: ' + result.parsed.length,
+    'RUN count: ' + result.runCount,
+    'WORKDIR present: ' + (result.hasWorkdir ? 'yes' : 'no'),
+    'Unpinned base image notes: ' + result.summary.unpinnedBase,
+    'ADD usage notes: ' + result.summary.addUsage
+  ];
+  for (var i = 0; i < items.length; i++) {
+    var li = document.createElement('li');
+    li.textContent = items[i];
+    list.appendChild(li);
+  }
+  summaryCard.appendChild(list);
+  output.appendChild(summaryCard);
+
+  var findingsTitle = document.createElement('h2');
+  findingsTitle.textContent = 'Findings';
+  output.appendChild(findingsTitle);
+  var findingsCard = document.createElement('div');
+  findingsCard.className = 'card';
+  if (result.findings.length === 0) {
+    var none = document.createElement('p');
+    none.textContent = 'No informational findings for this input.';
+    findingsCard.appendChild(none);
+  } else {
+    var table = document.createElement('table');
+    var thead = document.createElement('thead');
+    var hr = document.createElement('tr');
+    ['Line', 'Instruction', 'Message'].forEach(function(h) {
+      var th = document.createElement('th');
+      th.textContent = h;
+      hr.appendChild(th);
+    });
+    thead.appendChild(hr);
+    table.appendChild(thead);
+    var tbody = document.createElement('tbody');
+    for (var f = 0; f < result.findings.length; f++) {
+      var tr = document.createElement('tr');
+      var cells = [String(result.findings[f].line), result.findings[f].instruction, result.findings[f].message];
+      for (var c = 0; c < cells.length; c++) {
+        var td = document.createElement('td');
+        td.textContent = cells[c];
+        tr.appendChild(td);
+      }
+      tbody.appendChild(tr);
+    }
+    table.appendChild(tbody);
+    findingsCard.appendChild(table);
+  }
+  output.appendChild(findingsCard);
+
+  var copyTitle = document.createElement('h2');
+  copyTitle.textContent = 'Normalized Instruction Block';
+  output.appendChild(copyTitle);
+  var copyCard = document.createElement('div');
+  copyCard.className = 'card';
+  var pre = document.createElement('pre');
+  pre.className = 'raw-block';
+  pre.textContent = result.normalizedInstructionBlock;
+  copyCard.appendChild(pre);
+  var row = document.createElement('div');
+  row.className = 'copy-row';
+  var btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'copy-btn';
+  btn.textContent = 'Copy Normalized Block';
+  var feedback = document.createElement('span');
+  feedback.className = 'copy-feedback';
+  btn.addEventListener('click', function() {
+    copyTextWithFallback(result.normalizedInstructionBlock).then(function(ok) {
+      feedback.textContent = ok ? 'Copied normalized instruction block.' : 'Copy failed. Please copy manually.';
+    });
+  });
+  row.appendChild(btn);
+  row.appendChild(feedback);
+  copyCard.appendChild(row);
+  output.appendChild(copyCard);
+}
+
+document.getElementById('lintBtn').addEventListener('click', function() {
+  renderResult(lintDockerfile(document.getElementById('dockerInput').value));
+});
+</script>
+
+</body>
+</html>

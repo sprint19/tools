@@ -46,9 +46,9 @@ Tracked work for Sprint19 Tools.
 
 ### DevOps & Logs
 
-- [ ] Dockerfile Linter — flag unpinned base images, missing WORKDIR, and multiple RUN layers
-- [ ] NGINX Config Formatter — pretty-print NGINX config blocks
-- [ ] Rails Log Beautifier — group requests, extract stats, and color-code status results
+- [x] Dockerfile Linter — flag unpinned base images, missing WORKDIR, and multiple RUN layers
+- [x] NGINX Config Formatter — pretty-print NGINX config blocks
+- [x] Rails Log Beautifier — group requests, extract stats, and color-code status results
 
 ### Utilities
 

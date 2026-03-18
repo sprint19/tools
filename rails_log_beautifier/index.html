@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Beautify Rails server logs locally with tolerant request grouping and deterministic output.">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://tools.sprint19.com/rails_log_beautifier/">
+  <meta property="og:title" content="Rails Log Beautifier — Built by Sprint19">
+  <meta property="og:description" content="Group Rails request logs and extract summary fields without runtime inference. Local-only processing.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://tools.sprint19.com/rails_log_beautifier/">
+  <meta property="og:image" content="https://tools.sprint19.com/og-image.png">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <link rel="stylesheet" href="/shared/styles.css">
+  <title>Rails Log Beautifier | Sprint19</title>
+  <style>
+    .error-msg { color: var(--color-error); font-weight: 600; margin: 0; }
+    .notice { color: var(--color-warning); margin: 0; }
+    .copy-row {
+      margin-top: 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .copy-btn {
+      padding: 8px 14px;
+      font-size: 14px;
+      cursor: pointer;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border-input);
+      border-radius: 4px;
+      color: var(--color-text);
+    }
+    .copy-btn:hover { background: var(--color-surface-hover); }
+    .copy-feedback { font-size: 13px; color: var(--color-text-muted); }
+  </style>
+</head>
+<body data-affiliate-cta="true">
+
+<a href="/" class="back-link">&larr; Sprint19 Tools</a>
+<h1>Rails Log Beautifier</h1>
+<p>Paste Rails server logs to group request-like sections and extract high-level stats with tolerant parsing.</p>
+<p class="disclaimer">Be careful when pasting production logs that may contain sensitive data.</p>
+
+<textarea id="logInput" class="tool-input" rows="16" placeholder='Started GET "/users" for 127.0.0.1 at 2026-03-18 10:00:00 +0000&#10;Processing by UsersController#index as HTML&#10;Completed 200 OK in 41.2ms (Views: 10.1ms | ActiveRecord: 4.2ms)'></textarea>
+<button id="beautifyBtn" class="tool-btn">Beautify Logs</button>
+<div id="output"></div>
+
+<footer class="site-footer">
+  <hr>
+  <p>Processed locally in your browser.</p>
+  <p>Built by <a href="https://sprint19.com" target="_blank" rel="noopener noreferrer">Sprint19</a>. Product engineering for startups.</p>
+  <p class="guardrail">This tool reorganizes log text only. It does not confirm incident causes or runtime correctness.</p>
+  <p class="copyright">&copy; 2026 Sprint19. Code licensed under <a href="/LICENSE.md">MIT</a>. Sprint19 name and branding may not be used without permission.</p>
+</footer>
+
+<script src="/shared/utils.js"></script>
+<script>
+var MAX_INPUT_BYTES = 307200;
+
+function copyTextWithFallback(text) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    return navigator.clipboard.writeText(text).then(function() {
+      return true;
+    }).catch(function() {
+      return fallbackCopy(text);
+    });
+  }
+  return Promise.resolve(fallbackCopy(text));
+}
+
+function fallbackCopy(text) {
+  var ta = document.createElement('textarea');
+  ta.value = text;
+  ta.setAttribute('readonly', '');
+  ta.style.position = 'fixed';
+  ta.style.opacity = '0';
+  document.body.appendChild(ta);
+  ta.focus();
+  ta.select();
+  var copied = false;
+  try {
+    copied = document.execCommand('copy');
+  } catch (e) {
+    copied = false;
+  }
+  document.body.removeChild(ta);
+  return copied;
+}
+
+function parseStarted(line) {
+  var m = line.match(/^Started\s+([A-Z]+)\s+"([^"]+)"/);
+  if (!m) return null;
+  return { method: m[1], path: m[2] };
+}
+
+function parseCompleted(line) {
+  var m = line.match(/^Completed\s+(\d{3})\s+.*?\s+in\s+([\d.]+)ms(?:\s+\(Views:\s*([\d.]+)ms\s+\|\s+ActiveRecord:\s*([\d.]+)ms\))?/);
+  if (!m) return null;
+  return {
+    status: m[1],
+    totalMs: m[2],
+    viewMs: m[3] || '',
+    dbMs: m[4] || ''
+  };
+}
+
+function createRequest(partial) {
+  return {
+    method: partial && partial.method ? partial.method : 'UNKNOWN',
+    path: partial && partial.path ? partial.path : 'UNKNOWN',
+    status: partial && partial.status ? partial.status : '',
+    totalMs: partial && partial.totalMs ? partial.totalMs : '',
+    viewMs: partial && partial.viewMs ? partial.viewMs : '',
+    dbMs: partial && partial.dbMs ? partial.dbMs : '',
+    lines: [],
+    complete: false
+  };
+}
+
+function parseRailsLogs(raw) {
+  if (!raw || !raw.trim()) return { error: 'No Rails log input provided.' };
+  if (raw.length > MAX_INPUT_BYTES) return { error: 'Input exceeds the 300KB limit.' };
+
+  var lines = raw.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
+  var requests = [];
+  var unassigned = [];
+  var notes = [];
+  var active = null;
+
+  for (var i = 0; i < lines.length; i++) {
+    var line = lines[i];
+    if (!line.trim()) continue;
+
+    var started = parseStarted(line.trim());
+    if (started) {
+      if (active) {
+        requests.push(active);
+      }
+      active = createRequest(started);
+      active.lines.push(line);
+      continue;
+    }
+
+    var completed = parseCompleted(line.trim());
+    if (completed) {
+      if (!active) {
+        var standalone = createRequest(completed);
+        standalone.lines.push(line);
+        standalone.complete = true;
+        requests.push(standalone);
+      } else {
+        active.status = completed.status;
+        active.totalMs = completed.totalMs;
+        active.viewMs = completed.viewMs;
+        active.dbMs = completed.dbMs;
+        active.lines.push(line);
+        active.complete = true;
+        requests.push(active);
+        active = null;
+      }
+      continue;
+    }
+
+    if (active) active.lines.push(line);
+    else unassigned.push(line);
+  }
+
+  if (active) requests.push(active);
+
+  if (requests.length === 0 && unassigned.length === 0) {
+    return { error: 'No parseable log lines found.' };
+  }
+
+  if (unassigned.length > 0) {
+    notes.push('Some lines did not match request markers and were placed in Unassigned Lines.');
+  }
+
+  var statusCounts = { '2xx': 0, '3xx': 0, '4xx': 0, '5xx': 0 };
+  for (var r = 0; r < requests.length; r++) {
+    var status = requests[r].status;
+    if (!status) continue;
+    var bucket = status.charAt(0) + 'xx';
+    if (statusCounts[bucket] !== undefined) statusCounts[bucket] += 1;
+  }
+
+  var groupedLines = [];
+  for (var g = 0; g < requests.length; g++) {
+    var req = requests[g];
+    groupedLines.push('=== Request ' + (g + 1) + ': ' + req.method + ' ' + req.path + ' ===');
+    for (var l = 0; l < req.lines.length; l++) groupedLines.push(req.lines[l]);
+    groupedLines.push('');
+  }
+  if (unassigned.length > 0) {
+    groupedLines.push('=== Unassigned Lines ===');
+    for (var u = 0; u < unassigned.length; u++) groupedLines.push(unassigned[u]);
+  }
+
+  return {
+    requests: requests,
+    unassigned: unassigned,
+    notes: notes,
+    groupedText: groupedLines.join('\n'),
+    statusCounts: statusCounts
+  };
+}
+
+function renderResult(result) {
+  var output = document.getElementById('output');
+  output.innerHTML = '';
+
+  if (result.error) {
+    var eCard = document.createElement('div');
+    eCard.className = 'card';
+    var eLine = document.createElement('p');
+    eLine.className = 'error-msg';
+    eLine.textContent = result.error;
+    eCard.appendChild(eLine);
+    output.appendChild(eCard);
+    return;
+  }
+
+  var ts = document.createElement('p');
+  ts.className = 'report-timestamp';
+  ts.textContent = 'Generated on: ' + new Date().toLocaleString();
+  output.appendChild(ts);
+
+  var sTitle = document.createElement('h2');
+  sTitle.textContent = 'Request Summary';
+  output.appendChild(sTitle);
+  var sCard = document.createElement('div');
+  sCard.className = 'card';
+  if (result.requests.length === 0) {
+    var noReq = document.createElement('p');
+    noReq.textContent = 'No request groups detected.';
+    sCard.appendChild(noReq);
+  } else {
+    var table = document.createElement('table');
+    var thead = document.createElement('thead');
+    var hr = document.createElement('tr');
+    ['#', 'Method', 'Path', 'Status', 'Total ms', 'View ms', 'DB ms'].forEach(function(h) {
+      var th = document.createElement('th');
+      th.textContent = h;
+      hr.appendChild(th);
+    });
+    thead.appendChild(hr);
+    table.appendChild(thead);
+    var tbody = document.createElement('tbody');
+    for (var i = 0; i < result.requests.length; i++) {
+      var r = result.requests[i];
+      var tr = document.createElement('tr');
+      var vals = [String(i + 1), r.method, r.path, r.status || '—', r.totalMs || '—', r.viewMs || '—', r.dbMs || '—'];
+      for (var c = 0; c < vals.length; c++) {
+        var td = document.createElement('td');
+        td.textContent = vals[c];
+        tr.appendChild(td);
+      }
+      tbody.appendChild(tr);
+    }
+    table.appendChild(tbody);
+    sCard.appendChild(table);
+  }
+  output.appendChild(sCard);
+
+  var bucketTitle = document.createElement('h2');
+  bucketTitle.textContent = 'Status Buckets';
+  output.appendChild(bucketTitle);
+  var bucketCard = document.createElement('div');
+  bucketCard.className = 'card';
+  var ul = document.createElement('ul');
+  ['2xx', '3xx', '4xx', '5xx'].forEach(function(bucket) {
+    var li = document.createElement('li');
+    li.textContent = bucket + ': ' + result.statusCounts[bucket];
+    ul.appendChild(li);
+  });
+  bucketCard.appendChild(ul);
+  output.appendChild(bucketCard);
+
+  if (result.notes.length > 0) {
+    var nTitle = document.createElement('h2');
+    nTitle.textContent = 'Informational Notes';
+    output.appendChild(nTitle);
+    var nCard = document.createElement('div');
+    nCard.className = 'card';
+    var nList = document.createElement('ul');
+    for (var n = 0; n < result.notes.length; n++) {
+      var li = document.createElement('li');
+      var p = document.createElement('p');
+      p.className = 'notice';
+      p.textContent = result.notes[n];
+      li.appendChild(p);
+      nList.appendChild(li);
+    }
+    nCard.appendChild(nList);
+    output.appendChild(nCard);
+  }
+
+  var outTitle = document.createElement('h2');
+  outTitle.textContent = 'Grouped Output';
+  output.appendChild(outTitle);
+  var outCard = document.createElement('div');
+  outCard.className = 'card';
+  var pre = document.createElement('pre');
+  pre.className = 'raw-block';
+  pre.textContent = result.groupedText;
+  outCard.appendChild(pre);
+  var row = document.createElement('div');
+  row.className = 'copy-row';
+  var btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'copy-btn';
+  btn.textContent = 'Copy Grouped Output';
+  var feedback = document.createElement('span');
+  feedback.className = 'copy-feedback';
+  btn.addEventListener('click', function() {
+    copyTextWithFallback(result.groupedText).then(function(ok) {
+      feedback.textContent = ok ? 'Copied grouped output.' : 'Copy failed. Please copy manually.';
+    });
+  });
+  row.appendChild(btn);
+  row.appendChild(feedback);
+  outCard.appendChild(row);
+  output.appendChild(outCard);
+}
+
+document.getElementById('beautifyBtn').addEventListener('click', function() {
+  renderResult(parseRailsLogs(document.getElementById('logInput').value));
+});
+</script>
+
+</body>
+</html>
