@@ -33,9 +33,9 @@ Tracked work for Sprint19 Tools.
 
 ### HTTP & Headers
 
-- [ ] HTTP Header Analyzer — structured breakdown of Cache-Control, CSP, CORS, HSTS, and security headers
-- [ ] CSP Policy Parser — break a Content-Security-Policy header into a directives table
-- [ ] Webhook Viewer — formatted display, structure stats, and event detection for JSON webhook payloads
+- [x] HTTP Header Analyzer — structured breakdown of Cache-Control, CSP, CORS, HSTS, and security headers
+- [x] CSP Policy Parser — break a Content-Security-Policy header into a directives table
+- [x] Webhook Viewer — formatted display, structure stats, and event detection for JSON webhook payloads
 
 ### Data & Config
 

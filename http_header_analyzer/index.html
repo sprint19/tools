@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Analyze pasted HTTP response headers locally with deterministic parsing, duplicate-header preservation, and structured output. No data leaves your browser.">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://tools.sprint19.com/http_header_analyzer/">
+  <meta property="og:title" content="HTTP Header Analyzer — Built by Sprint19">
+  <meta property="og:description" content="Parse and format HTTP response headers locally with neutral informational highlights and copy-ready output.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://tools.sprint19.com/http_header_analyzer/">
+  <meta property="og:image" content="https://tools.sprint19.com/og-image.png">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <link rel="stylesheet" href="/shared/styles.css">
+  <title>HTTP Header Analyzer | Sprint19</title>
+  <style>
+    .error-msg { color: var(--color-error); font-weight: 600; margin: 0; }
+    .notice { color: var(--color-warning); margin: 0; }
+    .present { color: var(--color-success); font-weight: 600; }
+    .absent { color: var(--color-text-muted); font-style: italic; }
+    .copy-row {
+      margin-top: 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .copy-btn {
+      padding: 8px 14px;
+      font-size: 14px;
+      cursor: pointer;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border-input);
+      border-radius: 4px;
+      color: var(--color-text);
+    }
+    .copy-btn:hover { background: var(--color-surface-hover); }
+    .copy-feedback { font-size: 13px; color: var(--color-text-muted); }
+  </style>
+</head>
+<body data-affiliate-cta="true">
+
+<a href="/" class="back-link">&larr; Sprint19 Tools</a>
+<h1>HTTP Header Analyzer</h1>
+<p>Paste HTTP response headers for deterministic parsing and structured viewing. Duplicate headers are preserved as separate rows.</p>
+
+<textarea id="headerInput" class="tool-input" rows="10" placeholder="HTTP/1.1 200 OK&#10;content-type: application/json&#10;set-cookie: a=1&#10;set-cookie: b=2"></textarea>
+<br>
+<button id="analyzeBtn" class="tool-btn">Analyze Headers</button>
+
+<div id="output"></div>
+
+<footer class="site-footer">
+  <hr>
+  <p>Analyzed locally in your browser.</p>
+  <p>Built by <a href="https://sprint19.com" target="_blank" rel="noopener noreferrer">Sprint19</a>. Product engineering for startups.</p>
+  <p class="guardrail">This tool parses header text only. It does not verify live endpoint behavior or perform security assessment.</p>
+  <p class="copyright">&copy; 2026 Sprint19. Code licensed under <a href="/LICENSE.md">MIT</a>. Sprint19 name and branding may not be used without permission.</p>
+</footer>
+
+<script>
+var MAX_INPUT_BYTES = 51200;
+var KNOWN_HEADERS = [
+  'cache-control',
+  'content-security-policy',
+  'strict-transport-security',
+  'x-frame-options',
+  'x-content-type-options',
+  'referrer-policy',
+  'access-control-allow-origin',
+  'access-control-allow-methods',
+  'access-control-allow-headers'
+];
+
+function copyTextWithFallback(text) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    return navigator.clipboard.writeText(text).then(function() {
+      return true;
+    }).catch(function() {
+      return fallbackCopy(text);
+    });
+  }
+  return Promise.resolve(fallbackCopy(text));
+}
+
+function fallbackCopy(text) {
+  var ta = document.createElement('textarea');
+  ta.value = text;
+  ta.setAttribute('readonly', '');
+  ta.style.position = 'fixed';
+  ta.style.opacity = '0';
+  document.body.appendChild(ta);
+  ta.focus();
+  ta.select();
+  var copied = false;
+  try {
+    copied = document.execCommand('copy');
+  } catch (e) {
+    copied = false;
+  }
+  document.body.removeChild(ta);
+  return copied;
+}
+
+function unfoldHeaderLines(raw) {
+  var normalized = raw.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  var lines = normalized.split('\n');
+  var out = [];
+
+  for (var i = 0; i < lines.length; i++) {
+    var line = lines[i];
+    if (!line) continue;
+    if (/^\s/.test(line) && out.length > 0) {
+      out[out.length - 1] += ' ' + line.trim();
+    } else {
+      out.push(line);
+    }
+  }
+
+  return out;
+}
+
+function parseHeaders(raw) {
+  if (!raw || !raw.trim()) return { error: 'No header input provided.' };
+  if (raw.length > MAX_INPUT_BYTES) return { error: 'Input exceeds the 50KB limit.' };
+
+  var lines = unfoldHeaderLines(raw);
+  var entries = [];
+  for (var i = 0; i < lines.length; i++) {
+    var line = lines[i];
+    if (/^HTTP\/[\d.]+\s+\d+/i.test(line.trim())) continue;
+
+    var idx = line.indexOf(':');
+    if (idx <= 0) continue;
+
+    var originalName = line.slice(0, idx).trim();
+    var value = line.slice(idx + 1).trim();
+    if (!originalName) continue;
+
+    entries.push({
+      nameOriginal: originalName,
+      nameLower: originalName.toLowerCase(),
+      value: value
+    });
+  }
+
+  if (entries.length === 0) {
+    return { error: 'No valid header lines found. Expected "Name: Value" format.' };
+  }
+
+  var counts = {};
+  for (var e = 0; e < entries.length; e++) {
+    var key = entries[e].nameLower;
+    counts[key] = (counts[key] || 0) + 1;
+  }
+
+  var notices = [];
+  var knownRows = [];
+  for (var k = 0; k < KNOWN_HEADERS.length; k++) {
+    var known = KNOWN_HEADERS[k];
+    var count = counts[known] || 0;
+    var firstValue = '';
+    if (count > 0) {
+      for (var p = 0; p < entries.length; p++) {
+        if (entries[p].nameLower === known) {
+          firstValue = entries[p].value;
+          break;
+        }
+      }
+    } else {
+      notices.push(known + ': Header not present in pasted input.');
+    }
+    knownRows.push({
+      header: known,
+      count: count,
+      sample: firstValue
+    });
+  }
+
+  var normalizedBlock = entries.map(function(entry) {
+    return entry.nameOriginal + ': ' + entry.value;
+  }).join('\n');
+
+  return {
+    entries: entries,
+    knownRows: knownRows,
+    notices: notices,
+    normalizedBlock: normalizedBlock
+  };
+}
+
+function renderResult(result) {
+  var output = document.getElementById('output');
+  output.innerHTML = '';
+
+  if (result.error) {
+    var errorCard = document.createElement('div');
+    errorCard.className = 'card';
+    var err = document.createElement('p');
+    err.className = 'error-msg';
+    err.textContent = result.error;
+    errorCard.appendChild(err);
+    output.appendChild(errorCard);
+    return;
+  }
+
+  var generated = document.createElement('p');
+  generated.className = 'report-timestamp';
+  generated.textContent = 'Generated on: ' + new Date().toLocaleString();
+  output.appendChild(generated);
+
+  var summaryTitle = document.createElement('h2');
+  summaryTitle.textContent = 'Summary of Findings';
+  output.appendChild(summaryTitle);
+
+  var summaryCard = document.createElement('div');
+  summaryCard.className = 'card';
+  var summaryList = document.createElement('ul');
+  var li1 = document.createElement('li');
+  li1.textContent = result.entries.length + ' header row(s) parsed.';
+  var duplicateCount = result.entries.length - Object.keys((function() {
+    var m = {};
+    for (var i = 0; i < result.entries.length; i++) m[result.entries[i].nameLower] = true;
+    return m;
+  })()).length;
+  var li2 = document.createElement('li');
+  li2.textContent = duplicateCount > 0
+    ? 'Repeated header rows detected and preserved in order.'
+    : 'No repeated header rows detected.';
+  summaryList.appendChild(li1);
+  summaryList.appendChild(li2);
+  summaryCard.appendChild(summaryList);
+  output.appendChild(summaryCard);
+
+  var tableTitle = document.createElement('h2');
+  tableTitle.textContent = 'Parsed Header Rows';
+  output.appendChild(tableTitle);
+  var tableCard = document.createElement('div');
+  tableCard.className = 'card';
+  var table = document.createElement('table');
+  var thead = document.createElement('thead');
+  var hr = document.createElement('tr');
+  ['#', 'Header Name', 'Value'].forEach(function(label) {
+    var th = document.createElement('th');
+    th.textContent = label;
+    hr.appendChild(th);
+  });
+  thead.appendChild(hr);
+  table.appendChild(thead);
+  var tbody = document.createElement('tbody');
+  for (var r = 0; r < result.entries.length; r++) {
+    var tr = document.createElement('tr');
+    var tdIdx = document.createElement('td');
+    tdIdx.textContent = String(r + 1);
+    var tdName = document.createElement('td');
+    tdName.textContent = result.entries[r].nameOriginal;
+    var tdValue = document.createElement('td');
+    tdValue.textContent = result.entries[r].value;
+    tr.appendChild(tdIdx);
+    tr.appendChild(tdName);
+    tr.appendChild(tdValue);
+    tbody.appendChild(tr);
+  }
+  table.appendChild(tbody);
+  tableCard.appendChild(table);
+  output.appendChild(tableCard);
+
+  var knownTitle = document.createElement('h2');
+  knownTitle.textContent = 'Common Header Highlights';
+  output.appendChild(knownTitle);
+  var knownCard = document.createElement('div');
+  knownCard.className = 'card';
+  var knownTable = document.createElement('table');
+  var knownHead = document.createElement('thead');
+  var knownHeadRow = document.createElement('tr');
+  ['Header', 'Status', 'Count', 'Sample Value'].forEach(function(label) {
+    var th = document.createElement('th');
+    th.textContent = label;
+    knownHeadRow.appendChild(th);
+  });
+  knownHead.appendChild(knownHeadRow);
+  knownTable.appendChild(knownHead);
+  var knownBody = document.createElement('tbody');
+  for (var h = 0; h < result.knownRows.length; h++) {
+    var row = result.knownRows[h];
+    var trKnown = document.createElement('tr');
+    var tdHeader = document.createElement('td');
+    tdHeader.textContent = row.header;
+    var tdStatus = document.createElement('td');
+    if (row.count > 0) {
+      var s = document.createElement('span');
+      s.className = 'present';
+      s.textContent = 'Present';
+      tdStatus.appendChild(s);
+    } else {
+      var a = document.createElement('span');
+      a.className = 'absent';
+      a.textContent = 'Not present';
+      tdStatus.appendChild(a);
+    }
+    var tdCount = document.createElement('td');
+    tdCount.textContent = String(row.count);
+    var tdSample = document.createElement('td');
+    tdSample.textContent = row.sample || '—';
+    trKnown.appendChild(tdHeader);
+    trKnown.appendChild(tdStatus);
+    trKnown.appendChild(tdCount);
+    trKnown.appendChild(tdSample);
+    knownBody.appendChild(trKnown);
+  }
+  knownTable.appendChild(knownBody);
+  knownCard.appendChild(knownTable);
+  output.appendChild(knownCard);
+
+  if (result.notices.length > 0) {
+    var noticeTitle = document.createElement('h2');
+    noticeTitle.textContent = 'Informational Notes';
+    output.appendChild(noticeTitle);
+    var noticeCard = document.createElement('div');
+    noticeCard.className = 'card';
+    var noteList = document.createElement('ul');
+    for (var n = 0; n < result.notices.length; n++) {
+      var liNote = document.createElement('li');
+      var pNote = document.createElement('p');
+      pNote.className = 'notice';
+      pNote.textContent = result.notices[n];
+      liNote.appendChild(pNote);
+      noteList.appendChild(liNote);
+    }
+    noticeCard.appendChild(noteList);
+    output.appendChild(noticeCard);
+  }
+
+  var copyTitle = document.createElement('h2');
+  copyTitle.textContent = 'Normalized Header Block';
+  output.appendChild(copyTitle);
+  var copyCard = document.createElement('div');
+  copyCard.className = 'card';
+  var pre = document.createElement('pre');
+  pre.className = 'raw-block';
+  pre.textContent = result.normalizedBlock;
+  copyCard.appendChild(pre);
+  var copyRow = document.createElement('div');
+  copyRow.className = 'copy-row';
+  var copyBtn = document.createElement('button');
+  copyBtn.type = 'button';
+  copyBtn.className = 'copy-btn';
+  copyBtn.textContent = 'Copy Normalized Headers';
+  var copyFeedback = document.createElement('span');
+  copyFeedback.className = 'copy-feedback';
+  copyFeedback.textContent = '';
+  copyBtn.addEventListener('click', function() {
+    copyTextWithFallback(result.normalizedBlock).then(function(success) {
+      copyFeedback.textContent = success ? 'Copied normalized header block.' : 'Copy failed. Please copy manually.';
+    });
+  });
+  copyRow.appendChild(copyBtn);
+  copyRow.appendChild(copyFeedback);
+  copyCard.appendChild(copyRow);
+  output.appendChild(copyCard);
+
+  var disclaimer = document.createElement('p');
+  disclaimer.className = 'disclaimer';
+  disclaimer.textContent = 'Interpretation only. Parsed output reflects pasted text and does not confirm server behavior.';
+  output.appendChild(disclaimer);
+}
+
+document.getElementById('analyzeBtn').addEventListener('click', function() {
+  var input = document.getElementById('headerInput').value;
+  renderResult(parseHeaders(input));
+});
+</script>
+
+</body>
+</html>

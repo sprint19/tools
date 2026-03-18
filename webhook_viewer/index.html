@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="View and format webhook JSON payloads locally with pretty output and light structure stats. No data leaves your browser.">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://tools.sprint19.com/webhook_viewer/">
+  <meta property="og:title" content="Webhook Viewer — Built by Sprint19">
+  <meta property="og:description" content="Pretty-print JSON webhook payloads and inspect basic structure stats with local-only deterministic parsing.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://tools.sprint19.com/webhook_viewer/">
+  <meta property="og:image" content="https://tools.sprint19.com/og-image.png">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <link rel="stylesheet" href="/shared/styles.css">
+  <title>Webhook Viewer | Sprint19</title>
+  <style>
+    .error-msg { color: var(--color-error); font-weight: 600; margin: 0; }
+    .notice { color: var(--color-warning); margin: 0; }
+    .copy-row {
+      margin-top: 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .copy-btn {
+      padding: 8px 14px;
+      font-size: 14px;
+      cursor: pointer;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border-input);
+      border-radius: 4px;
+      color: var(--color-text);
+    }
+    .copy-btn:hover { background: var(--color-surface-hover); }
+    .copy-feedback { font-size: 13px; color: var(--color-text-muted); }
+  </style>
+</head>
+<body data-affiliate-cta="true">
+
+<a href="/" class="back-link">&larr; Sprint19 Tools</a>
+<h1>Webhook Viewer</h1>
+<p>Paste a JSON webhook payload to pretty-print it and view lightweight structural stats.</p>
+
+<textarea id="jsonInput" class="tool-input" rows="11" placeholder='{"event":"invoice.paid","id":"evt_123","data":{"object":{"id":"in_123","status":"paid"}}}'></textarea>
+<br>
+<button id="viewBtn" class="tool-btn">View Payload</button>
+
+<div id="output"></div>
+
+<footer class="site-footer">
+  <hr>
+  <p>Parsed locally in your browser.</p>
+  <p>Built by <a href="https://sprint19.com" target="_blank" rel="noopener noreferrer">Sprint19</a>. Product engineering for startups.</p>
+  <p class="guardrail">This tool formats JSON payload text only. It does not validate sender authenticity or execute events.</p>
+  <p class="copyright">&copy; 2026 Sprint19. Code licensed under <a href="/LICENSE.md">MIT</a>. Sprint19 name and branding may not be used without permission.</p>
+</footer>
+
+<script>
+var MAX_INPUT_BYTES = 102400;
+var MAX_DEPTH = 20;
+var EVENT_KEYS = ['event', 'type', 'action'];
+
+function copyTextWithFallback(text) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    return navigator.clipboard.writeText(text).then(function() {
+      return true;
+    }).catch(function() {
+      return fallbackCopy(text);
+    });
+  }
+  return Promise.resolve(fallbackCopy(text));
+}
+
+function fallbackCopy(text) {
+  var ta = document.createElement('textarea');
+  ta.value = text;
+  ta.setAttribute('readonly', '');
+  ta.style.position = 'fixed';
+  ta.style.opacity = '0';
+  document.body.appendChild(ta);
+  ta.focus();
+  ta.select();
+  var copied = false;
+  try {
+    copied = document.execCommand('copy');
+  } catch (e) {
+    copied = false;
+  }
+  document.body.removeChild(ta);
+  return copied;
+}
+
+function collectStats(value, depth, stats) {
+  if (depth > MAX_DEPTH) {
+    stats.truncated = true;
+    return;
+  }
+  if (Array.isArray(value)) {
+    stats.arrayCount += 1;
+    if (depth > stats.maxObservedDepth) stats.maxObservedDepth = depth;
+    for (var i = 0; i < value.length; i++) {
+      collectStats(value[i], depth + 1, stats);
+    }
+    return;
+  }
+  if (value && typeof value === 'object') {
+    stats.objectCount += 1;
+    if (depth > stats.maxObservedDepth) stats.maxObservedDepth = depth;
+    var keys = Object.keys(value);
+    for (var k = 0; k < keys.length; k++) {
+      collectStats(value[keys[k]], depth + 1, stats);
+    }
+    return;
+  }
+  stats.primitiveCount += 1;
+  if (depth > stats.maxObservedDepth) stats.maxObservedDepth = depth;
+}
+
+function parseWebhookJson(raw) {
+  if (!raw || !raw.trim()) return { error: 'No payload provided.' };
+  if (raw.length > MAX_INPUT_BYTES) return { error: 'Input exceeds the 100KB limit.' };
+
+  var parsed;
+  try {
+    parsed = JSON.parse(raw);
+  } catch (err) {
+    return { error: 'Invalid JSON payload. This tool accepts JSON only in v1.' };
+  }
+
+  var pretty = JSON.stringify(parsed, null, 2);
+  var notices = [];
+
+  notices.push('JSON-only viewer: form-data, URL-encoded bodies, and signature-header analysis are out of scope in v1.');
+
+  var stats = {
+    objectCount: 0,
+    arrayCount: 0,
+    primitiveCount: 0,
+    maxObservedDepth: 0,
+    truncated: false
+  };
+  collectStats(parsed, 1, stats);
+  if (stats.truncated) {
+    notices.push('Structure stats traversal reached depth limit (20) and was truncated.');
+  }
+
+  var topLevel = (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) ? parsed : null;
+  var eventHints = [];
+  if (topLevel) {
+    for (var i = 0; i < EVENT_KEYS.length; i++) {
+      var key = EVENT_KEYS[i];
+      if (Object.prototype.hasOwnProperty.call(topLevel, key)) {
+        eventHints.push({
+          key: key,
+          value: topLevel[key]
+        });
+      }
+    }
+  }
+
+  return {
+    parsed: parsed,
+    pretty: pretty,
+    topLevelKeyCount: topLevel ? Object.keys(topLevel).length : 0,
+    notices: notices,
+    eventHints: eventHints,
+    stats: stats
+  };
+}
+
+function valuePreview(value) {
+  if (typeof value === 'string') return value;
+  try {
+    return JSON.stringify(value);
+  } catch (e) {
+    return String(value);
+  }
+}
+
+function renderResult(result) {
+  var output = document.getElementById('output');
+  output.innerHTML = '';
+
+  if (result.error) {
+    var errorCard = document.createElement('div');
+    errorCard.className = 'card';
+    var err = document.createElement('p');
+    err.className = 'error-msg';
+    err.textContent = result.error;
+    errorCard.appendChild(err);
+    output.appendChild(errorCard);
+    return;
+  }
+
+  var generated = document.createElement('p');
+  generated.className = 'report-timestamp';
+  generated.textContent = 'Generated on: ' + new Date().toLocaleString();
+  output.appendChild(generated);
+
+  var statsTitle = document.createElement('h2');
+  statsTitle.textContent = 'Structure Stats';
+  output.appendChild(statsTitle);
+  var statsCard = document.createElement('div');
+  statsCard.className = 'card';
+  var statsList = document.createElement('ul');
+  var s1 = document.createElement('li');
+  s1.textContent = 'Top-level key count: ' + result.topLevelKeyCount;
+  var s2 = document.createElement('li');
+  s2.textContent = 'Objects: ' + result.stats.objectCount + ', Arrays: ' + result.stats.arrayCount + ', Primitive values: ' + result.stats.primitiveCount;
+  var s3 = document.createElement('li');
+  s3.textContent = 'Observed depth: ' + result.stats.maxObservedDepth + (result.stats.truncated ? ' (truncated at depth 20)' : '');
+  statsList.appendChild(s1);
+  statsList.appendChild(s2);
+  statsList.appendChild(s3);
+  statsCard.appendChild(statsList);
+  output.appendChild(statsCard);
+
+  var hintsTitle = document.createElement('h2');
+  hintsTitle.textContent = 'Top-Level Event-Style Keys';
+  output.appendChild(hintsTitle);
+  var hintsCard = document.createElement('div');
+  hintsCard.className = 'card';
+  if (result.eventHints.length === 0) {
+    var none = document.createElement('p');
+    none.textContent = 'No top-level event-style keys detected (event, type, action).';
+    hintsCard.appendChild(none);
+  } else {
+    var hintList = document.createElement('ul');
+    for (var h = 0; h < result.eventHints.length; h++) {
+      var li = document.createElement('li');
+      li.textContent = result.eventHints[h].key + ': ' + valuePreview(result.eventHints[h].value);
+      hintList.appendChild(li);
+    }
+    hintsCard.appendChild(hintList);
+  }
+  output.appendChild(hintsCard);
+
+  var prettyTitle = document.createElement('h2');
+  prettyTitle.textContent = 'Pretty JSON Output';
+  output.appendChild(prettyTitle);
+  var prettyCard = document.createElement('div');
+  prettyCard.className = 'card';
+  var pre = document.createElement('pre');
+  pre.className = 'raw-block';
+  pre.textContent = result.pretty;
+  prettyCard.appendChild(pre);
+  var copyRow = document.createElement('div');
+  copyRow.className = 'copy-row';
+  var copyBtn = document.createElement('button');
+  copyBtn.type = 'button';
+  copyBtn.className = 'copy-btn';
+  copyBtn.textContent = 'Copy Pretty JSON';
+  var feedback = document.createElement('span');
+  feedback.className = 'copy-feedback';
+  feedback.textContent = '';
+  copyBtn.addEventListener('click', function() {
+    copyTextWithFallback(result.pretty).then(function(success) {
+      feedback.textContent = success ? 'Copied pretty JSON output.' : 'Copy failed. Please copy manually.';
+    });
+  });
+  copyRow.appendChild(copyBtn);
+  copyRow.appendChild(feedback);
+  prettyCard.appendChild(copyRow);
+  output.appendChild(prettyCard);
+
+  if (result.notices.length > 0) {
+    var noticesTitle = document.createElement('h2');
+    noticesTitle.textContent = 'Informational Notes';
+    output.appendChild(noticesTitle);
+    var noticesCard = document.createElement('div');
+    noticesCard.className = 'card';
+    var noteList = document.createElement('ul');
+    for (var n = 0; n < result.notices.length; n++) {
+      var noteLi = document.createElement('li');
+      var noteP = document.createElement('p');
+      noteP.className = 'notice';
+      noteP.textContent = result.notices[n];
+      noteLi.appendChild(noteP);
+      noteList.appendChild(noteLi);
+    }
+    noticesCard.appendChild(noteList);
+    output.appendChild(noticesCard);
+  }
+
+  var disclaimer = document.createElement('p');
+  disclaimer.className = 'disclaimer';
+  disclaimer.textContent = 'Interpretation only. This viewer formats JSON payload text and does not infer provider behavior.';
+  output.appendChild(disclaimer);
+}
+
+document.getElementById('viewBtn').addEventListener('click', function() {
+  var raw = document.getElementById('jsonInput').value;
+  renderResult(parseWebhookJson(raw));
+});
+</script>
+
+</body>
+</html>

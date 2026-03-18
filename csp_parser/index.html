@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Parse Content-Security-Policy text locally in your browser, with directive tables and normalized output. No data leaves your browser.">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://tools.sprint19.com/csp_parser/">
+  <meta property="og:title" content="CSP Policy Parser — Built by Sprint19">
+  <meta property="og:description" content="Parse CSP strings into directive rows and copy-ready normalized output with deterministic local-only behavior.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://tools.sprint19.com/csp_parser/">
+  <meta property="og:image" content="https://tools.sprint19.com/og-image.png">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <link rel="stylesheet" href="/shared/styles.css">
+  <title>CSP Policy Parser | Sprint19</title>
+  <style>
+    .error-msg { color: var(--color-error); font-weight: 600; margin: 0; }
+    .notice { color: var(--color-warning); margin: 0; }
+    .status-chip {
+      display: inline-block;
+      padding: 4px 10px;
+      border: 1px solid var(--color-border-input);
+      border-radius: 999px;
+      font-size: 12px;
+      background: var(--color-surface);
+      color: var(--color-text);
+    }
+    .copy-row {
+      margin-top: 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .copy-btn {
+      padding: 8px 14px;
+      font-size: 14px;
+      cursor: pointer;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border-input);
+      border-radius: 4px;
+      color: var(--color-text);
+    }
+    .copy-btn:hover { background: var(--color-surface-hover); }
+    .copy-feedback { font-size: 13px; color: var(--color-text-muted); }
+  </style>
+</head>
+<body data-affiliate-cta="true">
+
+<a href="/" class="back-link">&larr; Sprint19 Tools</a>
+<h1>CSP Policy Parser</h1>
+<p>Paste a CSP value or full CSP header line for deterministic parsing and normalized output.</p>
+
+<textarea id="cspInput" class="tool-input" rows="8" placeholder="Content-Security-Policy: default-src 'self'; script-src 'self' https://cdn.example.com"></textarea>
+<br>
+<button id="parseBtn" class="tool-btn">Parse Policy</button>
+
+<div id="output"></div>
+
+<footer class="site-footer">
+  <hr>
+  <p>Parsed locally in your browser.</p>
+  <p>Built by <a href="https://sprint19.com" target="_blank" rel="noopener noreferrer">Sprint19</a>. Product engineering for startups.</p>
+  <p class="guardrail">This tool parses CSP text only. It does not validate browser enforcement outcomes or perform security assessment.</p>
+  <p class="copyright">&copy; 2026 Sprint19. Code licensed under <a href="/LICENSE.md">MIT</a>. Sprint19 name and branding may not be used without permission.</p>
+</footer>
+
+<script>
+var MAX_INPUT_BYTES = 20480;
+
+function copyTextWithFallback(text) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    return navigator.clipboard.writeText(text).then(function() {
+      return true;
+    }).catch(function() {
+      return fallbackCopy(text);
+    });
+  }
+  return Promise.resolve(fallbackCopy(text));
+}
+
+function fallbackCopy(text) {
+  var ta = document.createElement('textarea');
+  ta.value = text;
+  ta.setAttribute('readonly', '');
+  ta.style.position = 'fixed';
+  ta.style.opacity = '0';
+  document.body.appendChild(ta);
+  ta.focus();
+  ta.select();
+  var copied = false;
+  try {
+    copied = document.execCommand('copy');
+  } catch (e) {
+    copied = false;
+  }
+  document.body.removeChild(ta);
+  return copied;
+}
+
+function normalizeInputToPolicy(raw) {
+  var trimmed = raw.trim();
+  var isReportOnly = false;
+  var policy = trimmed;
+
+  var reportOnlyMatch = trimmed.match(/^content-security-policy-report-only\s*:\s*(.*)$/i);
+  if (reportOnlyMatch) {
+    isReportOnly = true;
+    policy = reportOnlyMatch[1].trim();
+    return { policy: policy, isReportOnly: isReportOnly };
+  }
+
+  var cspMatch = trimmed.match(/^content-security-policy\s*:\s*(.*)$/i);
+  if (cspMatch) {
+    policy = cspMatch[1].trim();
+  }
+
+  return { policy: policy, isReportOnly: isReportOnly };
+}
+
+function parseCsp(raw) {
+  if (!raw || !raw.trim()) return { error: 'No CSP input provided.' };
+  if (raw.length > MAX_INPUT_BYTES) return { error: 'Input exceeds the 20KB limit.' };
+
+  var normalized = normalizeInputToPolicy(raw);
+  var policy = normalized.policy;
+  if (!policy) return { error: 'No policy value found after normalization.' };
+
+  var segments = policy.split(';');
+  var rows = [];
+  var notices = [];
+  var directiveCountMap = {};
+
+  for (var i = 0; i < segments.length; i++) {
+    var part = segments[i].trim();
+    if (!part) {
+      notices.push('Empty directive segment found and ignored during parsing.');
+      continue;
+    }
+
+    var tokens = part.split(/\s+/).filter(function(t) { return t.trim() !== ''; });
+    if (tokens.length === 0) {
+      notices.push('Malformed directive segment found and ignored.');
+      continue;
+    }
+
+    var directive = tokens[0];
+    var sources = tokens.slice(1);
+    rows.push({
+      segment: part,
+      directive: directive,
+      sources: sources
+    });
+    directiveCountMap[directive] = (directiveCountMap[directive] || 0) + 1;
+  }
+
+  if (rows.length === 0) {
+    return { error: 'No valid directive segments were parsed from this input.' };
+  }
+
+  var duplicateNotes = [];
+  Object.keys(directiveCountMap).forEach(function(key) {
+    if (directiveCountMap[key] > 1) {
+      duplicateNotes.push('Duplicate directive entries detected for "' + key + '". Entries are preserved as parsed.');
+    }
+  });
+  notices = notices.concat(duplicateNotes);
+
+  var normalizedOutput = rows.map(function(row) { return row.segment; }).join('; ');
+  var sortedRows = rows.slice().sort(function(a, b) {
+    return a.directive.localeCompare(b.directive);
+  });
+
+  return {
+    isReportOnly: normalized.isReportOnly,
+    rows: rows,
+    sortedRows: sortedRows,
+    notices: notices,
+    normalizedOutput: normalizedOutput
+  };
+}
+
+function renderResult(result) {
+  var output = document.getElementById('output');
+  output.innerHTML = '';
+
+  if (result.error) {
+    var errorCard = document.createElement('div');
+    errorCard.className = 'card';
+    var err = document.createElement('p');
+    err.className = 'error-msg';
+    err.textContent = result.error;
+    errorCard.appendChild(err);
+    output.appendChild(errorCard);
+    return;
+  }
+
+  var generated = document.createElement('p');
+  generated.className = 'report-timestamp';
+  generated.textContent = 'Generated on: ' + new Date().toLocaleString();
+  output.appendChild(generated);
+
+  var modeCard = document.createElement('div');
+  modeCard.className = 'card';
+  var modeTitle = document.createElement('p');
+  modeTitle.textContent = 'Input mode: ';
+  var chip = document.createElement('span');
+  chip.className = 'status-chip';
+  chip.textContent = result.isReportOnly ? 'Report-Only detected' : 'Enforced policy text';
+  modeTitle.appendChild(chip);
+  modeCard.appendChild(modeTitle);
+  output.appendChild(modeCard);
+
+  var tableTitle = document.createElement('h2');
+  tableTitle.textContent = 'Directive Table (Parsed Order)';
+  output.appendChild(tableTitle);
+
+  var tableCard = document.createElement('div');
+  tableCard.className = 'card';
+  var table = document.createElement('table');
+  var thead = document.createElement('thead');
+  var headRow = document.createElement('tr');
+  ['#', 'Directive', 'Sources/Tokens'].forEach(function(label) {
+    var th = document.createElement('th');
+    th.textContent = label;
+    headRow.appendChild(th);
+  });
+  thead.appendChild(headRow);
+  table.appendChild(thead);
+  var tbody = document.createElement('tbody');
+  for (var i = 0; i < result.rows.length; i++) {
+    var tr = document.createElement('tr');
+    var tdIdx = document.createElement('td');
+    tdIdx.textContent = String(i + 1);
+    var tdDirective = document.createElement('td');
+    tdDirective.textContent = result.rows[i].directive;
+    var tdSources = document.createElement('td');
+    tdSources.textContent = result.rows[i].sources.length > 0 ? result.rows[i].sources.join(' ') : '—';
+    tr.appendChild(tdIdx);
+    tr.appendChild(tdDirective);
+    tr.appendChild(tdSources);
+    tbody.appendChild(tr);
+  }
+  table.appendChild(tbody);
+  tableCard.appendChild(table);
+  output.appendChild(tableCard);
+
+  var normalizedTitle = document.createElement('h2');
+  normalizedTitle.textContent = 'Normalized CSP Output';
+  output.appendChild(normalizedTitle);
+  var normalizedCard = document.createElement('div');
+  normalizedCard.className = 'card';
+  var pre = document.createElement('pre');
+  pre.className = 'raw-block';
+  pre.textContent = result.normalizedOutput;
+  normalizedCard.appendChild(pre);
+  var copyRow = document.createElement('div');
+  copyRow.className = 'copy-row';
+  var copyBtn = document.createElement('button');
+  copyBtn.type = 'button';
+  copyBtn.className = 'copy-btn';
+  copyBtn.textContent = 'Copy Normalized CSP';
+  var feedback = document.createElement('span');
+  feedback.className = 'copy-feedback';
+  feedback.textContent = '';
+  copyBtn.addEventListener('click', function() {
+    copyTextWithFallback(result.normalizedOutput).then(function(success) {
+      feedback.textContent = success ? 'Copied normalized CSP output.' : 'Copy failed. Please copy manually.';
+    });
+  });
+  copyRow.appendChild(copyBtn);
+  copyRow.appendChild(feedback);
+  normalizedCard.appendChild(copyRow);
+  output.appendChild(normalizedCard);
+
+  var sortedTitle = document.createElement('h2');
+  sortedTitle.textContent = 'Directive Table (Sorted Secondary View)';
+  output.appendChild(sortedTitle);
+  var sortedCard = document.createElement('div');
+  sortedCard.className = 'card';
+  var sortedList = document.createElement('ul');
+  for (var s = 0; s < result.sortedRows.length; s++) {
+    var li = document.createElement('li');
+    li.textContent = result.sortedRows[s].directive + ': ' +
+      (result.sortedRows[s].sources.length > 0 ? result.sortedRows[s].sources.join(' ') : '—');
+    sortedList.appendChild(li);
+  }
+  sortedCard.appendChild(sortedList);
+  output.appendChild(sortedCard);
+
+  if (result.notices.length > 0) {
+    var noticeTitle = document.createElement('h2');
+    noticeTitle.textContent = 'Informational Notes';
+    output.appendChild(noticeTitle);
+    var noticeCard = document.createElement('div');
+    noticeCard.className = 'card';
+    var noticeList = document.createElement('ul');
+    for (var n = 0; n < result.notices.length; n++) {
+      var nLi = document.createElement('li');
+      var nP = document.createElement('p');
+      nP.className = 'notice';
+      nP.textContent = result.notices[n];
+      nLi.appendChild(nP);
+      noticeList.appendChild(nLi);
+    }
+    noticeCard.appendChild(noticeList);
+    output.appendChild(noticeCard);
+  }
+
+  var disclaimer = document.createElement('p');
+  disclaimer.className = 'disclaimer';
+  disclaimer.textContent = 'Interpretation only. Parsed output reflects provided policy text and does not confirm runtime enforcement.';
+  output.appendChild(disclaimer);
+}
+
+document.getElementById('parseBtn').addEventListener('click', function() {
+  var input = document.getElementById('cspInput').value;
+  renderResult(parseCsp(input));
+});
+</script>
+
+</body>
+</html>
