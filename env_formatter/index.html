@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Format .env text locally with ordered key/value parsing, malformed-line notes, and masked-by-default rendering. No data leaves your browser.">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://tools.sprint19.com/env_formatter/">
+  <meta property="og:title" content="ENV File Formatter — Built by Sprint19">
+  <meta property="og:description" content="Parse .env text into a structured table with local-only deterministic formatting and copy-ready output.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://tools.sprint19.com/env_formatter/">
+  <meta property="og:image" content="https://tools.sprint19.com/og-image.png">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <link rel="stylesheet" href="/shared/styles.css">
+  <title>ENV File Formatter | Sprint19</title>
+  <style>
+    .error-msg { color: var(--color-error); font-weight: 600; margin: 0; }
+    .notice { color: var(--color-warning); margin: 0; }
+    .controls {
+      margin-top: 10px;
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .copy-row {
+      margin-top: 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .copy-btn {
+      padding: 8px 14px;
+      font-size: 14px;
+      cursor: pointer;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border-input);
+      border-radius: 4px;
+      color: var(--color-text);
+    }
+    .copy-btn:hover { background: var(--color-surface-hover); }
+    .copy-feedback { font-size: 13px; color: var(--color-text-muted); }
+  </style>
+</head>
+<body data-affiliate-cta="true">
+
+<a href="/" class="back-link">&larr; Sprint19 Tools</a>
+<h1>ENV File Formatter</h1>
+<p>Paste <code>.env</code> text to parse key/value entries in source order with masked-by-default rendering.</p>
+<p class="disclaimer">Be careful when pasting production secrets into shared screens or recordings.</p>
+
+<textarea id="envInput" class="tool-input" rows="12" placeholder="export API_KEY=abc123&#10;DB_HOST=localhost&#10;EMPTY_VALUE=&#10;QUOTED=&quot;value # not a comment&quot;"></textarea>
+<div class="controls">
+  <label><input id="revealToggle" type="checkbox"> Reveal rendered values</label>
+</div>
+<button id="formatBtn" class="tool-btn">Format ENV</button>
+
+<div id="output"></div>
+
+<footer class="site-footer">
+  <hr>
+  <p>Parsed locally in your browser.</p>
+  <p>Built by <a href="https://sprint19.com" target="_blank" rel="noopener noreferrer">Sprint19</a>. Product engineering for startups.</p>
+  <p class="guardrail">This tool parses .env text only. It does not validate runtime configuration behavior.</p>
+  <p class="copyright">&copy; 2026 Sprint19. Code licensed under <a href="/LICENSE.md">MIT</a>. Sprint19 name and branding may not be used without permission.</p>
+</footer>
+
+<script src="/shared/utils.js"></script>
+<script>
+var MAX_INPUT_BYTES = 51200;
+
+function copyTextWithFallback(text) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    return navigator.clipboard.writeText(text).then(function() {
+      return true;
+    }).catch(function() {
+      return fallbackCopy(text);
+    });
+  }
+  return Promise.resolve(fallbackCopy(text));
+}
+
+function fallbackCopy(text) {
+  var ta = document.createElement('textarea');
+  ta.value = text;
+  ta.setAttribute('readonly', '');
+  ta.style.position = 'fixed';
+  ta.style.opacity = '0';
+  document.body.appendChild(ta);
+  ta.focus();
+  ta.select();
+  var copied = false;
+  try {
+    copied = document.execCommand('copy');
+  } catch (e) {
+    copied = false;
+  }
+  document.body.removeChild(ta);
+  return copied;
+}
+
+function maskValue(value) {
+  if (value === '') return '(empty)';
+  return '••••••';
+}
+
+function splitInlineComment(valueText) {
+  var inSingle = false;
+  var inDouble = false;
+  for (var i = 0; i < valueText.length; i++) {
+    var ch = valueText.charAt(i);
+    if (ch === "'" && !inDouble) inSingle = !inSingle;
+    if (ch === '"' && !inSingle) inDouble = !inDouble;
+    if (ch === '#' && !inSingle && !inDouble) {
+      if (i === 0) return { valuePart: '', commentPart: valueText.slice(i) };
+      if (/\s/.test(valueText.charAt(i - 1))) {
+        return { valuePart: valueText.slice(0, i).trimEnd(), commentPart: valueText.slice(i) };
+      }
+    }
+  }
+  return { valuePart: valueText, commentPart: '' };
+}
+
+function detectQuoted(valuePart) {
+  var trimmed = valuePart.trim();
+  if (trimmed.length >= 2) {
+    var first = trimmed.charAt(0);
+    var last = trimmed.charAt(trimmed.length - 1);
+    if ((first === '"' && last === '"') || (first === "'" && last === "'")) {
+      return {
+        quoted: true,
+        quoteChar: first,
+        literal: trimmed,
+        inner: trimmed.slice(1, -1)
+      };
+    }
+  }
+  return { quoted: false, quoteChar: '', literal: trimmed, inner: trimmed };
+}
+
+function normalizeEnvValue(entry) {
+  if (entry.quoted) return entry.literal;
+  if (entry.value === '') return '';
+  if (/\s/.test(entry.value) || /#/.test(entry.value)) {
+    return '"' + entry.value.replace(/"/g, '\\"') + '"';
+  }
+  return entry.value;
+}
+
+function parseEnv(raw) {
+  if (!raw || !raw.trim()) return { error: 'No .env input provided.' };
+  if (raw.length > MAX_INPUT_BYTES) return { error: 'Input exceeds the 50KB limit.' };
+
+  var lines = raw.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
+  var entries = [];
+  var notes = [];
+
+  for (var i = 0; i < lines.length; i++) {
+    var lineNo = i + 1;
+    var original = lines[i];
+    var trimmed = original.trim();
+    if (!trimmed) continue;
+    if (trimmed.charAt(0) === '#') continue;
+
+    var exportPrefix = false;
+    var working = original;
+    if (/^\s*export\s+/.test(working)) {
+      exportPrefix = true;
+      working = working.replace(/^\s*export\s+/, '');
+    }
+
+    var eqIdx = working.indexOf('=');
+    if (eqIdx === -1) {
+      notes.push('Line ' + lineNo + ': no key/value separator (=) found.');
+      continue;
+    }
+
+    var rawKey = working.slice(0, eqIdx).trim();
+    if (!rawKey) {
+      notes.push('Line ' + lineNo + ': key is empty.');
+      continue;
+    }
+    if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(rawKey)) {
+      notes.push('Line ' + lineNo + ': key "' + rawKey + '" does not match common .env key pattern.');
+    }
+
+    var remainder = working.slice(eqIdx + 1);
+    var split = splitInlineComment(remainder);
+    var quoted = detectQuoted(split.valuePart);
+
+    entries.push({
+      lineNo: lineNo,
+      key: rawKey,
+      value: quoted.inner,
+      quoted: quoted.quoted,
+      quoteChar: quoted.quoteChar,
+      literal: quoted.literal,
+      exportPrefix: exportPrefix
+    });
+  }
+
+  if (entries.length === 0) {
+    return { error: 'No key/value entries found.' };
+  }
+
+  var normalized = entries.map(function(entry) {
+    var prefix = entry.exportPrefix ? 'export ' : '';
+    return prefix + entry.key + '=' + normalizeEnvValue(entry);
+  }).join('\n');
+
+  return {
+    entries: entries,
+    notes: notes,
+    normalized: normalized
+  };
+}
+
+function renderResult(result, revealValues) {
+  var output = document.getElementById('output');
+  output.innerHTML = '';
+
+  if (result.error) {
+    var errorCard = document.createElement('div');
+    errorCard.className = 'card';
+    var err = document.createElement('p');
+    err.className = 'error-msg';
+    err.textContent = result.error;
+    errorCard.appendChild(err);
+    output.appendChild(errorCard);
+    return;
+  }
+
+  var generated = document.createElement('p');
+  generated.className = 'report-timestamp';
+  generated.textContent = 'Generated on: ' + new Date().toLocaleString();
+  output.appendChild(generated);
+
+  var tableTitle = document.createElement('h2');
+  tableTitle.textContent = 'Parsed Entries';
+  output.appendChild(tableTitle);
+
+  var tableCard = document.createElement('div');
+  tableCard.className = 'card';
+  var table = document.createElement('table');
+  var thead = document.createElement('thead');
+  var headRow = document.createElement('tr');
+  ['Line', 'Export?', 'Key', 'Value', 'Quoted?'].forEach(function(label) {
+    var th = document.createElement('th');
+    th.textContent = label;
+    headRow.appendChild(th);
+  });
+  thead.appendChild(headRow);
+  table.appendChild(thead);
+  var tbody = document.createElement('tbody');
+  for (var i = 0; i < result.entries.length; i++) {
+    var row = result.entries[i];
+    var tr = document.createElement('tr');
+    var cells = [
+      String(row.lineNo),
+      row.exportPrefix ? 'yes' : 'no',
+      row.key,
+      revealValues ? row.value : maskValue(row.value),
+      row.quoted ? 'yes (' + row.quoteChar + ')' : 'no'
+    ];
+    for (var c = 0; c < cells.length; c++) {
+      var td = document.createElement('td');
+      td.textContent = cells[c];
+      tr.appendChild(td);
+    }
+    tbody.appendChild(tr);
+  }
+  table.appendChild(tbody);
+  tableCard.appendChild(table);
+  output.appendChild(tableCard);
+
+  if (result.notes.length > 0) {
+    var notesTitle = document.createElement('h2');
+    notesTitle.textContent = 'Informational Notes';
+    output.appendChild(notesTitle);
+    var notesCard = document.createElement('div');
+    notesCard.className = 'card';
+    var list = document.createElement('ul');
+    for (var n = 0; n < result.notes.length; n++) {
+      var li = document.createElement('li');
+      var p = document.createElement('p');
+      p.className = 'notice';
+      p.textContent = result.notes[n];
+      li.appendChild(p);
+      list.appendChild(li);
+    }
+    notesCard.appendChild(list);
+    output.appendChild(notesCard);
+  }
+
+  var normalizedTitle = document.createElement('h2');
+  normalizedTitle.textContent = 'Normalized .env Output';
+  output.appendChild(normalizedTitle);
+  var normalizedCard = document.createElement('div');
+  normalizedCard.className = 'card';
+  var pre = document.createElement('pre');
+  pre.className = 'raw-block';
+  pre.textContent = result.normalized;
+  normalizedCard.appendChild(pre);
+  var copyRow = document.createElement('div');
+  copyRow.className = 'copy-row';
+  var copyBtn = document.createElement('button');
+  copyBtn.type = 'button';
+  copyBtn.className = 'copy-btn';
+  copyBtn.textContent = 'Copy Normalized .env';
+  var feedback = document.createElement('span');
+  feedback.className = 'copy-feedback';
+  feedback.textContent = '';
+  copyBtn.addEventListener('click', function() {
+    copyTextWithFallback(result.normalized).then(function(success) {
+      feedback.textContent = success ? 'Copied normalized .env output.' : 'Copy failed. Please copy manually.';
+    });
+  });
+  copyRow.appendChild(copyBtn);
+  copyRow.appendChild(feedback);
+  normalizedCard.appendChild(copyRow);
+  output.appendChild(normalizedCard);
+
+  var disclaimer = document.createElement('p');
+  disclaimer.className = 'disclaimer';
+  disclaimer.textContent = 'Interpretation only. Parsed output reflects pasted text and does not confirm runtime behavior.';
+  output.appendChild(disclaimer);
+}
+
+document.getElementById('formatBtn').addEventListener('click', function() {
+  var input = document.getElementById('envInput').value;
+  var reveal = document.getElementById('revealToggle').checked;
+  renderResult(parseEnv(input), reveal);
+});
+</script>
+
+</body>
+</html>

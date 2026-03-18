@@ -39,9 +39,9 @@ Tracked work for Sprint19 Tools.
 
 ### Data & Config
 
-- [ ] ENV File Formatter — structured table from .env files with optional value masking
-- [ ] Redis URL Parser — extract host, port, database, and auth details from a Redis connection URL
-- [ ] Postgres JSON Formatter — pretty-print and validate JSON from psql output
+- [x] ENV File Formatter — structured table from .env files with optional value masking
+- [x] Redis URL Parser — extract host, port, database, and auth details from a Redis connection URL
+- [x] Postgres JSON Formatter — pretty-print and validate JSON from psql output
 - [x] Calendar File Viewer — parse ICS calendar files into structured event output
 
 ### DevOps & Logs

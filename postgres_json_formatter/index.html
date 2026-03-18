@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Format JSON text locally with deterministic pretty-print and optional single-pass unescape mode. No data leaves your browser.">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://tools.sprint19.com/postgres_json_formatter/">
+  <meta property="og:title" content="Postgres JSON Formatter — Built by Sprint19">
+  <meta property="og:description" content="Pretty-print JSON text with local-only parsing and strict single-pass optional unescape behavior.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://tools.sprint19.com/postgres_json_formatter/">
+  <meta property="og:image" content="https://tools.sprint19.com/og-image.png">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <link rel="stylesheet" href="/shared/styles.css">
+  <title>Postgres JSON Formatter | Sprint19</title>
+  <style>
+    .error-msg { color: var(--color-error); font-weight: 600; margin: 0; }
+    .notice { color: var(--color-warning); margin: 0; }
+    .controls {
+      margin-top: 10px;
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .copy-row {
+      margin-top: 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .copy-btn {
+      padding: 8px 14px;
+      font-size: 14px;
+      cursor: pointer;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border-input);
+      border-radius: 4px;
+      color: var(--color-text);
+    }
+    .copy-btn:hover { background: var(--color-surface-hover); }
+    .copy-feedback { font-size: 13px; color: var(--color-text-muted); }
+  </style>
+</head>
+<body data-affiliate-cta="true">
+
+<a href="/" class="back-link">&larr; Sprint19 Tools</a>
+<h1>Postgres JSON Formatter</h1>
+<p>Paste JSON text for deterministic pretty-print formatting. Optional single-pass unescape mode is available for JSON string literals containing JSON.</p>
+
+<textarea id="jsonInput" class="tool-input" rows="11" placeholder='{"id":1,"meta":{"enabled":true}}'></textarea>
+<div class="controls">
+  <label><input id="singlePassToggle" type="checkbox"> Attempt single-pass unescape for JSON string literal input</label>
+</div>
+<button id="formatBtn" class="tool-btn">Format JSON</button>
+
+<div id="output"></div>
+
+<footer class="site-footer">
+  <hr>
+  <p>Formatted locally in your browser.</p>
+  <p>Built by <a href="https://sprint19.com" target="_blank" rel="noopener noreferrer">Sprint19</a>. Product engineering for startups.</p>
+  <p class="guardrail">This tool formats JSON text only. It does not execute SQL or validate database state.</p>
+  <p class="copyright">&copy; 2026 Sprint19. Code licensed under <a href="/LICENSE.md">MIT</a>. Sprint19 name and branding may not be used without permission.</p>
+</footer>
+
+<script src="/shared/utils.js"></script>
+<script>
+var MAX_INPUT_BYTES = 102400;
+
+function copyTextWithFallback(text) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    return navigator.clipboard.writeText(text).then(function() {
+      return true;
+    }).catch(function() {
+      return fallbackCopy(text);
+    });
+  }
+  return Promise.resolve(fallbackCopy(text));
+}
+
+function fallbackCopy(text) {
+  var ta = document.createElement('textarea');
+  ta.value = text;
+  ta.setAttribute('readonly', '');
+  ta.style.position = 'fixed';
+  ta.style.opacity = '0';
+  document.body.appendChild(ta);
+  ta.focus();
+  ta.select();
+  var copied = false;
+  try {
+    copied = document.execCommand('copy');
+  } catch (e) {
+    copied = false;
+  }
+  document.body.removeChild(ta);
+  return copied;
+}
+
+function detectRootType(value) {
+  if (Array.isArray(value)) return 'array';
+  if (value === null) return 'null';
+  return typeof value;
+}
+
+function formatJson(rawInput, singlePassEnabled) {
+  if (!rawInput || !rawInput.trim()) {
+    return { error: 'Enter JSON text to format.' };
+  }
+  if (rawInput.length > MAX_INPUT_BYTES) {
+    return { error: 'Input exceeds the 100KB limit.' };
+  }
+
+  var notices = [];
+  var parsed;
+  try {
+    parsed = JSON.parse(rawInput);
+  } catch (e) {
+    return { error: 'Invalid JSON input. Please provide valid JSON text.' };
+  }
+
+  if (singlePassEnabled && typeof parsed === 'string') {
+    try {
+      parsed = JSON.parse(parsed);
+      notices.push('Single-pass unescape applied to JSON string literal input.');
+    } catch (e2) {
+      notices.push('Single-pass unescape was enabled, but inner string was not valid JSON. Base parsed value was preserved.');
+    }
+  } else if (singlePassEnabled) {
+    notices.push('Single-pass unescape is available only when root input parses as a JSON string literal.');
+  }
+
+  var pretty = JSON.stringify(parsed, null, 2);
+  var rootType = detectRootType(parsed);
+  var topLevelCount = 0;
+  if (Array.isArray(parsed)) {
+    topLevelCount = parsed.length;
+  } else if (parsed && typeof parsed === 'object') {
+    topLevelCount = Object.keys(parsed).length;
+  }
+
+  return {
+    parsed: parsed,
+    pretty: pretty,
+    rootType: rootType,
+    topLevelCount: topLevelCount,
+    notices: notices
+  };
+}
+
+function renderResult(result) {
+  var output = document.getElementById('output');
+  output.innerHTML = '';
+
+  if (result.error) {
+    var errorCard = document.createElement('div');
+    errorCard.className = 'card';
+    var err = document.createElement('p');
+    err.className = 'error-msg';
+    err.textContent = result.error;
+    errorCard.appendChild(err);
+    output.appendChild(errorCard);
+    return;
+  }
+
+  var generated = document.createElement('p');
+  generated.className = 'report-timestamp';
+  generated.textContent = 'Generated on: ' + new Date().toLocaleString();
+  output.appendChild(generated);
+
+  var statsTitle = document.createElement('h2');
+  statsTitle.textContent = 'Structure Stats';
+  output.appendChild(statsTitle);
+  var statsCard = document.createElement('div');
+  statsCard.className = 'card';
+  var list = document.createElement('ul');
+  var liType = document.createElement('li');
+  liType.textContent = 'Root type: ' + result.rootType;
+  var liCount = document.createElement('li');
+  if (result.rootType === 'array') {
+    liCount.textContent = 'Top-level array length: ' + result.topLevelCount;
+  } else if (result.rootType === 'object') {
+    liCount.textContent = 'Top-level key count: ' + result.topLevelCount;
+  } else {
+    liCount.textContent = 'Top-level count is not applicable for scalar root types.';
+  }
+  list.appendChild(liType);
+  list.appendChild(liCount);
+  statsCard.appendChild(list);
+  output.appendChild(statsCard);
+
+  if (result.notices.length > 0) {
+    var notesTitle = document.createElement('h2');
+    notesTitle.textContent = 'Informational Notes';
+    output.appendChild(notesTitle);
+    var notesCard = document.createElement('div');
+    notesCard.className = 'card';
+    var notesList = document.createElement('ul');
+    for (var i = 0; i < result.notices.length; i++) {
+      var li = document.createElement('li');
+      var p = document.createElement('p');
+      p.className = 'notice';
+      p.textContent = result.notices[i];
+      li.appendChild(p);
+      notesList.appendChild(li);
+    }
+    notesCard.appendChild(notesList);
+    output.appendChild(notesCard);
+  }
+
+  var prettyTitle = document.createElement('h2');
+  prettyTitle.textContent = 'Pretty JSON Output';
+  output.appendChild(prettyTitle);
+  var prettyCard = document.createElement('div');
+  prettyCard.className = 'card';
+  var pre = document.createElement('pre');
+  pre.className = 'raw-block';
+  pre.textContent = result.pretty;
+  prettyCard.appendChild(pre);
+  var copyRow = document.createElement('div');
+  copyRow.className = 'copy-row';
+  var copyBtn = document.createElement('button');
+  copyBtn.type = 'button';
+  copyBtn.className = 'copy-btn';
+  copyBtn.textContent = 'Copy Pretty JSON';
+  var feedback = document.createElement('span');
+  feedback.className = 'copy-feedback';
+  feedback.textContent = '';
+  copyBtn.addEventListener('click', function() {
+    copyTextWithFallback(result.pretty).then(function(success) {
+      feedback.textContent = success ? 'Copied pretty JSON output.' : 'Copy failed. Please copy manually.';
+    });
+  });
+  copyRow.appendChild(copyBtn);
+  copyRow.appendChild(feedback);
+  prettyCard.appendChild(copyRow);
+  output.appendChild(prettyCard);
+
+  var disclaimer = document.createElement('p');
+  disclaimer.className = 'disclaimer';
+  disclaimer.textContent = 'Interpretation only. Formatting output does not validate database behavior or query correctness.';
+  output.appendChild(disclaimer);
+}
+
+document.getElementById('formatBtn').addEventListener('click', function() {
+  var raw = document.getElementById('jsonInput').value;
+  var singlePass = document.getElementById('singlePassToggle').checked;
+  renderResult(formatJson(raw, singlePass));
+});
+</script>
+
+</body>
+</html>

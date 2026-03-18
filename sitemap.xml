@@ -89,6 +89,18 @@
     <lastmod>2026-03-18</lastmod>
   </url>
   <url>
+    <loc>https://tools.sprint19.com/env_formatter/</loc>
+    <lastmod>2026-03-18</lastmod>
+  </url>
+  <url>
+    <loc>https://tools.sprint19.com/redis_url_parser/</loc>
+    <lastmod>2026-03-18</lastmod>
+  </url>
+  <url>
+    <loc>https://tools.sprint19.com/postgres_json_formatter/</loc>
+    <lastmod>2026-03-18</lastmod>
+  </url>
+  <url>
     <loc>https://tools.sprint19.com/port_check/</loc>
     <lastmod>2026-03-18</lastmod>
   </url>

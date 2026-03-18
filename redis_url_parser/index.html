@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Parse Redis connection URLs locally with deterministic component extraction and masked-by-default secret handling. No data leaves your browser.">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://tools.sprint19.com/redis_url_parser/">
+  <meta property="og:title" content="Redis URL Parser — Built by Sprint19">
+  <meta property="og:description" content="Extract Redis URL components, preserve query parameters in order, and generate copy-ready summaries locally.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://tools.sprint19.com/redis_url_parser/">
+  <meta property="og:image" content="https://tools.sprint19.com/og-image.png">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <link rel="stylesheet" href="/shared/styles.css">
+  <title>Redis URL Parser | Sprint19</title>
+  <style>
+    .error-msg { color: var(--color-error); font-weight: 600; margin: 0; }
+    .notice { color: var(--color-warning); margin: 0; }
+    .controls {
+      margin-top: 10px;
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .copy-row {
+      margin-top: 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .copy-btn {
+      padding: 8px 14px;
+      font-size: 14px;
+      cursor: pointer;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border-input);
+      border-radius: 4px;
+      color: var(--color-text);
+    }
+    .copy-btn:hover { background: var(--color-surface-hover); }
+    .copy-feedback { font-size: 13px; color: var(--color-text-muted); }
+  </style>
+</head>
+<body data-affiliate-cta="true">
+
+<a href="/" class="back-link">&larr; Sprint19 Tools</a>
+<h1>Redis URL Parser</h1>
+<p>Paste a Redis connection URL to extract components with masked-by-default secret handling.</p>
+<p class="disclaimer">Be careful when pasting production secrets into shared screens or recordings.</p>
+
+<textarea id="urlInput" class="tool-input" rows="4" placeholder="rediss://:secret@redis.example.com:6380/2?ssl=true&timeout=5&timeout=10"></textarea>
+<div class="controls">
+  <label><input id="revealSecretsToggle" type="checkbox"> Reveal secrets</label>
+</div>
+<button id="parseBtn" class="tool-btn">Parse Redis URL</button>
+
+<div id="output"></div>
+
+<footer class="site-footer">
+  <hr>
+  <p>Parsed locally in your browser.</p>
+  <p>Built by <a href="https://sprint19.com" target="_blank" rel="noopener noreferrer">Sprint19</a>. Product engineering for startups.</p>
+  <p class="guardrail">This tool parses Redis URL components only. It does not test connectivity or authentication behavior.</p>
+  <p class="copyright">&copy; 2026 Sprint19. Code licensed under <a href="/LICENSE.md">MIT</a>. Sprint19 name and branding may not be used without permission.</p>
+</footer>
+
+<script src="/shared/utils.js"></script>
+<script>
+var MAX_INPUT_BYTES = 10240;
+
+function copyTextWithFallback(text) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    return navigator.clipboard.writeText(text).then(function() {
+      return true;
+    }).catch(function() {
+      return fallbackCopy(text);
+    });
+  }
+  return Promise.resolve(fallbackCopy(text));
+}
+
+function fallbackCopy(text) {
+  var ta = document.createElement('textarea');
+  ta.value = text;
+  ta.setAttribute('readonly', '');
+  ta.style.position = 'fixed';
+  ta.style.opacity = '0';
+  document.body.appendChild(ta);
+  ta.focus();
+  ta.select();
+  var copied = false;
+  try {
+    copied = document.execCommand('copy');
+  } catch (e) {
+    copied = false;
+  }
+  document.body.removeChild(ta);
+  return copied;
+}
+
+function parseRedisUrl(raw) {
+  if (!raw || !raw.trim()) return { error: 'No Redis URL provided.' };
+  if (raw.length > MAX_INPUT_BYTES) return { error: 'Input exceeds the 10KB limit.' };
+
+  var trimmed = raw.trim();
+  if (!/^rediss?:\/\//i.test(trimmed)) {
+    return { error: 'Unsupported scheme. Use redis:// or rediss://.' };
+  }
+
+  var parsedUrl;
+  try {
+    parsedUrl = new URL(trimmed);
+  } catch (e) {
+    return { error: 'Invalid URL structure. Please provide a valid Redis URL.' };
+  }
+
+  var scheme = parsedUrl.protocol.replace(':', '').toLowerCase();
+  if (scheme !== 'redis' && scheme !== 'rediss') {
+    return { error: 'Unsupported scheme. Use redis:// or rediss://.' };
+  }
+
+  var dbPath = parsedUrl.pathname || '';
+  var dbIndex = '0';
+  if (dbPath && dbPath !== '/') {
+    dbIndex = dbPath.replace(/^\//, '');
+  }
+
+  var queryParams = [];
+  parsedUrl.searchParams.forEach(function(value, key) {
+    queryParams.push({ key: key, value: value });
+  });
+
+  return {
+    scheme: scheme,
+    host: parsedUrl.hostname || '',
+    port: parsedUrl.port || '6379',
+    dbIndex: dbIndex || '0',
+    username: parsedUrl.username || '',
+    password: parsedUrl.password || '',
+    passwordPresent: parsedUrl.password !== '',
+    tlsEnabled: scheme === 'rediss',
+    queryParams: queryParams,
+    originalUrl: trimmed
+  };
+}
+
+function buildMaskedUrl(parsed, reveal) {
+  var userInfo = '';
+  if (parsed.username || parsed.passwordPresent) {
+    var user = parsed.username || '';
+    var pass = parsed.passwordPresent ? (reveal ? parsed.password : '••••••') : '';
+    userInfo = user + (parsed.passwordPresent ? ':' + pass : '') + '@';
+  }
+  var query = parsed.queryParams.length > 0
+    ? '?' + parsed.queryParams.map(function(item) {
+        return encodeURIComponent(item.key) + '=' + encodeURIComponent(item.value);
+      }).join('&')
+    : '';
+  return parsed.scheme + '://' + userInfo + parsed.host + ':' + parsed.port + '/' + parsed.dbIndex + query;
+}
+
+function buildSummary(parsed, reveal) {
+  var lines = [];
+  lines.push('Scheme: ' + parsed.scheme);
+  lines.push('Host: ' + parsed.host);
+  lines.push('Port: ' + parsed.port);
+  lines.push('Database index: ' + parsed.dbIndex);
+  lines.push('TLS implied by scheme: ' + (parsed.tlsEnabled ? 'yes' : 'no'));
+  lines.push('Username: ' + (parsed.username || '—'));
+  lines.push('Password present: ' + (parsed.passwordPresent ? 'yes' : 'no'));
+  lines.push('Password: ' + (parsed.passwordPresent ? (reveal ? parsed.password : '••••••') : '—'));
+  lines.push('Query parameters: ' + parsed.queryParams.length);
+  return lines.join('\n');
+}
+
+function renderResult(result, reveal) {
+  var output = document.getElementById('output');
+  output.innerHTML = '';
+
+  if (result.error) {
+    var errorCard = document.createElement('div');
+    errorCard.className = 'card';
+    var err = document.createElement('p');
+    err.className = 'error-msg';
+    err.textContent = result.error;
+    errorCard.appendChild(err);
+    output.appendChild(errorCard);
+    return;
+  }
+
+  var generated = document.createElement('p');
+  generated.className = 'report-timestamp';
+  generated.textContent = 'Generated on: ' + new Date().toLocaleString();
+  output.appendChild(generated);
+
+  var summaryTitle = document.createElement('h2');
+  summaryTitle.textContent = 'Normalized Connection Summary';
+  output.appendChild(summaryTitle);
+  var summaryCard = document.createElement('div');
+  summaryCard.className = 'card';
+  var summaryText = buildSummary(result, reveal);
+  var summaryPre = document.createElement('pre');
+  summaryPre.className = 'raw-block';
+  summaryPre.textContent = summaryText;
+  summaryCard.appendChild(summaryPre);
+  var summaryCopyRow = document.createElement('div');
+  summaryCopyRow.className = 'copy-row';
+  var copySummaryBtn = document.createElement('button');
+  copySummaryBtn.type = 'button';
+  copySummaryBtn.className = 'copy-btn';
+  copySummaryBtn.textContent = 'Copy Summary';
+  var summaryFeedback = document.createElement('span');
+  summaryFeedback.className = 'copy-feedback';
+  summaryFeedback.textContent = '';
+  copySummaryBtn.addEventListener('click', function() {
+    copyTextWithFallback(summaryText).then(function(success) {
+      summaryFeedback.textContent = success ? 'Copied connection summary.' : 'Copy failed. Please copy manually.';
+    });
+  });
+  summaryCopyRow.appendChild(copySummaryBtn);
+  summaryCopyRow.appendChild(summaryFeedback);
+  summaryCard.appendChild(summaryCopyRow);
+  output.appendChild(summaryCard);
+
+  var detailsTitle = document.createElement('h2');
+  detailsTitle.textContent = 'Parsed Components';
+  output.appendChild(detailsTitle);
+  var detailsCard = document.createElement('div');
+  detailsCard.className = 'card';
+  var table = document.createElement('table');
+  var thead = document.createElement('thead');
+  var headRow = document.createElement('tr');
+  ['Field', 'Value'].forEach(function(label) {
+    var th = document.createElement('th');
+    th.textContent = label;
+    headRow.appendChild(th);
+  });
+  thead.appendChild(headRow);
+  table.appendChild(thead);
+  var tbody = document.createElement('tbody');
+  var rows = [
+    ['scheme', result.scheme],
+    ['host', result.host || '—'],
+    ['port', result.port],
+    ['db index', result.dbIndex],
+    ['username', result.username || '—'],
+    ['password present', result.passwordPresent ? 'yes' : 'no'],
+    ['password', result.passwordPresent ? (reveal ? result.password : '••••••') : '—']
+  ];
+  for (var i = 0; i < rows.length; i++) {
+    var tr = document.createElement('tr');
+    var tdKey = document.createElement('td');
+    tdKey.textContent = rows[i][0];
+    var tdValue = document.createElement('td');
+    tdValue.textContent = rows[i][1];
+    tr.appendChild(tdKey);
+    tr.appendChild(tdValue);
+    tbody.appendChild(tr);
+  }
+  table.appendChild(tbody);
+  detailsCard.appendChild(table);
+  output.appendChild(detailsCard);
+
+  var queryTitle = document.createElement('h2');
+  queryTitle.textContent = 'Query Parameters (Source Order)';
+  output.appendChild(queryTitle);
+  var queryCard = document.createElement('div');
+  queryCard.className = 'card';
+  if (result.queryParams.length === 0) {
+    var none = document.createElement('p');
+    none.textContent = 'No query parameters found.';
+    queryCard.appendChild(none);
+  } else {
+    var qTable = document.createElement('table');
+    var qHead = document.createElement('thead');
+    var qHeadRow = document.createElement('tr');
+    ['#', 'Key', 'Value'].forEach(function(label) {
+      var th = document.createElement('th');
+      th.textContent = label;
+      qHeadRow.appendChild(th);
+    });
+    qHead.appendChild(qHeadRow);
+    qTable.appendChild(qHead);
+    var qBody = document.createElement('tbody');
+    for (var q = 0; q < result.queryParams.length; q++) {
+      var qTr = document.createElement('tr');
+      var tdIndex = document.createElement('td');
+      tdIndex.textContent = String(q + 1);
+      var tdKey = document.createElement('td');
+      tdKey.textContent = result.queryParams[q].key;
+      var tdVal = document.createElement('td');
+      tdVal.textContent = result.queryParams[q].value;
+      qTr.appendChild(tdIndex);
+      qTr.appendChild(tdKey);
+      qTr.appendChild(tdVal);
+      qBody.appendChild(qTr);
+    }
+    qTable.appendChild(qBody);
+    queryCard.appendChild(qTable);
+  }
+  output.appendChild(queryCard);
+
+  var urlTitle = document.createElement('h2');
+  urlTitle.textContent = 'URL Copy Options';
+  output.appendChild(urlTitle);
+  var urlCard = document.createElement('div');
+  urlCard.className = 'card';
+  var maskedUrl = buildMaskedUrl(result, false);
+  var revealedUrl = buildMaskedUrl(result, true);
+  var maskedPre = document.createElement('pre');
+  maskedPre.className = 'raw-block';
+  maskedPre.textContent = maskedUrl;
+  urlCard.appendChild(maskedPre);
+  var urlCopyRow = document.createElement('div');
+  urlCopyRow.className = 'copy-row';
+  var copyMaskedBtn = document.createElement('button');
+  copyMaskedBtn.type = 'button';
+  copyMaskedBtn.className = 'copy-btn';
+  copyMaskedBtn.textContent = 'Copy Masked URL';
+  var copyRevealedBtn = document.createElement('button');
+  copyRevealedBtn.type = 'button';
+  copyRevealedBtn.className = 'copy-btn';
+  copyRevealedBtn.textContent = 'Copy Unmasked URL';
+  copyRevealedBtn.disabled = !reveal;
+  var urlFeedback = document.createElement('span');
+  urlFeedback.className = 'copy-feedback';
+  urlFeedback.textContent = reveal ? '' : 'Enable "Reveal secrets" to copy unmasked URL.';
+  copyMaskedBtn.addEventListener('click', function() {
+    copyTextWithFallback(maskedUrl).then(function(success) {
+      urlFeedback.textContent = success ? 'Copied masked URL.' : 'Copy failed. Please copy manually.';
+    });
+  });
+  copyRevealedBtn.addEventListener('click', function() {
+    copyTextWithFallback(revealedUrl).then(function(success) {
+      urlFeedback.textContent = success ? 'Copied unmasked URL.' : 'Copy failed. Please copy manually.';
+    });
+  });
+  urlCopyRow.appendChild(copyMaskedBtn);
+  urlCopyRow.appendChild(copyRevealedBtn);
+  urlCopyRow.appendChild(urlFeedback);
+  urlCard.appendChild(urlCopyRow);
+  output.appendChild(urlCard);
+
+  var disclaimer = document.createElement('p');
+  disclaimer.className = 'disclaimer';
+  disclaimer.textContent = 'Interpretation only. Parsed output does not verify reachability, auth, or runtime behavior.';
+  output.appendChild(disclaimer);
+}
+
+document.getElementById('parseBtn').addEventListener('click', function() {
+  var raw = document.getElementById('urlInput').value;
+  var reveal = document.getElementById('revealSecretsToggle').checked;
+  renderResult(parseRedisUrl(raw), reveal);
+});
+</script>
+
+</body>
+</html>
