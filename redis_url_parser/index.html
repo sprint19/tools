@@ -6,6 +6,18 @@
   <meta name="description" content="Parse Redis connection URLs locally with deterministic component extraction and masked-by-default secret handling. No data leaves your browser.">
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="https://tools.sprint19.com/redis_url_parser/">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Redis URL Parser | Sprint19",
+    "description": "Parse Redis connection URLs locally with deterministic component extraction and masked-by-default secret handling. No data leaves your browser.",
+    "applicationCategory": "DeveloperApplication",
+    "operatingSystem": "Web",
+    "url": "https://tools.sprint19.com/redis_url_parser/"
+  }
+  </script>
+
   <meta property="og:title" content="Redis URL Parser — Built by Sprint19">
   <meta property="og:description" content="Extract Redis URL components, preserve query parameters in order, and generate copy-ready summaries locally.">
   <meta property="og:type" content="website">
@@ -51,13 +63,14 @@
 <p>Paste a Redis connection URL to extract components with masked-by-default secret handling.</p>
 <p class="disclaimer">Be careful when pasting production secrets into shared screens or recordings.</p>
 
+<label for="urlInput">Redis URL Input</label>
 <textarea id="urlInput" class="tool-input" rows="4" placeholder="rediss://:secret@redis.example.com:6380/2?ssl=true&timeout=5&timeout=10"></textarea>
 <div class="controls">
   <label><input id="revealSecretsToggle" type="checkbox"> Reveal secrets</label>
 </div>
 <button id="parseBtn" class="tool-btn">Parse Redis URL</button>
 
-<div id="output"></div>
+<div id="output" aria-live="polite"></div>
 
 <footer class="site-footer">
   <hr>

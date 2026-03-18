@@ -10,6 +10,93 @@ function escapeHTML(str) {
   );
 }
 
+window.Sprint19Utils = window.Sprint19Utils || {};
+
+window.Sprint19Utils.setCopyFeedback = function(feedbackEl, ok) {
+  if (!feedbackEl) return;
+  feedbackEl.textContent = ok ? 'Copied' : 'Copy failed';
+  if (feedbackEl.__sprint19CopyTimer) {
+    clearTimeout(feedbackEl.__sprint19CopyTimer);
+  }
+  feedbackEl.__sprint19CopyTimer = setTimeout(function() {
+    feedbackEl.textContent = '';
+  }, 1500);
+};
+
+window.Sprint19Utils.copyTextWithFeedback = function(text, feedbackEl) {
+  function finalize(ok) {
+    window.Sprint19Utils.setCopyFeedback(feedbackEl, ok);
+    return ok;
+  }
+
+  function fallbackCopy(value) {
+    var ta = document.createElement('textarea');
+    ta.value = value;
+    ta.setAttribute('readonly', '');
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    var copied = false;
+    try {
+      copied = document.execCommand('copy');
+    } catch (e) {
+      copied = false;
+    }
+    document.body.removeChild(ta);
+    return copied;
+  }
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    return navigator.clipboard.writeText(text).then(function() {
+      return finalize(true);
+    }).catch(function() {
+      return finalize(fallbackCopy(text));
+    });
+  }
+  return Promise.resolve(finalize(fallbackCopy(text)));
+};
+
+window.Sprint19Utils.bindPrimaryActionShortcut = function(options) {
+  if (!options || !options.input || !options.action) return;
+  var inputEl = typeof options.input === 'string'
+    ? document.querySelector(options.input)
+    : options.input;
+  var actionEl = typeof options.action === 'string'
+    ? document.querySelector(options.action)
+    : options.action;
+  if (!inputEl || !actionEl) return;
+
+  document.addEventListener('keydown', function(event) {
+    if (event.defaultPrevented) return;
+    if (event.key !== 'Enter') return;
+    if (!(event.ctrlKey || event.metaKey) || event.altKey || event.shiftKey) return;
+    if (document.activeElement !== inputEl) return;
+    event.preventDefault();
+    actionEl.click();
+  });
+};
+
+(function initKeyboardShortcutBindings() {
+  function bind() {
+    if (!document.body) return;
+    var inputSelector = document.body.getAttribute('data-shortcut-input');
+    var actionSelector = document.body.getAttribute('data-shortcut-action');
+    if (!inputSelector || !actionSelector) return;
+    window.Sprint19Utils.bindPrimaryActionShortcut({
+      input: inputSelector,
+      action: actionSelector
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', bind);
+  } else {
+    bind();
+  }
+})();
+
 (function initThemeToggle() {
   var STORAGE_KEY = 'sprint19-theme';
   var ROOT = document.documentElement;
@@ -122,3 +209,4 @@ function escapeHTML(str) {
     mountCTA();
   }
 })();
+

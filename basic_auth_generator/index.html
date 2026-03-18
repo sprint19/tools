@@ -6,6 +6,18 @@
   <meta name="description" content="Generate a Basic Authorization header locally in your browser using UTF-8-safe Base64 encoding. No data leaves your browser.">
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="https://tools.sprint19.com/basic_auth_generator/">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Basic Auth Header Generator | Sprint19",
+    "description": "Generate a Basic Authorization header locally in your browser using UTF-8-safe Base64 encoding. No data leaves your browser.",
+    "applicationCategory": "DeveloperApplication",
+    "operatingSystem": "Web",
+    "url": "https://tools.sprint19.com/basic_auth_generator/"
+  }
+  </script>
+
   <meta property="og:title" content="Basic Auth Header Generator — Built by Sprint19">
   <meta property="og:description" content="Format Basic Authorization headers from username and password with deterministic local-only processing.">
   <meta property="og:type" content="website">
@@ -88,7 +100,7 @@
 
 <button id="generateBtn" class="tool-btn">Generate Header</button>
 
-<div id="output"></div>
+<div id="output" role="status" aria-live="polite"></div>
 
 <footer class="site-footer">
   <hr>
@@ -98,6 +110,7 @@
   <p class="copyright">&copy; 2026 Sprint19. Code licensed under <a href="/LICENSE.md">MIT</a>. Sprint19 name and branding may not be used without permission.</p>
 </footer>
 
+<script src="/shared/utils.js"></script>
 <script>
 var MAX_COMBINED_INPUT = 10240;
 var HEADER_NAME = 'Authorization';
@@ -115,6 +128,9 @@ function utf8ToBase64(value) {
 }
 
 function copyTextWithFallback(text) {
+  if (window.Sprint19Utils && typeof window.Sprint19Utils.copyTextWithFeedback === 'function') {
+    return window.Sprint19Utils.copyTextWithFeedback(text);
+  }
   if (navigator.clipboard && navigator.clipboard.writeText) {
     return navigator.clipboard.writeText(text).then(function() {
       return true;
@@ -223,8 +239,12 @@ function renderResult(result) {
   feedback.textContent = '';
 
   copyBtn.addEventListener('click', function() {
+    if (window.Sprint19Utils && typeof window.Sprint19Utils.copyTextWithFeedback === 'function') {
+      window.Sprint19Utils.copyTextWithFeedback(result.fullHeaderLine, feedback);
+      return;
+    }
     copyTextWithFallback(result.fullHeaderLine).then(function(success) {
-      feedback.textContent = success ? 'Copied full header line.' : 'Copy failed. Please copy manually.';
+      feedback.textContent = success ? 'Copied' : 'Copy failed';
     });
   });
 

@@ -60,11 +60,11 @@ Tracked work for Sprint19 Tools.
 
 ## Improvements to Existing Tools
 
-- [ ] Add structured data (JSON-LD) to each tool page for search visibility
-- [ ] Add OpenGraph image per tool for richer social sharing
-- [ ] Add copy-to-clipboard confirmation feedback across all tools
-- [ ] Keyboard shortcut support (e.g. Ctrl+Enter to run/parse)
-- [ ] Accessibility audit — ensure all tools meet WCAG 2.1 AA
+- [x] Add structured data (JSON-LD) to each tool page for search visibility
+- [x] Add OpenGraph image per tool for richer social sharing
+- [x] Add copy-to-clipboard confirmation feedback across all tools
+- [x] Keyboard shortcut support (e.g. Ctrl+Enter to run/parse)
+- [x] Accessibility audit — ensure all tools meet WCAG 2.1 AA (evidence: `.cursor/plans/a11y-route-audit-v5.md`; independent review signoff recorded)
 
 ---
 

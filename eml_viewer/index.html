@@ -6,6 +6,18 @@
   <meta name="description" content="View and parse EML files locally in your browser. Inspect headers, multipart boundaries, and message body safely with no data leaving your browser.">
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="https://tools.sprint19.com/eml_viewer/">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "EML Viewer | Sprint19",
+    "description": "View and parse EML files locally in your browser. Inspect headers, multipart boundaries, and message body safely with no data leaving your browser.",
+    "applicationCategory": "DeveloperApplication",
+    "operatingSystem": "Web",
+    "url": "https://tools.sprint19.com/eml_viewer/"
+  }
+  </script>
+
   <meta property="og:title" content="EML Viewer — Built by Sprint19">
   <meta property="og:description" content="Open and inspect EML messages with structured header and body views. No data leaves your browser.">
   <meta property="og:type" content="website">
@@ -27,14 +39,16 @@
 <p>Upload an <code>.eml</code> file or paste raw source to inspect message headers, body, and multipart structure.</p>
 
 <div class="file-row">
+  <label for="fileInput">EML File Upload</label>
   <input type="file" id="fileInput" accept=".eml,.txt,message/rfc822">
 </div>
+<label for="emlInput">Raw EML Source</label>
 <textarea id="emlInput" class="tool-input" rows="10" placeholder="Paste raw EML source here..."></textarea>
 <br>
 <button id="parseBtn" class="tool-btn">Parse EML</button>
 <p class="helper">Files are parsed locally only.</p>
 
-<div id="output"></div>
+<div id="output" aria-live="polite"></div>
 
 <footer class="site-footer">
   <hr>

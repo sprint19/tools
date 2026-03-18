@@ -6,6 +6,18 @@
   <meta name="description" content="View and parse ICS calendar files locally. Extract calendar events with title, start, end, and location fields.">
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="https://tools.sprint19.com/calendar_file_viewer/">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Calendar File Viewer | Sprint19",
+    "description": "View and parse ICS calendar files locally. Extract calendar events with title, start, end, and location fields.",
+    "applicationCategory": "DeveloperApplication",
+    "operatingSystem": "Web",
+    "url": "https://tools.sprint19.com/calendar_file_viewer/"
+  }
+  </script>
+
   <meta property="og:title" content="Calendar File Viewer — Built by Sprint19">
   <meta property="og:description" content="Parse ICS calendar files and inspect events with local-only processing.">
   <meta property="og:type" content="website">
@@ -26,13 +38,15 @@
 <p>Upload a calendar file (<code>.ics</code>) or paste source text to inspect events in a readable table.</p>
 
 <div class="file-row">
+  <label for="fileInput">ICS File Upload</label>
   <input type="file" id="fileInput" accept=".ics,text/calendar">
 </div>
+<label for="icsInput">Raw ICS Content</label>
 <textarea id="icsInput" class="tool-input" rows="10" placeholder="BEGIN:VCALENDAR&#10;..."></textarea>
 <br>
 <button id="parseBtn" class="tool-btn">Parse Calendar File</button>
 
-<div id="output"></div>
+<div id="output" aria-live="polite"></div>
 
 <footer class="site-footer">
   <hr>

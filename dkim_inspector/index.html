@@ -6,6 +6,18 @@
   <meta name="description" content="A privacy-first, browser-based DKIM inspector. Paste a DKIM DNS TXT record or DKIM-Signature header for a structured field-by-field breakdown with warnings. No data leaves your browser. Built by Sprint19.">
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="https://tools.sprint19.com/dkim_inspector/">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "DKIM Inspector – Record & Signature Analysis | Sprint19",
+    "description": "A privacy-first, browser-based DKIM inspector. Paste a DKIM DNS TXT record or DKIM-Signature header for a structured field-by-field breakdown with warnings. No data leaves your browser. Built by Sprint19.",
+    "applicationCategory": "DeveloperApplication",
+    "operatingSystem": "Web",
+    "url": "https://tools.sprint19.com/dkim_inspector/"
+  }
+  </script>
+
   <meta property="og:title" content="DKIM Inspector — Built by Sprint19">
   <meta property="og:description" content="Paste a DKIM DNS TXT record or DKIM-Signature header for a structured field-by-field breakdown with warnings. No data leaves your browser.">
   <meta property="og:type" content="website">
@@ -25,11 +37,12 @@
 <h1>DKIM Inspector</h1>
 <p>Paste a DKIM DNS TXT record or a DKIM-Signature email header. Structured breakdown. No DNS lookups. No data leaves your browser.</p>
 
+<label for="dkimInput">DKIM Record or Signature</label>
 <textarea id="dkimInput" class="tool-input" placeholder="v=DKIM1; k=rsa; p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNA..." rows="6"></textarea>
 <br>
 <button id="inspectBtn" class="tool-btn">Inspect</button>
 
-<div id="output"></div>
+<div id="output" aria-live="polite"></div>
 
 <footer class="site-footer">
   <hr>

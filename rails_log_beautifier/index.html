@@ -6,6 +6,18 @@
   <meta name="description" content="Beautify Rails server logs locally with tolerant request grouping and deterministic output.">
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="https://tools.sprint19.com/rails_log_beautifier/">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Rails Log Beautifier | Sprint19",
+    "description": "Beautify Rails server logs locally with tolerant request grouping and deterministic output.",
+    "applicationCategory": "DeveloperApplication",
+    "operatingSystem": "Web",
+    "url": "https://tools.sprint19.com/rails_log_beautifier/"
+  }
+  </script>
+
   <meta property="og:title" content="Rails Log Beautifier — Built by Sprint19">
   <meta property="og:description" content="Group Rails request logs and extract summary fields without runtime inference. Local-only processing.">
   <meta property="og:type" content="website">
@@ -44,9 +56,10 @@
 <p>Paste Rails server logs to group request-like sections and extract high-level stats with tolerant parsing.</p>
 <p class="disclaimer">Be careful when pasting production logs that may contain sensitive data.</p>
 
+<label for="logInput">Rails Log Input</label>
 <textarea id="logInput" class="tool-input" rows="16" placeholder='Started GET "/users" for 127.0.0.1 at 2026-03-18 10:00:00 +0000&#10;Processing by UsersController#index as HTML&#10;Completed 200 OK in 41.2ms (Views: 10.1ms | ActiveRecord: 4.2ms)'></textarea>
 <button id="beautifyBtn" class="tool-btn">Beautify Logs</button>
-<div id="output"></div>
+<div id="output" aria-live="polite"></div>
 
 <footer class="site-footer">
   <hr>

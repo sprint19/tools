@@ -6,6 +6,18 @@
   <meta name="description" content="Format NGINX config text locally with deterministic indentation and preserved comments/directive boundaries.">
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="https://tools.sprint19.com/nginx_formatter/">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "NGINX Config Formatter | Sprint19",
+    "description": "Format NGINX config text locally with deterministic indentation and preserved comments/directive boundaries.",
+    "applicationCategory": "DeveloperApplication",
+    "operatingSystem": "Web",
+    "url": "https://tools.sprint19.com/nginx_formatter/"
+  }
+  </script>
+
   <meta property="og:title" content="NGINX Config Formatter — Built by Sprint19">
   <meta property="og:description" content="Pretty-print NGINX config blocks while preserving comments and directive boundaries. Local-only processing.">
   <meta property="og:type" content="website">
@@ -37,15 +49,16 @@
     .copy-feedback { font-size: 13px; color: var(--color-text-muted); }
   </style>
 </head>
-<body data-affiliate-cta="true">
+<body data-affiliate-cta="true" data-shortcut-input="#nginxInput" data-shortcut-action="#formatBtn">
 
 <a href="/" class="back-link">&larr; Sprint19 Tools</a>
 <h1>NGINX Config Formatter</h1>
 <p>Paste an NGINX config block for deterministic indentation while preserving comments and directive boundaries.</p>
 
-<textarea id="nginxInput" class="tool-input" rows="16" placeholder="server {&#10;listen 80; # inline comment&#10;location / {&#10;proxy_pass http://app; &#10;}&#10;}"></textarea>
-<button id="formatBtn" class="tool-btn">Format Config</button>
-<div id="output"></div>
+<label for="nginxInput">NGINX config input</label>
+<textarea id="nginxInput" class="tool-input" rows="16" aria-label="NGINX config input" placeholder="server {&#10;listen 80; # inline comment&#10;location / {&#10;proxy_pass http://app; &#10;}&#10;}"></textarea>
+<button id="formatBtn" class="tool-btn" aria-label="Format NGINX config">Format Config</button>
+<div id="output" role="status" aria-live="polite"></div>
 
 <footer class="site-footer">
   <hr>
@@ -60,6 +73,9 @@
 var MAX_INPUT_BYTES = 102400;
 
 function copyTextWithFallback(text) {
+  if (window.Sprint19Utils && typeof window.Sprint19Utils.copyTextWithFeedback === 'function') {
+    return window.Sprint19Utils.copyTextWithFeedback(text);
+  }
   if (navigator.clipboard && navigator.clipboard.writeText) {
     return navigator.clipboard.writeText(text).then(function() {
       return true;
@@ -231,8 +247,12 @@ function renderResult(result) {
   var feedback = document.createElement('span');
   feedback.className = 'copy-feedback';
   btn.addEventListener('click', function() {
+    if (window.Sprint19Utils && typeof window.Sprint19Utils.copyTextWithFeedback === 'function') {
+      window.Sprint19Utils.copyTextWithFeedback(result.formatted, feedback);
+      return;
+    }
     copyTextWithFallback(result.formatted).then(function(ok) {
-      feedback.textContent = ok ? 'Copied formatted config.' : 'Copy failed. Please copy manually.';
+      feedback.textContent = ok ? 'Copied' : 'Copy failed';
     });
   });
   row.appendChild(btn);

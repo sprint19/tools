@@ -6,6 +6,18 @@
   <meta name="description" content="A privacy-first, browser-based DMARC aggregate report reader. Upload your XML and receive a clear, structured interpretation. No data leaves your browser. Built by Sprint19.">
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="https://tools.sprint19.com/dmarc_reader/">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "DMARC XML Reader – Clear, Local Report Interpretation | Sprint19",
+    "description": "A privacy-first, browser-based DMARC aggregate report reader. Upload your XML and receive a clear, structured interpretation. No data leaves your browser. Built by Sprint19.",
+    "applicationCategory": "DeveloperApplication",
+    "operatingSystem": "Web",
+    "url": "https://tools.sprint19.com/dmarc_reader/"
+  }
+  </script>
+
   <meta property="og:title" content="DMARC XML Reader — Built by Sprint19">
   <meta property="og:description" content="Upload your DMARC XML and receive a clear, structured interpretation. No data leaves your browser.">
   <meta property="og:type" content="website">
@@ -59,9 +71,10 @@
 <h1>DMARC XML Reader</h1>
 <p>Structured interpretation. No speculation. No data leaves your browser.</p>
 
+<label for="fileInput">DMARC XML File</label>
 <input type="file" id="fileInput" accept=".xml" />
 
-<div id="output"></div>
+<div id="output" aria-live="polite"></div>
 
 <footer class="site-footer">
   <hr>

@@ -6,6 +6,18 @@
   <meta name="description" content="Inspect DNS TXT record content locally in your browser. Normalize pasted TXT values, detect common record types, and parse tags safely with no network lookups.">
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="https://tools.sprint19.com/dns_txt_inspector/">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "DNS TXT Record Inspector | Sprint19",
+    "description": "Inspect DNS TXT record content locally in your browser. Normalize pasted TXT values, detect common record types, and parse tags safely with no network lookups.",
+    "applicationCategory": "DeveloperApplication",
+    "operatingSystem": "Web",
+    "url": "https://tools.sprint19.com/dns_txt_inspector/"
+  }
+  </script>
+
   <meta property="og:title" content="DNS TXT Record Inspector — Built by Sprint19">
   <meta property="og:description" content="Parse TXT content into normalized value, detected type, and structured tags. No data leaves your browser.">
   <meta property="og:type" content="website">
@@ -36,11 +48,12 @@
 <h1>DNS TXT Record Inspector</h1>
 <p>Paste TXT record content to normalize it, detect common record patterns, and inspect parsed tags or segments.</p>
 
+<label for="txtInput">TXT Record Content</label>
 <textarea id="txtInput" class="tool-input" rows="8" placeholder='"v=DMARC1; p=none; rua=mailto:dmarc@example.com"' ></textarea>
 <br>
 <button id="inspectBtn" class="tool-btn">Inspect TXT</button>
 
-<div id="output"></div>
+<div id="output" aria-live="polite"></div>
 
 <footer class="site-footer">
   <hr>

@@ -6,6 +6,18 @@
   <meta name="description" content="Pick a base color to generate complementary, analogous, triadic, and split-complementary palettes, a monochrome scale, and a gradient strip — with HEX, RGB, WCAG contrast ratios, and one-click copy. No data leaves your browser. Built by Sprint19.">
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="https://tools.sprint19.com/color_picker/">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Color Picker & Palette Generator – HEX, RGB, HSL | Sprint19",
+    "description": "Pick a base color to generate complementary, analogous, triadic, and split-complementary palettes, a monochrome scale, and a gradient strip — with HEX, RGB, WCAG contrast ratios, and one-click copy. No data leaves your browser. Built by Sprint19.",
+    "applicationCategory": "DeveloperApplication",
+    "operatingSystem": "Web",
+    "url": "https://tools.sprint19.com/color_picker/"
+  }
+  </script>
+
   <meta property="og:title" content="Color Picker &amp; Palette Generator &#8211; HEX, RGB, HSL | Sprint19">
   <meta property="og:description" content="Pick a base color to generate complementary, analogous, triadic, and split-complementary palettes, a monochrome scale, and a gradient strip — with WCAG contrast ratios.">
   <meta property="og:type" content="website">
@@ -243,11 +255,11 @@
 <p>Pick or paste a base color to generate palettes, monochrome scales, and gradient strips with WCAG contrast data. Everything runs in your browser.</p>
 
 <div class="picker-row">
-  <input type="color" id="colorPicker" value="#4CA38C">
-  <input type="text" id="hexInput" value="#4CA38C" placeholder="#4CA38C" spellcheck="false" autocomplete="off">
+  <input type="color" id="colorPicker" value="#4CA38C" aria-label="Base color picker">
+  <input type="text" id="hexInput" value="#4CA38C" placeholder="#4CA38C" spellcheck="false" autocomplete="off" aria-label="HEX color input">
   <button class="preset-btn" id="presetBtn">Sprint19 teal</button>
 </div>
-<div class="hex-error" id="hexError"></div>
+<div class="hex-error" id="hexError" role="status" aria-live="polite"></div>
 
 <div class="preview-section">
   <div class="preview-block">

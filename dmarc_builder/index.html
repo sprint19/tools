@@ -6,6 +6,18 @@
   <meta name="description" content="A privacy-first, browser-based DMARC record builder. Fill in your policy settings and get a ready-to-publish TXT record. No data leaves your browser. Built by Sprint19.">
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="https://tools.sprint19.com/dmarc_builder/">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "DMARC Record Builder – Generate a DMARC TXT Record | Sprint19",
+    "description": "A privacy-first, browser-based DMARC record builder. Fill in your policy settings and get a ready-to-publish TXT record. No data leaves your browser. Built by Sprint19.",
+    "applicationCategory": "DeveloperApplication",
+    "operatingSystem": "Web",
+    "url": "https://tools.sprint19.com/dmarc_builder/"
+  }
+  </script>
+
   <meta property="og:title" content="DMARC Record Builder — Built by Sprint19">
   <meta property="og:description" content="Fill in your DMARC policy settings and get a ready-to-publish TXT record. No data leaves your browser.">
   <meta property="og:type" content="website">
@@ -167,7 +179,7 @@
 
 <button id="generateBtn" class="tool-btn">Generate Record</button>
 
-<div id="output"></div>
+<div id="output" aria-live="polite"></div>
 
 <footer class="site-footer">
   <hr>

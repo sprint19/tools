@@ -6,6 +6,18 @@
   <meta name="description" content="A privacy-first, browser-based JWT decoder. Paste a JSON Web Token to decode its header, payload, and signature. No verification performed. No data leaves your browser. Built by Sprint19.">
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="https://tools.sprint19.com/jwt_decoder/">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "JWT Decoder – Decode Header, Payload & Signature | Sprint19",
+    "description": "A privacy-first, browser-based JWT decoder. Paste a JSON Web Token to decode its header, payload, and signature. No verification performed. No data leaves your browser. Built by Sprint19.",
+    "applicationCategory": "DeveloperApplication",
+    "operatingSystem": "Web",
+    "url": "https://tools.sprint19.com/jwt_decoder/"
+  }
+  </script>
+
   <meta property="og:title" content="JWT Decoder — Decode Header, Payload &amp; Signature | Sprint19">
   <meta property="og:description" content="Paste a JSON Web Token to decode its header, payload, and signature. No verification performed. No data leaves your browser.">
   <meta property="og:type" content="website">
@@ -28,11 +40,12 @@
 <h1>JWT Decoder</h1>
 <p>Paste a JSON Web Token. Decode only &mdash; no signature verification is performed. No data leaves your browser.</p>
 
+<label for="jwtInput">JWT Token Input</label>
 <textarea id="jwtInput" class="tool-input" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c" rows="4"></textarea>
 <br>
 <button id="decodeBtn" class="tool-btn">Decode</button>
 
-<div id="output"></div>
+<div id="output" aria-live="polite"></div>
 
 <footer class="site-footer">
   <hr>

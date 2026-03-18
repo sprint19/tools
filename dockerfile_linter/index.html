@@ -6,6 +6,18 @@
   <meta name="description" content="Lint Dockerfile text locally for deterministic informational findings. No build execution or network calls.">
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="https://tools.sprint19.com/dockerfile_linter/">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Dockerfile Linter | Sprint19",
+    "description": "Lint Dockerfile text locally for deterministic informational findings. No build execution or network calls.",
+    "applicationCategory": "DeveloperApplication",
+    "operatingSystem": "Web",
+    "url": "https://tools.sprint19.com/dockerfile_linter/"
+  }
+  </script>
+
   <meta property="og:title" content="Dockerfile Linter — Built by Sprint19">
   <meta property="og:description" content="Parse Dockerfile instructions with continuation-line support and local-only informational checks.">
   <meta property="og:type" content="website">
@@ -37,15 +49,16 @@
     .copy-feedback { font-size: 13px; color: var(--color-text-muted); }
   </style>
 </head>
-<body data-affiliate-cta="true">
+<body data-affiliate-cta="true" data-shortcut-input="#dockerInput" data-shortcut-action="#lintBtn">
 
 <a href="/" class="back-link">&larr; Sprint19 Tools</a>
 <h1>Dockerfile Linter</h1>
 <p>Paste Dockerfile text to get deterministic informational notes. Parsing is local-only and interpretation-only.</p>
 
-<textarea id="dockerInput" class="tool-input" rows="14" placeholder="FROM node:latest&#10;RUN apt-get update && \&#10;    apt-get install -y curl&#10;ADD . /app"></textarea>
-<button id="lintBtn" class="tool-btn">Lint Dockerfile</button>
-<div id="output"></div>
+<label for="dockerInput">Dockerfile input</label>
+<textarea id="dockerInput" class="tool-input" rows="14" aria-label="Dockerfile input" placeholder="FROM node:latest&#10;RUN apt-get update && \&#10;    apt-get install -y curl&#10;ADD . /app"></textarea>
+<button id="lintBtn" class="tool-btn" aria-label="Lint Dockerfile input">Lint Dockerfile</button>
+<div id="output" role="status" aria-live="polite"></div>
 
 <footer class="site-footer">
   <hr>
@@ -60,6 +73,9 @@
 var MAX_INPUT_BYTES = 51200;
 
 function copyTextWithFallback(text) {
+  if (window.Sprint19Utils && typeof window.Sprint19Utils.copyTextWithFeedback === 'function') {
+    return window.Sprint19Utils.copyTextWithFeedback(text);
+  }
   if (navigator.clipboard && navigator.clipboard.writeText) {
     return navigator.clipboard.writeText(text).then(function() {
       return true;
@@ -328,8 +344,12 @@ function renderResult(result) {
   var feedback = document.createElement('span');
   feedback.className = 'copy-feedback';
   btn.addEventListener('click', function() {
+    if (window.Sprint19Utils && typeof window.Sprint19Utils.copyTextWithFeedback === 'function') {
+      window.Sprint19Utils.copyTextWithFeedback(result.normalizedInstructionBlock, feedback);
+      return;
+    }
     copyTextWithFallback(result.normalizedInstructionBlock).then(function(ok) {
-      feedback.textContent = ok ? 'Copied normalized instruction block.' : 'Copy failed. Please copy manually.';
+      feedback.textContent = ok ? 'Copied' : 'Copy failed';
     });
   });
   row.appendChild(btn);

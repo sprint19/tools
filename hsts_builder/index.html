@@ -6,6 +6,18 @@
   <meta name="description" content="Generate Strict-Transport-Security headers locally in your browser with deterministic output and strict validation. No data leaves your browser.">
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="https://tools.sprint19.com/hsts_builder/">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "HSTS Builder | Sprint19",
+    "description": "Generate Strict-Transport-Security headers locally in your browser with deterministic output and strict validation. No data leaves your browser.",
+    "applicationCategory": "DeveloperApplication",
+    "operatingSystem": "Web",
+    "url": "https://tools.sprint19.com/hsts_builder/"
+  }
+  </script>
+
   <meta property="og:title" content="HSTS Builder — Built by Sprint19">
   <meta property="og:description" content="Build copy-ready HSTS header values with max-age, includeSubDomains, and preload. Local-only processing.">
   <meta property="og:type" content="website">
@@ -121,7 +133,7 @@
 
 <button id="generateBtn" class="tool-btn">Generate Header</button>
 
-<div id="output"></div>
+<div id="output" aria-live="polite"></div>
 
 <footer class="site-footer">
   <hr>

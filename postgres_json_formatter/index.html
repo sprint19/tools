@@ -6,6 +6,18 @@
   <meta name="description" content="Format JSON text locally with deterministic pretty-print and optional single-pass unescape mode. No data leaves your browser.">
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="https://tools.sprint19.com/postgres_json_formatter/">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Postgres JSON Formatter | Sprint19",
+    "description": "Format JSON text locally with deterministic pretty-print and optional single-pass unescape mode. No data leaves your browser.",
+    "applicationCategory": "DeveloperApplication",
+    "operatingSystem": "Web",
+    "url": "https://tools.sprint19.com/postgres_json_formatter/"
+  }
+  </script>
+
   <meta property="og:title" content="Postgres JSON Formatter — Built by Sprint19">
   <meta property="og:description" content="Pretty-print JSON text with local-only parsing and strict single-pass optional unescape behavior.">
   <meta property="og:type" content="website">
@@ -44,19 +56,20 @@
     .copy-feedback { font-size: 13px; color: var(--color-text-muted); }
   </style>
 </head>
-<body data-affiliate-cta="true">
+<body data-affiliate-cta="true" data-shortcut-input="#jsonInput" data-shortcut-action="#formatBtn">
 
 <a href="/" class="back-link">&larr; Sprint19 Tools</a>
 <h1>Postgres JSON Formatter</h1>
 <p>Paste JSON text for deterministic pretty-print formatting. Optional single-pass unescape mode is available for JSON string literals containing JSON.</p>
 
-<textarea id="jsonInput" class="tool-input" rows="11" placeholder='{"id":1,"meta":{"enabled":true}}'></textarea>
+<label for="jsonInput">JSON input</label>
+<textarea id="jsonInput" class="tool-input" rows="11" aria-label="JSON input" placeholder='{"id":1,"meta":{"enabled":true}}'></textarea>
 <div class="controls">
   <label><input id="singlePassToggle" type="checkbox"> Attempt single-pass unescape for JSON string literal input</label>
 </div>
-<button id="formatBtn" class="tool-btn">Format JSON</button>
+<button id="formatBtn" class="tool-btn" aria-label="Format JSON input">Format JSON</button>
 
-<div id="output"></div>
+<div id="output" role="status" aria-live="polite"></div>
 
 <footer class="site-footer">
   <hr>
@@ -71,6 +84,9 @@
 var MAX_INPUT_BYTES = 102400;
 
 function copyTextWithFallback(text) {
+  if (window.Sprint19Utils && typeof window.Sprint19Utils.copyTextWithFeedback === 'function') {
+    return window.Sprint19Utils.copyTextWithFeedback(text);
+  }
   if (navigator.clipboard && navigator.clipboard.writeText) {
     return navigator.clipboard.writeText(text).then(function() {
       return true;
@@ -230,8 +246,12 @@ function renderResult(result) {
   feedback.className = 'copy-feedback';
   feedback.textContent = '';
   copyBtn.addEventListener('click', function() {
+    if (window.Sprint19Utils && typeof window.Sprint19Utils.copyTextWithFeedback === 'function') {
+      window.Sprint19Utils.copyTextWithFeedback(result.pretty, feedback);
+      return;
+    }
     copyTextWithFallback(result.pretty).then(function(success) {
-      feedback.textContent = success ? 'Copied pretty JSON output.' : 'Copy failed. Please copy manually.';
+      feedback.textContent = success ? 'Copied' : 'Copy failed';
     });
   });
   copyRow.appendChild(copyBtn);

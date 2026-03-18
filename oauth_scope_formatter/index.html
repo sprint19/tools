@@ -6,6 +6,18 @@
   <meta name="description" content="Format OAuth scope strings locally in your browser with deterministic dedupe and order-preserving normalization. No data leaves your browser.">
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="https://tools.sprint19.com/oauth_scope_formatter/">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "OAuth Scope Formatter | Sprint19",
+    "description": "Format OAuth scope strings locally in your browser with deterministic dedupe and order-preserving normalization. No data leaves your browser.",
+    "applicationCategory": "DeveloperApplication",
+    "operatingSystem": "Web",
+    "url": "https://tools.sprint19.com/oauth_scope_formatter/"
+  }
+  </script>
+
   <meta property="og:title" content="OAuth Scope Formatter — Built by Sprint19">
   <meta property="og:description" content="Normalize scope strings into copy-ready space-delimited output with duplicate handling. Local-only processing.">
   <meta property="og:type" content="website">
@@ -58,17 +70,18 @@
     }
   </style>
 </head>
-<body data-affiliate-cta="true">
+<body data-affiliate-cta="true" data-shortcut-input="#scopeInput" data-shortcut-action="#formatBtn">
 
 <a href="/" class="back-link">&larr; Sprint19 Tools</a>
 <h1>OAuth Scope Formatter</h1>
 <p>Paste raw scope text to normalize it into a copy-ready space-delimited string with duplicate handling.</p>
 
-<textarea id="scopeInput" class="tool-input" rows="7" placeholder="openid profile,email&#10;offline_access profile"></textarea>
+<label for="scopeInput">OAuth scope input</label>
+<textarea id="scopeInput" class="tool-input" rows="7" aria-label="OAuth scope input" placeholder="openid profile,email&#10;offline_access profile"></textarea>
 <br>
-<button id="formatBtn" class="tool-btn">Format Scopes</button>
+<button id="formatBtn" class="tool-btn" aria-label="Format OAuth scopes">Format Scopes</button>
 
-<div id="output"></div>
+<div id="output" role="status" aria-live="polite"></div>
 
 <footer class="site-footer">
   <hr>
@@ -78,10 +91,14 @@
   <p class="copyright">&copy; 2026 Sprint19. Code licensed under <a href="/LICENSE.md">MIT</a>. Sprint19 name and branding may not be used without permission.</p>
 </footer>
 
+<script src="/shared/utils.js"></script>
 <script>
 var MAX_SCOPE_INPUT = 10240;
 
 function copyTextWithFallback(text) {
+  if (window.Sprint19Utils && typeof window.Sprint19Utils.copyTextWithFeedback === 'function') {
+    return window.Sprint19Utils.copyTextWithFeedback(text);
+  }
   if (navigator.clipboard && navigator.clipboard.writeText) {
     return navigator.clipboard.writeText(text).then(function() {
       return true;
@@ -212,8 +229,12 @@ function renderResult(result) {
   feedback.textContent = '';
 
   copyBtn.addEventListener('click', function() {
+    if (window.Sprint19Utils && typeof window.Sprint19Utils.copyTextWithFeedback === 'function') {
+      window.Sprint19Utils.copyTextWithFeedback(result.normalized, feedback);
+      return;
+    }
     copyTextWithFallback(result.normalized).then(function(success) {
-      feedback.textContent = success ? 'Copied normalized scope string.' : 'Copy failed. Please copy manually.';
+      feedback.textContent = success ? 'Copied' : 'Copy failed';
     });
   });
 

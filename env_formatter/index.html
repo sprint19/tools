@@ -6,6 +6,18 @@
   <meta name="description" content="Format .env text locally with ordered key/value parsing, malformed-line notes, and masked-by-default rendering. No data leaves your browser.">
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="https://tools.sprint19.com/env_formatter/">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "ENV File Formatter | Sprint19",
+    "description": "Format .env text locally with ordered key/value parsing, malformed-line notes, and masked-by-default rendering. No data leaves your browser.",
+    "applicationCategory": "DeveloperApplication",
+    "operatingSystem": "Web",
+    "url": "https://tools.sprint19.com/env_formatter/"
+  }
+  </script>
+
   <meta property="og:title" content="ENV File Formatter — Built by Sprint19">
   <meta property="og:description" content="Parse .env text into a structured table with local-only deterministic formatting and copy-ready output.">
   <meta property="og:type" content="website">
@@ -44,20 +56,21 @@
     .copy-feedback { font-size: 13px; color: var(--color-text-muted); }
   </style>
 </head>
-<body data-affiliate-cta="true">
+<body data-affiliate-cta="true" data-shortcut-input="#envInput" data-shortcut-action="#formatBtn">
 
 <a href="/" class="back-link">&larr; Sprint19 Tools</a>
 <h1>ENV File Formatter</h1>
 <p>Paste <code>.env</code> text to parse key/value entries in source order with masked-by-default rendering.</p>
 <p class="disclaimer">Be careful when pasting production secrets into shared screens or recordings.</p>
 
-<textarea id="envInput" class="tool-input" rows="12" placeholder="export API_KEY=abc123&#10;DB_HOST=localhost&#10;EMPTY_VALUE=&#10;QUOTED=&quot;value # not a comment&quot;"></textarea>
+<label for="envInput">ENV input</label>
+<textarea id="envInput" class="tool-input" rows="12" aria-label="ENV input" placeholder="export API_KEY=abc123&#10;DB_HOST=localhost&#10;EMPTY_VALUE=&#10;QUOTED=&quot;value # not a comment&quot;"></textarea>
 <div class="controls">
   <label><input id="revealToggle" type="checkbox"> Reveal rendered values</label>
 </div>
-<button id="formatBtn" class="tool-btn">Format ENV</button>
+<button id="formatBtn" class="tool-btn" aria-label="Format ENV input">Format ENV</button>
 
-<div id="output"></div>
+<div id="output" role="status" aria-live="polite"></div>
 
 <footer class="site-footer">
   <hr>
@@ -72,6 +85,9 @@
 var MAX_INPUT_BYTES = 51200;
 
 function copyTextWithFallback(text) {
+  if (window.Sprint19Utils && typeof window.Sprint19Utils.copyTextWithFeedback === 'function') {
+    return window.Sprint19Utils.copyTextWithFeedback(text);
+  }
   if (navigator.clipboard && navigator.clipboard.writeText) {
     return navigator.clipboard.writeText(text).then(function() {
       return true;
@@ -313,8 +329,12 @@ function renderResult(result, revealValues) {
   feedback.className = 'copy-feedback';
   feedback.textContent = '';
   copyBtn.addEventListener('click', function() {
+    if (window.Sprint19Utils && typeof window.Sprint19Utils.copyTextWithFeedback === 'function') {
+      window.Sprint19Utils.copyTextWithFeedback(result.normalized, feedback);
+      return;
+    }
     copyTextWithFallback(result.normalized).then(function(success) {
-      feedback.textContent = success ? 'Copied normalized .env output.' : 'Copy failed. Please copy manually.';
+      feedback.textContent = success ? 'Copied' : 'Copy failed';
     });
   });
   copyRow.appendChild(copyBtn);

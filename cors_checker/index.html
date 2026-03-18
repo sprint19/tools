@@ -6,6 +6,18 @@
   <meta name="description" content="A privacy-first, browser-based CORS header checker. Paste HTTP response headers to see CORS configuration at a glance. No data leaves your browser. Built by Sprint19.">
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="https://tools.sprint19.com/cors_checker/">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "CORS Header Checker – Analyze CORS Configuration | Sprint19",
+    "description": "A privacy-first, browser-based CORS header checker. Paste HTTP response headers to see CORS configuration at a glance. No data leaves your browser. Built by Sprint19.",
+    "applicationCategory": "DeveloperApplication",
+    "operatingSystem": "Web",
+    "url": "https://tools.sprint19.com/cors_checker/"
+  }
+  </script>
+
   <meta property="og:title" content="CORS Header Checker &#8211; Analyze CORS Configuration | Sprint19">
   <meta property="og:description" content="Paste HTTP response headers to analyze CORS configuration and flag common misconfigurations. No data leaves your browser.">
   <meta property="og:type" content="website">
@@ -27,6 +39,7 @@
 <h1>CORS Header Checker</h1>
 <p>Paste HTTP response headers. Structured breakdown of CORS configuration. No data leaves your browser.</p>
 
+<label for="corsInput">HTTP Response Headers</label>
 <textarea id="corsInput" class="tool-input" placeholder="HTTP/1.1 200 OK
 Content-Type: application/json
 Access-Control-Allow-Origin: *
@@ -36,7 +49,7 @@ Access-Control-Max-Age: 3600" rows="8"></textarea>
 <br>
 <button id="checkBtn" class="tool-btn">Check</button>
 
-<div id="output"></div>
+<div id="output" aria-live="polite"></div>
 
 <footer class="site-footer">
   <hr>

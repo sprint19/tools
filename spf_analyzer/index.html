@@ -6,6 +6,18 @@
   <meta name="description" content="A privacy-first, browser-based SPF record analyzer. Paste your TXT record and receive a clear syntax breakdown with lookup warnings. No data leaves your browser. Built by Sprint19.">
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="https://tools.sprint19.com/spf_analyzer/">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "SPF Record Analyzer – Syntax Validation & Lookup Warnings | Sprint19",
+    "description": "A privacy-first, browser-based SPF record analyzer. Paste your TXT record and receive a clear syntax breakdown with lookup warnings. No data leaves your browser. Built by Sprint19.",
+    "applicationCategory": "DeveloperApplication",
+    "operatingSystem": "Web",
+    "url": "https://tools.sprint19.com/spf_analyzer/"
+  }
+  </script>
+
   <meta property="og:title" content="SPF Record Analyzer — Built by Sprint19">
   <meta property="og:description" content="Paste your SPF TXT record and receive a clear syntax breakdown with lookup warnings. No data leaves your browser.">
   <meta property="og:type" content="website">
@@ -25,11 +37,12 @@
 <h1>SPF Record Analyzer</h1>
 <p>Paste an SPF TXT record. Structured breakdown. No DNS lookups. No data leaves your browser.</p>
 
+<label for="spfInput">SPF Record Input</label>
 <textarea id="spfInput" class="tool-input" placeholder="v=spf1 include:_spf.google.com ip4:203.0.113.0/24 ~all" rows="4"></textarea>
 <br>
 <button id="analyzeBtn" class="tool-btn">Analyze</button>
 
-<div id="output"></div>
+<div id="output" aria-live="polite"></div>
 
 <footer class="site-footer">
   <hr>

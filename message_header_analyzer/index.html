@@ -6,6 +6,18 @@
   <meta name="description" content="Analyze raw email message headers locally in your browser. Parse key fields, authentication signals, and mail transfer hops. No data leaves your browser.">
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="https://tools.sprint19.com/message_header_analyzer/">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Message Header Analyzer | Sprint19",
+    "description": "Analyze raw email message headers locally in your browser. Parse key fields, authentication signals, and mail transfer hops. No data leaves your browser.",
+    "applicationCategory": "DeveloperApplication",
+    "operatingSystem": "Web",
+    "url": "https://tools.sprint19.com/message_header_analyzer/"
+  }
+  </script>
+
   <meta property="og:title" content="Message Header Analyzer — Built by Sprint19">
   <meta property="og:description" content="Parse email headers into structured fields, auth indicators, and transfer hops. No data leaves your browser.">
   <meta property="og:type" content="website">
@@ -33,11 +45,12 @@
 <h1>Message Header Analyzer</h1>
 <p>Paste raw email headers to get a structured view of common fields, authentication results, and message route hints.</p>
 
+<label for="headerInput">Message Headers Input</label>
 <textarea id="headerInput" class="tool-input" rows="11" placeholder="From: sender@example.com&#10;To: team@example.com&#10;Subject: Test&#10;..."></textarea>
 <br>
 <button id="analyzeBtn" class="tool-btn">Analyze Headers</button>
 
-<div id="output"></div>
+<div id="output" aria-live="polite"></div>
 
 <footer class="site-footer">
   <hr>
