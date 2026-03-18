@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Generate Strict-Transport-Security headers locally in your browser with deterministic output and strict validation. No data leaves your browser.">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://tools.sprint19.com/hsts_builder/">
+  <meta property="og:title" content="HSTS Builder — Built by Sprint19">
+  <meta property="og:description" content="Build copy-ready HSTS header values with max-age, includeSubDomains, and preload. Local-only processing.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://tools.sprint19.com/hsts_builder/">
+  <meta property="og:image" content="https://tools.sprint19.com/og-image.png">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <link rel="stylesheet" href="/shared/styles.css">
+  <title>HSTS Builder | Sprint19</title>
+  <style>
+    .form-group { margin-bottom: 14px; }
+    .form-group label {
+      display: block;
+      font-weight: 600;
+      font-size: 14px;
+      margin-bottom: 6px;
+      color: var(--color-text);
+    }
+    .form-group input[type="number"],
+    .form-group select {
+      width: 100%;
+      max-width: 360px;
+      padding: 8px 10px;
+      font-size: 14px;
+      border: 1px solid var(--color-border-input);
+      border-radius: 4px;
+      box-sizing: border-box;
+      background: var(--color-card-bg);
+      color: var(--color-text);
+      font-family: inherit;
+    }
+    .checkbox-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .checkbox-group label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      color: var(--color-text);
+      cursor: pointer;
+    }
+    .hint {
+      margin-top: 4px;
+      font-size: 12px;
+      color: var(--color-text-faint);
+    }
+    .warning-msg { color: var(--color-warning); margin: 0; }
+    .error-msg { color: var(--color-error); font-weight: 600; margin: 0; }
+    .kv-grid {
+      display: grid;
+      grid-template-columns: 170px 1fr;
+      gap: 8px 10px;
+      font-size: 14px;
+    }
+    .kv-grid dt { color: var(--color-text-muted); }
+    .kv-grid dd {
+      margin: 0;
+      word-break: break-word;
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    }
+    .copy-row {
+      margin-top: 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .copy-btn {
+      padding: 8px 14px;
+      font-size: 14px;
+      cursor: pointer;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border-input);
+      border-radius: 4px;
+      color: var(--color-text);
+    }
+    .copy-btn:hover { background: var(--color-surface-hover); }
+    .copy-feedback {
+      font-size: 13px;
+      color: var(--color-text-muted);
+    }
+  </style>
+</head>
+<body data-affiliate-cta="true">
+
+<a href="/" class="back-link">&larr; Sprint19 Tools</a>
+<h1>HSTS Builder</h1>
+<p>Generate a deterministic <code>Strict-Transport-Security</code> header from max-age and directive flags. No network requests.</p>
+
+<div class="form-group">
+  <label for="presetSelect">Preset Max-Age</label>
+  <select id="presetSelect" aria-label="Preset max-age">
+    <option value="">Custom value</option>
+    <option value="86400">1 day (86400)</option>
+    <option value="2592000">30 days (2592000)</option>
+    <option value="31536000">1 year (31536000)</option>
+  </select>
+</div>
+
+<div class="form-group">
+  <label for="maxAgeInput">max-age (seconds)</label>
+  <input id="maxAgeInput" type="number" inputmode="numeric" min="0" max="2147483647" step="1" placeholder="31536000">
+  <p class="hint">Required integer between 0 and 2147483647.</p>
+</div>
+
+<div class="checkbox-group">
+  <label><input type="checkbox" id="includeSubdomainsInput"> includeSubDomains</label>
+  <label><input type="checkbox" id="preloadInput"> preload</label>
+</div>
+
+<button id="generateBtn" class="tool-btn">Generate Header</button>
+
+<div id="output"></div>
+
+<footer class="site-footer">
+  <hr>
+  <p>Generated locally in your browser.</p>
+  <p>Built by <a href="https://sprint19.com" target="_blank" rel="noopener noreferrer">Sprint19</a>. Product engineering for startups.</p>
+  <p class="guardrail">This tool generates HSTS header values only. It does not verify browser preload status or live server configuration.</p>
+  <p class="copyright">&copy; 2026 Sprint19. Code licensed under <a href="/LICENSE.md">MIT</a>. Sprint19 name and branding may not be used without permission.</p>
+</footer>
+
+<script src="/shared/utils.js"></script>
+<script>
+var HEADER_NAME = 'Strict-Transport-Security';
+var MAX_SAFE_HSTS = 2147483647;
+var PRELOAD_MIN_MAX_AGE = 31536000;
+
+function parseMaxAge(rawValue) {
+  var trimmed = String(rawValue || '').trim();
+  if (!trimmed) return { error: 'max-age is required.' };
+  if (!/^\d+$/.test(trimmed)) return { error: 'max-age must be a whole number (digits only).' };
+
+  var asNumber = Number(trimmed);
+  if (!Number.isInteger(asNumber)) return { error: 'max-age must be an integer.' };
+  if (asNumber < 0) return { error: 'max-age cannot be negative.' };
+  if (asNumber > MAX_SAFE_HSTS) return { error: 'max-age exceeds supported range (max 2147483647).' };
+
+  return { value: asNumber };
+}
+
+function buildHeaderState(maxAge, includeSubdomains, preload) {
+  var directives = ['max-age=' + maxAge];
+  if (includeSubdomains) directives.push('includeSubDomains');
+  if (preload) directives.push('preload');
+
+  var headerValue = directives.join('; ');
+  return {
+    headerName: HEADER_NAME,
+    headerValue: headerValue,
+    fullHeaderLine: HEADER_NAME + ': ' + headerValue
+  };
+}
+
+function collectWarnings(maxAge, includeSubdomains, preload) {
+  var warnings = [];
+  if (maxAge === 0) {
+    warnings.push('max-age=0 disables policy persistence in browsers.');
+  } else if (maxAge > 0 && maxAge < 86400) {
+    warnings.push('This max-age is unusually short and may reset quickly in browsers.');
+  }
+
+  if (preload && (!includeSubdomains || maxAge < PRELOAD_MIN_MAX_AGE)) {
+    warnings.push('This selection may not meet common preload expectations.');
+  }
+
+  return warnings;
+}
+
+function copyTextWithFallback(text) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    return navigator.clipboard.writeText(text).then(function() {
+      return true;
+    }).catch(function() {
+      return fallbackCopy(text);
+    });
+  }
+  return Promise.resolve(fallbackCopy(text));
+}
+
+function fallbackCopy(text) {
+  var ta = document.createElement('textarea');
+  ta.value = text;
+  ta.setAttribute('readonly', '');
+  ta.style.position = 'fixed';
+  ta.style.opacity = '0';
+  document.body.appendChild(ta);
+  ta.focus();
+  ta.select();
+  var copied = false;
+  try {
+    copied = document.execCommand('copy');
+  } catch (e) {
+    copied = false;
+  }
+  document.body.removeChild(ta);
+  return copied;
+}
+
+function renderDirectiveNotes() {
+  var wrap = document.createElement('div');
+  wrap.className = 'card';
+  var list = document.createElement('ul');
+
+  var notes = [
+    'max-age: how long browsers remember the HTTPS-only policy.',
+    'includeSubDomains: applies the policy to subdomains.',
+    'preload: signals intent for preload consideration.'
+  ];
+
+  for (var i = 0; i < notes.length; i++) {
+    var li = document.createElement('li');
+    li.textContent = notes[i];
+    list.appendChild(li);
+  }
+
+  wrap.appendChild(list);
+  return wrap;
+}
+
+function renderResult(result) {
+  var output = document.getElementById('output');
+  output.innerHTML = '';
+
+  if (result.error) {
+    var errorCard = document.createElement('div');
+    errorCard.className = 'card';
+    var p = document.createElement('p');
+    p.className = 'error-msg';
+    p.textContent = result.error;
+    errorCard.appendChild(p);
+    output.appendChild(errorCard);
+    return;
+  }
+
+  var timestamp = document.createElement('p');
+  timestamp.className = 'report-timestamp';
+  timestamp.textContent = 'Generated on: ' + new Date().toLocaleString();
+  output.appendChild(timestamp);
+
+  var summaryTitle = document.createElement('h2');
+  summaryTitle.textContent = 'Header Output';
+  output.appendChild(summaryTitle);
+
+  var summaryCard = document.createElement('div');
+  summaryCard.className = 'card';
+
+  var kv = document.createElement('dl');
+  kv.className = 'kv-grid';
+  var fields = [
+    ['Header name', result.headerState.headerName],
+    ['Header value', result.headerState.headerValue],
+    ['Full header line', result.headerState.fullHeaderLine]
+  ];
+  for (var i = 0; i < fields.length; i++) {
+    var dt = document.createElement('dt');
+    dt.textContent = fields[i][0];
+    var dd = document.createElement('dd');
+    dd.textContent = fields[i][1];
+    kv.appendChild(dt);
+    kv.appendChild(dd);
+  }
+  summaryCard.appendChild(kv);
+
+  var copyRow = document.createElement('div');
+  copyRow.className = 'copy-row';
+
+  var copyBtn = document.createElement('button');
+  copyBtn.type = 'button';
+  copyBtn.className = 'copy-btn';
+  copyBtn.textContent = 'Copy Full Header';
+
+  var feedback = document.createElement('span');
+  feedback.className = 'copy-feedback';
+  feedback.textContent = '';
+
+  copyBtn.addEventListener('click', function() {
+    copyTextWithFallback(result.headerState.fullHeaderLine).then(function(success) {
+      feedback.textContent = success ? 'Copied full header line.' : 'Copy failed. Please copy manually.';
+    });
+  });
+
+  copyRow.appendChild(copyBtn);
+  copyRow.appendChild(feedback);
+  summaryCard.appendChild(copyRow);
+  output.appendChild(summaryCard);
+
+  var warningsTitle = document.createElement('h2');
+  warningsTitle.textContent = 'Notable Warnings';
+  output.appendChild(warningsTitle);
+
+  var warningsCard = document.createElement('div');
+  warningsCard.className = 'card';
+  if (result.warnings.length === 0) {
+    var noWarn = document.createElement('p');
+    noWarn.className = 'muted';
+    noWarn.textContent = 'No notable warnings for this selection.';
+    warningsCard.appendChild(noWarn);
+  } else {
+    var warningList = document.createElement('ul');
+    for (var w = 0; w < result.warnings.length; w++) {
+      var item = document.createElement('li');
+      var line = document.createElement('p');
+      line.className = 'warning-msg';
+      line.textContent = result.warnings[w];
+      item.appendChild(line);
+      warningList.appendChild(item);
+    }
+    warningsCard.appendChild(warningList);
+  }
+  output.appendChild(warningsCard);
+
+  var explainTitle = document.createElement('h2');
+  explainTitle.textContent = 'Directive Notes';
+  output.appendChild(explainTitle);
+  output.appendChild(renderDirectiveNotes());
+
+  var disclaimer = document.createElement('p');
+  disclaimer.className = 'disclaimer';
+  disclaimer.textContent = 'Interpretation only. Generated headers should be reviewed in your deployment context before use.';
+  output.appendChild(disclaimer);
+}
+
+function computeResultFromForm() {
+  var maxAgeInput = document.getElementById('maxAgeInput').value;
+  var includeSubdomains = document.getElementById('includeSubdomainsInput').checked;
+  var preload = document.getElementById('preloadInput').checked;
+
+  var parsed = parseMaxAge(maxAgeInput);
+  if (parsed.error) return { error: parsed.error };
+
+  return {
+    headerState: buildHeaderState(parsed.value, includeSubdomains, preload),
+    warnings: collectWarnings(parsed.value, includeSubdomains, preload)
+  };
+}
+
+document.getElementById('presetSelect').addEventListener('change', function() {
+  var selected = this.value;
+  if (selected) {
+    document.getElementById('maxAgeInput').value = selected;
+  }
+});
+
+document.getElementById('generateBtn').addEventListener('click', function() {
+  renderResult(computeResultFromForm());
+});
+</script>
+
+</body>
+</html>

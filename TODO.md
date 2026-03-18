@@ -24,7 +24,7 @@ Tracked work for Sprint19 Tools.
 
 ### SSL & Certificates
 
-- [ ] HSTS Builder — generate Strict-Transport-Security headers with max-age, includeSubDomains, and preload
+- [x] HSTS Builder — generate Strict-Transport-Security headers with max-age, includeSubDomains, and preload
 
 ### Auth & Tokens
 
