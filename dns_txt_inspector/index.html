@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Inspect DNS TXT record content locally in your browser. Normalize pasted TXT values, detect common record types, and parse tags safely with no network lookups.">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://tools.sprint19.com/dns_txt_inspector/">
+  <meta property="og:title" content="DNS TXT Record Inspector — Built by Sprint19">
+  <meta property="og:description" content="Parse TXT content into normalized value, detected type, and structured tags. No data leaves your browser.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://tools.sprint19.com/dns_txt_inspector/">
+  <meta property="og:image" content="https://tools.sprint19.com/og-image.png">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <link rel="stylesheet" href="/shared/styles.css">
+  <title>DNS TXT Record Inspector | Sprint19</title>
+  <style>
+    .error-msg { color: var(--color-error); font-weight: 600; margin-top: 12px; }
+    .muted { color: var(--color-text-muted); font-size: 13px; }
+    .badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border: 1px solid var(--color-border-input);
+      border-radius: 999px;
+      font-size: 12px;
+      margin-left: 8px;
+      background: var(--color-surface);
+      color: var(--color-text);
+    }
+    .tag-table td { vertical-align: top; }
+  </style>
+</head>
+<body data-affiliate-cta="true">
+
+<a href="/" class="back-link">&larr; Sprint19 Tools</a>
+<h1>DNS TXT Record Inspector</h1>
+<p>Paste TXT record content to normalize it, detect common record patterns, and inspect parsed tags or segments.</p>
+
+<textarea id="txtInput" class="tool-input" rows="8" placeholder='"v=DMARC1; p=none; rua=mailto:dmarc@example.com"' ></textarea>
+<br>
+<button id="inspectBtn" class="tool-btn">Inspect TXT</button>
+
+<div id="output"></div>
+
+<footer class="site-footer">
+  <hr>
+  <p>Analyzed locally in your browser.</p>
+  <p>Built by <a href="https://sprint19.com" target="_blank" rel="noopener noreferrer">Sprint19</a>. Product engineering for startups.</p>
+  <p class="guardrail">This tool parses TXT record content only. It does not query live DNS or verify deployed records.</p>
+  <p class="copyright">&copy; 2026 Sprint19. Code licensed under <a href="/LICENSE.md">MIT</a>. Sprint19 name and branding may not be used without permission.</p>
+</footer>
+
+<script src="/shared/utils.js"></script>
+<script>
+if (typeof escapeHTML === 'undefined') {
+  function escapeHTML(str) {
+    return str.replace(/[&<>'"]/g, function(tag) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag];
+    });
+  }
+}
+
+var MAX_INPUT_BYTES = 10240;
+
+function isVerificationKey(key) {
+  return [
+    'google-site-verification',
+    'ms',
+    'atlassian-domain-verification',
+    'facebook-domain-verification',
+    'zoom-domain-verification',
+    'stripe-verification'
+  ].indexOf(key.toLowerCase()) !== -1;
+}
+
+function parseQuotedSegments(input) {
+  var i = 0;
+  var parts = [];
+  var hasMultiple = false;
+
+  while (i < input.length) {
+    while (i < input.length && /\s/.test(input.charAt(i))) i++;
+    if (i >= input.length) break;
+    if (input.charAt(i) !== '"') return { valid: false, error: 'Quoted segment sequence is malformed.' };
+
+    i++;
+    var segment = '';
+    while (i < input.length) {
+      var ch = input.charAt(i);
+      if (ch === '\\' && i + 1 < input.length) {
+        segment += input.charAt(i + 1);
+        i += 2;
+        continue;
+      }
+      if (ch === '"') break;
+      segment += ch;
+      i++;
+    }
+
+    if (i >= input.length || input.charAt(i) !== '"') {
+      return { valid: false, error: 'Unterminated quote in TXT value.' };
+    }
+
+    parts.push(segment);
+    i++;
+    while (i < input.length && /\s/.test(input.charAt(i))) i++;
+    if (i < input.length && input.charAt(i) === '"') hasMultiple = true;
+  }
+
+  if (parts.length === 0) {
+    return { valid: false, error: 'Quoted TXT value is empty.' };
+  }
+
+  return { valid: true, parts: parts, hasMultiple: hasMultiple || parts.length > 1 };
+}
+
+function normalizeInput(rawInput) {
+  if (!rawInput || !rawInput.trim()) {
+    return { error: 'No TXT content provided.' };
+  }
+  if (rawInput.length > MAX_INPUT_BYTES) {
+    return { error: 'Input exceeds the 10KB limit. Paste a single TXT record value.' };
+  }
+
+  var trimmed = rawInput.trim();
+  var warnings = [];
+  var normalized;
+
+  if (/^"/.test(trimmed)) {
+    var quoted = parseQuotedSegments(trimmed);
+    if (quoted.valid) {
+      normalized = quoted.parts.join('');
+      if (quoted.hasMultiple) {
+        warnings.push('Detected split quoted segments; segments were joined to form one TXT value.');
+      }
+    } else {
+      return { error: quoted.error };
+    }
+  } else {
+    normalized = trimmed;
+  }
+
+  var compact = normalized.replace(/\s+/g, ' ').trim();
+  if (compact !== normalized) {
+    warnings.push('Whitespace normalized to single spaces for structured parsing.');
+  }
+
+  return {
+    normalizedValue: compact,
+    warnings: warnings
+  };
+}
+
+function detectType(normalizedValue, pairs) {
+  var lower = normalizedValue.toLowerCase();
+  var hasPair = pairs.length > 0;
+  var pairMap = {};
+  for (var i = 0; i < pairs.length; i++) {
+    pairMap[pairs[i].key.toLowerCase()] = true;
+  }
+
+  if (/^v=spf1(\s|$)/i.test(normalizedValue)) return 'SPF';
+  if (pairMap.v && /^dmarc1$/i.test(getPairValue(pairs, 'v'))) return 'DMARC';
+  if (pairMap.v && /^dkim1$/i.test(getPairValue(pairs, 'v'))) return 'DKIM';
+  for (var j = 0; j < pairs.length; j++) {
+    if (isVerificationKey(pairs[j].key)) return 'Verification token';
+  }
+  if (!hasPair && /(google-site-verification|atlassian-domain-verification|facebook-domain-verification|zoom-domain-verification)/.test(lower)) {
+    return 'Verification token';
+  }
+  if (hasPair) return 'Key-Value TXT';
+  return 'Generic TXT';
+}
+
+function getPairValue(pairs, key) {
+  for (var i = 0; i < pairs.length; i++) {
+    if (pairs[i].key.toLowerCase() === key.toLowerCase()) return pairs[i].value;
+  }
+  return '';
+}
+
+function parseSegments(normalizedValue) {
+  var warnings = [];
+  var rows = [];
+  var pairs = [];
+  var segments = [];
+
+  if (/^v=spf1(\s|$)/i.test(normalizedValue)) {
+    segments = normalizedValue.split(/\s+/);
+    for (var s = 0; s < segments.length; s++) {
+      var token = segments[s];
+      if (!token) continue;
+      var idxEq = token.indexOf('=');
+      var idxColon = token.indexOf(':');
+      var key = '';
+      var value = '';
+
+      if (idxEq > 0) {
+        key = token.slice(0, idxEq);
+        value = token.slice(idxEq + 1);
+      } else if (idxColon > 0) {
+        key = token.slice(0, idxColon);
+        value = token.slice(idxColon + 1);
+      } else {
+        key = token;
+      }
+
+      rows.push({
+        segment: token,
+        key: key || '(token)',
+        value: value || '—',
+        note: s === 0 ? 'Version token' : 'SPF mechanism or modifier'
+      });
+      if (idxEq > 0) pairs.push({ key: key, value: value });
+    }
+    if (!/\s(?:\+|-|~|\?)?all$/i.test(' ' + normalizedValue)) {
+      warnings.push('SPF record does not end with an explicit all mechanism.');
+    }
+    return { rows: rows, pairs: pairs, warnings: warnings };
+  }
+
+  if (normalizedValue.indexOf(';') !== -1) {
+    segments = normalizedValue.split(';');
+  } else {
+    segments = [normalizedValue];
+  }
+
+  for (var i = 0; i < segments.length; i++) {
+    var part = segments[i].trim();
+    if (!part) continue;
+    var eqIdx = part.indexOf('=');
+    var k = '';
+    var v = '';
+    var note = 'Unstructured segment';
+
+    if (eqIdx > 0) {
+      k = part.slice(0, eqIdx).trim();
+      v = part.slice(eqIdx + 1).trim();
+      note = 'Key-value tag';
+      pairs.push({ key: k, value: v });
+    } else if (/^v(dmarc1|dkim1)$/i.test(part)) {
+      k = 'v';
+      v = part.slice(1);
+      note = 'Version-like token';
+    } else if (normalizedValue.indexOf(';') !== -1) {
+      warnings.push('Segment "' + part + '" does not include "=" and may be malformed.');
+    }
+
+    rows.push({
+      segment: part,
+      key: k || '(none)',
+      value: v || '—',
+      note: note
+    });
+  }
+
+  return { rows: rows, pairs: pairs, warnings: warnings };
+}
+
+function collectTypeWarnings(recordType, pairs) {
+  var warnings = [];
+  var pairMap = {};
+  for (var i = 0; i < pairs.length; i++) {
+    pairMap[pairs[i].key.toLowerCase()] = true;
+  }
+
+  if (recordType === 'DMARC') {
+    if (!pairMap.v) warnings.push('DMARC record should include "v=DMARC1".');
+    if (!pairMap.p) warnings.push('DMARC record is missing policy tag "p".');
+  }
+  if (recordType === 'DKIM') {
+    if (!pairMap.v) warnings.push('DKIM record should include "v=DKIM1".');
+    if (!pairMap.p) warnings.push('DKIM record is missing public key tag "p".');
+  }
+  if (recordType === 'Verification token' && pairs.length === 0) {
+    warnings.push('Verification token pattern detected, but no key-value pair was parsed.');
+  }
+
+  return warnings;
+}
+
+function buildSummaryCard(result) {
+  var card = document.createElement('div');
+  card.className = 'card';
+
+  var typeLine = document.createElement('p');
+  var strong = document.createElement('strong');
+  strong.textContent = 'Detected type:';
+  var badge = document.createElement('span');
+  badge.className = 'badge';
+  badge.textContent = result.recordType;
+  typeLine.appendChild(strong);
+  typeLine.appendChild(badge);
+  card.appendChild(typeLine);
+
+  var guardrail = document.createElement('p');
+  guardrail.className = 'muted';
+  guardrail.textContent = 'This parser analyzes pasted TXT content only and does not perform live DNS lookups.';
+  card.appendChild(guardrail);
+
+  return card;
+}
+
+function buildSegmentTable(rows) {
+  var table = document.createElement('table');
+  table.className = 'tag-table';
+  var thead = document.createElement('thead');
+  var headRow = document.createElement('tr');
+  ['Segment', 'Key', 'Value', 'Notes'].forEach(function(label) {
+    var th = document.createElement('th');
+    th.textContent = label;
+    headRow.appendChild(th);
+  });
+  thead.appendChild(headRow);
+  table.appendChild(thead);
+
+  var tbody = document.createElement('tbody');
+  for (var i = 0; i < rows.length; i++) {
+    var tr = document.createElement('tr');
+    var cols = [rows[i].segment, rows[i].key, rows[i].value, rows[i].note];
+    for (var c = 0; c < cols.length; c++) {
+      var td = document.createElement('td');
+      td.textContent = cols[c];
+      tr.appendChild(td);
+    }
+    tbody.appendChild(tr);
+  }
+  table.appendChild(tbody);
+  return table;
+}
+
+function appendPreBlock(parent, title, value) {
+  var heading = document.createElement('h2');
+  heading.textContent = title;
+  parent.appendChild(heading);
+
+  var card = document.createElement('div');
+  card.className = 'card';
+  var pre = document.createElement('pre');
+  pre.className = 'raw-block';
+  pre.textContent = value;
+  card.appendChild(pre);
+  parent.appendChild(card);
+}
+
+function inspectTXT(rawInput) {
+  var normalized = normalizeInput(rawInput);
+  if (normalized.error) return { error: normalized.error };
+
+  var parsed = parseSegments(normalized.normalizedValue);
+  var detectedType = detectType(normalized.normalizedValue, parsed.pairs);
+  var warnings = normalized.warnings.concat(parsed.warnings, collectTypeWarnings(detectedType, parsed.pairs));
+
+  return {
+    rawInput: rawInput,
+    normalizedValue: normalized.normalizedValue,
+    rows: parsed.rows,
+    recordType: detectedType,
+    warnings: warnings
+  };
+}
+
+function renderResult(result) {
+  var output = document.getElementById('output');
+  output.innerHTML = '';
+
+  if (result.error) {
+    var err = document.createElement('p');
+    err.className = 'error-msg';
+    err.textContent = result.error;
+    output.appendChild(err);
+    return;
+  }
+
+  var timestamp = document.createElement('p');
+  timestamp.className = 'report-timestamp';
+  timestamp.textContent = 'Generated on: ' + new Date().toLocaleString();
+  output.appendChild(timestamp);
+
+  var source = document.createElement('p');
+  source.className = 'report-source';
+  source.textContent = 'This summary is generated from the TXT content you pasted.';
+  output.appendChild(source);
+
+  var summaryH2 = document.createElement('h2');
+  summaryH2.textContent = 'Summary of Findings';
+  output.appendChild(summaryH2);
+  output.appendChild(buildSummaryCard(result));
+
+  var detailsH2 = document.createElement('h2');
+  detailsH2.textContent = 'Parsed Tags and Segments';
+  output.appendChild(detailsH2);
+  var detailsCard = document.createElement('div');
+  detailsCard.className = 'card';
+  detailsCard.appendChild(buildSegmentTable(result.rows));
+  output.appendChild(detailsCard);
+
+  if (result.warnings.length > 0) {
+    var warningsH2 = document.createElement('h2');
+    warningsH2.textContent = 'Warnings';
+    output.appendChild(warningsH2);
+    var warningsCard = document.createElement('div');
+    warningsCard.className = 'card';
+    var list = document.createElement('ul');
+    for (var i = 0; i < result.warnings.length; i++) {
+      var li = document.createElement('li');
+      li.textContent = result.warnings[i];
+      list.appendChild(li);
+    }
+    warningsCard.appendChild(list);
+    output.appendChild(warningsCard);
+  }
+
+  appendPreBlock(output, 'Raw Input', result.rawInput);
+  appendPreBlock(output, 'Raw Normalized Value', result.normalizedValue);
+
+  var disclaimer = document.createElement('p');
+  disclaimer.className = 'disclaimer';
+  disclaimer.textContent = 'Interpretation only. TXT parsing results do not confirm domain ownership, policy correctness, or security state.';
+  output.appendChild(disclaimer);
+}
+
+document.getElementById('inspectBtn').addEventListener('click', function() {
+  var raw = document.getElementById('txtInput').value;
+  renderResult(inspectTXT(raw));
+});
+</script>
+
+</body>
+</html>

@@ -19,7 +19,7 @@ Tracked work for Sprint19 Tools.
 
 ### Email & DNS
 
-- [ ] DNS TXT Record Inspector — parse key/value pairs from DMARC, SPF, DKIM, and domain verification records
+- [x] DNS TXT Record Inspector — parse key/value pairs from DMARC, SPF, DKIM, and domain verification records
 - [x] Message Header Analyzer — parse sender info, Return-Path, SPF/DKIM/DMARC indicators, and transfer hops from raw headers
 
 ### SSL & Certificates
