@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Format OAuth scope strings locally in your browser with deterministic dedupe and order-preserving normalization. No data leaves your browser.">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://tools.sprint19.com/oauth_scope_formatter/">
+  <meta property="og:title" content="OAuth Scope Formatter — Built by Sprint19">
+  <meta property="og:description" content="Normalize scope strings into copy-ready space-delimited output with duplicate handling. Local-only processing.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://tools.sprint19.com/oauth_scope_formatter/">
+  <meta property="og:image" content="https://tools.sprint19.com/og-image.png">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <link rel="stylesheet" href="/shared/styles.css">
+  <title>OAuth Scope Formatter | Sprint19</title>
+  <style>
+    .error-msg { color: var(--color-error); font-weight: 600; margin: 0; }
+    .notice { color: var(--color-warning); margin: 0; }
+    .copy-row {
+      margin-top: 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .copy-btn {
+      padding: 8px 14px;
+      font-size: 14px;
+      cursor: pointer;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border-input);
+      border-radius: 4px;
+      color: var(--color-text);
+    }
+    .copy-btn:hover { background: var(--color-surface-hover); }
+    .copy-feedback {
+      font-size: 13px;
+      color: var(--color-text-muted);
+    }
+    .scope-columns {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    @media (max-width: 700px) {
+      .scope-columns { grid-template-columns: 1fr; }
+    }
+    .scope-columns ul {
+      margin: 0;
+      padding-left: 18px;
+    }
+    .scope-columns li {
+      margin-bottom: 4px;
+      word-break: break-word;
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body data-affiliate-cta="true">
+
+<a href="/" class="back-link">&larr; Sprint19 Tools</a>
+<h1>OAuth Scope Formatter</h1>
+<p>Paste raw scope text to normalize it into a copy-ready space-delimited string with duplicate handling.</p>
+
+<textarea id="scopeInput" class="tool-input" rows="7" placeholder="openid profile,email&#10;offline_access profile"></textarea>
+<br>
+<button id="formatBtn" class="tool-btn">Format Scopes</button>
+
+<div id="output"></div>
+
+<footer class="site-footer">
+  <hr>
+  <p>Formatted locally in your browser.</p>
+  <p>Built by <a href="https://sprint19.com" target="_blank" rel="noopener noreferrer">Sprint19</a>. Product engineering for startups.</p>
+  <p class="guardrail">This tool formats scope text only. It does not validate provider-specific permission semantics.</p>
+  <p class="copyright">&copy; 2026 Sprint19. Code licensed under <a href="/LICENSE.md">MIT</a>. Sprint19 name and branding may not be used without permission.</p>
+</footer>
+
+<script>
+var MAX_SCOPE_INPUT = 10240;
+
+function copyTextWithFallback(text) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    return navigator.clipboard.writeText(text).then(function() {
+      return true;
+    }).catch(function() {
+      return fallbackCopy(text);
+    });
+  }
+  return Promise.resolve(fallbackCopy(text));
+}
+
+function fallbackCopy(text) {
+  var ta = document.createElement('textarea');
+  ta.value = text;
+  ta.setAttribute('readonly', '');
+  ta.style.position = 'fixed';
+  ta.style.opacity = '0';
+  document.body.appendChild(ta);
+  ta.focus();
+  ta.select();
+  var copied = false;
+  try {
+    copied = document.execCommand('copy');
+  } catch (e) {
+    copied = false;
+  }
+  document.body.removeChild(ta);
+  return copied;
+}
+
+function containsUncommonChars(token) {
+  return /["'`;|]/.test(token);
+}
+
+function formatScopes(raw) {
+  if (!raw || !raw.trim()) return { error: 'No scope input provided.' };
+  if (raw.length > MAX_SCOPE_INPUT) return { error: 'Input exceeds the 10KB limit.' };
+
+  var splitTokens = raw.split(/[\s,\n\r\t]+/);
+  var orderedUnique = [];
+  var seen = {};
+  var duplicates = 0;
+  var uncommonFound = false;
+
+  for (var i = 0; i < splitTokens.length; i++) {
+    var token = splitTokens[i].trim();
+    if (!token) continue;
+    if (containsUncommonChars(token)) uncommonFound = true;
+    if (seen[token]) {
+      duplicates++;
+      continue;
+    }
+    seen[token] = true;
+    orderedUnique.push(token);
+  }
+
+  if (orderedUnique.length === 0) {
+    return { error: 'No valid scope tokens found after normalization.' };
+  }
+
+  var sortedUnique = orderedUnique.slice().sort(function(a, b) {
+    return a.localeCompare(b);
+  });
+
+  var notices = [];
+  if (duplicates > 0) {
+    notices.push('Duplicate scopes detected. Repeated entries removed in normalized output.');
+  }
+  if (uncommonFound) {
+    notices.push('Some tokens contain uncommon characters. This tool does not validate provider-specific scope syntax.');
+  }
+
+  return {
+    rawInput: raw,
+    normalized: orderedUnique.join(' '),
+    orderedUnique: orderedUnique,
+    sortedUnique: sortedUnique,
+    uniqueCount: orderedUnique.length,
+    duplicateCount: duplicates,
+    notices: notices
+  };
+}
+
+function renderResult(result) {
+  var output = document.getElementById('output');
+  output.innerHTML = '';
+
+  if (result.error) {
+    var errorCard = document.createElement('div');
+    errorCard.className = 'card';
+    var err = document.createElement('p');
+    err.className = 'error-msg';
+    err.textContent = result.error;
+    errorCard.appendChild(err);
+    output.appendChild(errorCard);
+    return;
+  }
+
+  var generated = document.createElement('p');
+  generated.className = 'report-timestamp';
+  generated.textContent = 'Generated on: ' + new Date().toLocaleString();
+  output.appendChild(generated);
+
+  var summaryTitle = document.createElement('h2');
+  summaryTitle.textContent = 'Normalized Output';
+  output.appendChild(summaryTitle);
+
+  var summaryCard = document.createElement('div');
+  summaryCard.className = 'card';
+
+  var normalizedPre = document.createElement('pre');
+  normalizedPre.className = 'raw-block';
+  normalizedPre.textContent = result.normalized;
+  summaryCard.appendChild(normalizedPre);
+
+  var counts = document.createElement('p');
+  counts.textContent = 'Unique scopes: ' + result.uniqueCount + ' | Duplicate entries removed: ' + result.duplicateCount;
+  summaryCard.appendChild(counts);
+
+  var copyRow = document.createElement('div');
+  copyRow.className = 'copy-row';
+  var copyBtn = document.createElement('button');
+  copyBtn.type = 'button';
+  copyBtn.className = 'copy-btn';
+  copyBtn.textContent = 'Copy Normalized Scopes';
+
+  var feedback = document.createElement('span');
+  feedback.className = 'copy-feedback';
+  feedback.textContent = '';
+
+  copyBtn.addEventListener('click', function() {
+    copyTextWithFallback(result.normalized).then(function(success) {
+      feedback.textContent = success ? 'Copied normalized scope string.' : 'Copy failed. Please copy manually.';
+    });
+  });
+
+  copyRow.appendChild(copyBtn);
+  copyRow.appendChild(feedback);
+  summaryCard.appendChild(copyRow);
+  output.appendChild(summaryCard);
+
+  var listTitle = document.createElement('h2');
+  listTitle.textContent = 'Scope Views';
+  output.appendChild(listTitle);
+
+  var listCard = document.createElement('div');
+  listCard.className = 'card';
+  var cols = document.createElement('div');
+  cols.className = 'scope-columns';
+
+  var firstSeenWrap = document.createElement('div');
+  var firstSeenTitle = document.createElement('p');
+  firstSeenTitle.textContent = 'First-seen order (primary)';
+  var firstSeenList = document.createElement('ul');
+  for (var i = 0; i < result.orderedUnique.length; i++) {
+    var li = document.createElement('li');
+    li.textContent = result.orderedUnique[i];
+    firstSeenList.appendChild(li);
+  }
+  firstSeenWrap.appendChild(firstSeenTitle);
+  firstSeenWrap.appendChild(firstSeenList);
+
+  var sortedWrap = document.createElement('div');
+  var sortedTitle = document.createElement('p');
+  sortedTitle.textContent = 'Sorted unique (secondary)';
+  var sortedList = document.createElement('ul');
+  for (var s = 0; s < result.sortedUnique.length; s++) {
+    var liSorted = document.createElement('li');
+    liSorted.textContent = result.sortedUnique[s];
+    sortedList.appendChild(liSorted);
+  }
+  sortedWrap.appendChild(sortedTitle);
+  sortedWrap.appendChild(sortedList);
+
+  cols.appendChild(firstSeenWrap);
+  cols.appendChild(sortedWrap);
+  listCard.appendChild(cols);
+  output.appendChild(listCard);
+
+  if (result.notices.length > 0) {
+    var noticeTitle = document.createElement('h2');
+    noticeTitle.textContent = 'Notices';
+    output.appendChild(noticeTitle);
+
+    var noticeCard = document.createElement('div');
+    noticeCard.className = 'card';
+    var nList = document.createElement('ul');
+    for (var n = 0; n < result.notices.length; n++) {
+      var nLi = document.createElement('li');
+      var nP = document.createElement('p');
+      nP.className = 'notice';
+      nP.textContent = result.notices[n];
+      nLi.appendChild(nP);
+      nList.appendChild(nLi);
+    }
+    noticeCard.appendChild(nList);
+    output.appendChild(noticeCard);
+  }
+
+  var rawTitle = document.createElement('h2');
+  rawTitle.textContent = 'Raw Input';
+  output.appendChild(rawTitle);
+  var rawCard = document.createElement('div');
+  rawCard.className = 'card';
+  var rawPre = document.createElement('pre');
+  rawPre.className = 'raw-block';
+  rawPre.textContent = result.rawInput;
+  rawCard.appendChild(rawPre);
+  output.appendChild(rawCard);
+
+  var disclaimer = document.createElement('p');
+  disclaimer.className = 'disclaimer';
+  disclaimer.textContent = 'Interpretation only. Scope formatting does not confirm provider-specific validity or granted permissions.';
+  output.appendChild(disclaimer);
+}
+
+document.getElementById('formatBtn').addEventListener('click', function() {
+  var raw = document.getElementById('scopeInput').value;
+  renderResult(formatScopes(raw));
+});
+</script>
+
+</body>
+</html>

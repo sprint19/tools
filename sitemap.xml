@@ -45,6 +45,10 @@
     <lastmod>2026-03-18</lastmod>
   </url>
   <url>
+    <loc>https://tools.sprint19.com/basic_auth_generator/</loc>
+    <lastmod>2026-03-18</lastmod>
+  </url>
+  <url>
     <loc>https://tools.sprint19.com/hsts_builder/</loc>
     <lastmod>2026-03-18</lastmod>
   </url>
@@ -67,6 +71,10 @@
   <url>
     <loc>https://tools.sprint19.com/openssl_csr_builder/</loc>
     <lastmod>2026-02-20</lastmod>
+  </url>
+  <url>
+    <loc>https://tools.sprint19.com/oauth_scope_formatter/</loc>
+    <lastmod>2026-03-18</lastmod>
   </url>
   <url>
     <loc>https://tools.sprint19.com/port_check/</loc>

@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Generate a Basic Authorization header locally in your browser using UTF-8-safe Base64 encoding. No data leaves your browser.">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://tools.sprint19.com/basic_auth_generator/">
+  <meta property="og:title" content="Basic Auth Header Generator — Built by Sprint19">
+  <meta property="og:description" content="Format Basic Authorization headers from username and password with deterministic local-only processing.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://tools.sprint19.com/basic_auth_generator/">
+  <meta property="og:image" content="https://tools.sprint19.com/og-image.png">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <link rel="stylesheet" href="/shared/styles.css">
+  <title>Basic Auth Header Generator | Sprint19</title>
+  <style>
+    .form-group { margin-bottom: 14px; }
+    .form-group label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--color-text);
+    }
+    .form-group input {
+      width: 100%;
+      max-width: 520px;
+      box-sizing: border-box;
+      padding: 9px 10px;
+      font-size: 14px;
+      border: 1px solid var(--color-border-input);
+      border-radius: 4px;
+      background: var(--color-card-bg);
+      color: var(--color-text);
+    }
+    .notice { color: var(--color-warning); margin: 0; }
+    .error-msg { color: var(--color-error); font-weight: 600; margin: 0; }
+    .kv-grid {
+      display: grid;
+      grid-template-columns: 160px 1fr;
+      gap: 8px 10px;
+      font-size: 14px;
+    }
+    .kv-grid dt { color: var(--color-text-muted); }
+    .kv-grid dd {
+      margin: 0;
+      word-break: break-word;
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    }
+    .copy-row {
+      margin-top: 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .copy-btn {
+      padding: 8px 14px;
+      font-size: 14px;
+      cursor: pointer;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border-input);
+      border-radius: 4px;
+      color: var(--color-text);
+    }
+    .copy-btn:hover { background: var(--color-surface-hover); }
+    .copy-feedback {
+      font-size: 13px;
+      color: var(--color-text-muted);
+    }
+  </style>
+</head>
+<body data-affiliate-cta="true">
+
+<a href="/" class="back-link">&larr; Sprint19 Tools</a>
+<h1>Basic Auth Header Generator</h1>
+<p>Enter a username and password to generate a Basic Authorization header. Local formatting only.</p>
+
+<div class="form-group">
+  <label for="usernameInput">Username</label>
+  <input id="usernameInput" type="text" autocomplete="off" spellcheck="false" placeholder="api-user">
+</div>
+<div class="form-group">
+  <label for="passwordInput">Password</label>
+  <input id="passwordInput" type="password" autocomplete="off" spellcheck="false" placeholder="••••••••">
+</div>
+
+<button id="generateBtn" class="tool-btn">Generate Header</button>
+
+<div id="output"></div>
+
+<footer class="site-footer">
+  <hr>
+  <p>Generated locally in your browser.</p>
+  <p>Built by <a href="https://sprint19.com" target="_blank" rel="noopener noreferrer">Sprint19</a>. Product engineering for startups.</p>
+  <p class="guardrail">This tool formats Basic Auth headers only. It does not transmit credentials or verify endpoint access.</p>
+  <p class="copyright">&copy; 2026 Sprint19. Code licensed under <a href="/LICENSE.md">MIT</a>. Sprint19 name and branding may not be used without permission.</p>
+</footer>
+
+<script>
+var MAX_COMBINED_INPUT = 10240;
+var HEADER_NAME = 'Authorization';
+
+function utf8ToBase64(value) {
+  if (typeof TextEncoder !== 'undefined') {
+    var bytes = new TextEncoder().encode(value);
+    var binary = '';
+    for (var i = 0; i < bytes.length; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+    return btoa(binary);
+  }
+  return btoa(unescape(encodeURIComponent(value)));
+}
+
+function copyTextWithFallback(text) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    return navigator.clipboard.writeText(text).then(function() {
+      return true;
+    }).catch(function() {
+      return fallbackCopy(text);
+    });
+  }
+  return Promise.resolve(fallbackCopy(text));
+}
+
+function fallbackCopy(text) {
+  var ta = document.createElement('textarea');
+  ta.value = text;
+  ta.setAttribute('readonly', '');
+  ta.style.position = 'fixed';
+  ta.style.opacity = '0';
+  document.body.appendChild(ta);
+  ta.focus();
+  ta.select();
+  var copied = false;
+  try {
+    copied = document.execCommand('copy');
+  } catch (e) {
+    copied = false;
+  }
+  document.body.removeChild(ta);
+  return copied;
+}
+
+function buildResult(username, password) {
+  if (!username) return { error: 'Username is required.' };
+  if (!password) return { error: 'Password is required.' };
+  if ((username.length + password.length) > MAX_COMBINED_INPUT) {
+    return { error: 'Combined input exceeds the 10KB limit.' };
+  }
+
+  var rawPair = username + ':' + password;
+  var encoded = utf8ToBase64(rawPair);
+  var headerValue = 'Basic ' + encoded;
+  var notices = [];
+
+  if (username.indexOf(':') !== -1) {
+    notices.push("Username contains ':' which may not be interpreted as expected by some systems.");
+  }
+
+  return {
+    headerName: HEADER_NAME,
+    headerValue: headerValue,
+    fullHeaderLine: HEADER_NAME + ': ' + headerValue,
+    notices: notices
+  };
+}
+
+function renderResult(result) {
+  var output = document.getElementById('output');
+  output.innerHTML = '';
+
+  if (result.error) {
+    var errorCard = document.createElement('div');
+    errorCard.className = 'card';
+    var p = document.createElement('p');
+    p.className = 'error-msg';
+    p.textContent = result.error;
+    errorCard.appendChild(p);
+    output.appendChild(errorCard);
+    return;
+  }
+
+  var generated = document.createElement('p');
+  generated.className = 'report-timestamp';
+  generated.textContent = 'Generated on: ' + new Date().toLocaleString();
+  output.appendChild(generated);
+
+  var title = document.createElement('h2');
+  title.textContent = 'Header Output';
+  output.appendChild(title);
+
+  var card = document.createElement('div');
+  card.className = 'card';
+  var grid = document.createElement('dl');
+  grid.className = 'kv-grid';
+  var rows = [
+    ['Header name', result.headerName],
+    ['Header value', result.headerValue],
+    ['Full header line', result.fullHeaderLine]
+  ];
+  for (var i = 0; i < rows.length; i++) {
+    var dt = document.createElement('dt');
+    dt.textContent = rows[i][0];
+    var dd = document.createElement('dd');
+    dd.textContent = rows[i][1];
+    grid.appendChild(dt);
+    grid.appendChild(dd);
+  }
+  card.appendChild(grid);
+
+  var copyRow = document.createElement('div');
+  copyRow.className = 'copy-row';
+  var copyBtn = document.createElement('button');
+  copyBtn.type = 'button';
+  copyBtn.className = 'copy-btn';
+  copyBtn.textContent = 'Copy Full Header';
+
+  var feedback = document.createElement('span');
+  feedback.className = 'copy-feedback';
+  feedback.textContent = '';
+
+  copyBtn.addEventListener('click', function() {
+    copyTextWithFallback(result.fullHeaderLine).then(function(success) {
+      feedback.textContent = success ? 'Copied full header line.' : 'Copy failed. Please copy manually.';
+    });
+  });
+
+  copyRow.appendChild(copyBtn);
+  copyRow.appendChild(feedback);
+  card.appendChild(copyRow);
+
+  output.appendChild(card);
+
+  if (result.notices.length > 0) {
+    var noticesTitle = document.createElement('h2');
+    noticesTitle.textContent = 'Notices';
+    output.appendChild(noticesTitle);
+
+    var noticeCard = document.createElement('div');
+    noticeCard.className = 'card';
+    var list = document.createElement('ul');
+    for (var n = 0; n < result.notices.length; n++) {
+      var li = document.createElement('li');
+      var pNotice = document.createElement('p');
+      pNotice.className = 'notice';
+      pNotice.textContent = result.notices[n];
+      li.appendChild(pNotice);
+      list.appendChild(li);
+    }
+    noticeCard.appendChild(list);
+    output.appendChild(noticeCard);
+  }
+
+  var disclaimer = document.createElement('p');
+  disclaimer.className = 'disclaimer';
+  disclaimer.textContent = 'Interpretation only. Use generated headers in trusted environments and handle credentials with care.';
+  output.appendChild(disclaimer);
+}
+
+document.getElementById('generateBtn').addEventListener('click', function() {
+  var username = document.getElementById('usernameInput').value;
+  var password = document.getElementById('passwordInput').value;
+  renderResult(buildResult(username, password));
+});
+</script>
+
+</body>
+</html>

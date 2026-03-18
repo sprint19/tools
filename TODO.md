@@ -28,8 +28,8 @@ Tracked work for Sprint19 Tools.
 
 ### Auth & Tokens
 
-- [ ] Basic Auth Header Generator — Base64-encode username/password into an Authorization header
-- [ ] OAuth Scope Formatter — parse and format OAuth scope strings into readable lists
+- [x] Basic Auth Header Generator — Base64-encode username/password into an Authorization header
+- [x] OAuth Scope Formatter — parse and format OAuth scope strings into readable lists
 
 ### HTTP & Headers
 
