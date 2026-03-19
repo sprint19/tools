@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Format LinkedIn text locally using deterministic Unicode style transformations for copy-ready output. No data leaves your browser.">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://tools.sprint19.com/linkedin_text_formatter/">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "LinkedIn Text Formatter | Sprint19",
+    "description": "Format plain text with Unicode styling for LinkedIn copy/paste workflows. Browser-only and deterministic.",
+    "applicationCategory": "BusinessApplication",
+    "operatingSystem": "Web",
+    "url": "https://tools.sprint19.com/linkedin_text_formatter/"
+  }
+  </script>
+  <meta property="og:title" content="LinkedIn Text Formatter — Built by Sprint19">
+  <meta property="og:description" content="Convert plain text into copy-ready Unicode-styled LinkedIn text with deterministic local transformations.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://tools.sprint19.com/linkedin_text_formatter/">
+  <meta property="og:image" content="https://tools.sprint19.com/og-image.png">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <link rel="stylesheet" href="/shared/styles.css">
+  <title>LinkedIn Text Formatter | Sprint19</title>
+  <style>
+    .controls-row {
+      margin-top: 12px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+    .style-btn {
+      padding: 8px 12px;
+      font-size: 14px;
+      border: 1px solid var(--color-border-input);
+      background: var(--color-surface);
+      color: var(--color-text);
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .style-btn:hover {
+      background: var(--color-surface-hover);
+    }
+    .scope-select {
+      min-width: 170px;
+      padding: 8px 10px;
+      border: 1px solid var(--color-border-input);
+      border-radius: 4px;
+      background: var(--color-card-bg);
+      color: var(--color-text);
+      font-size: 14px;
+    }
+    .secondary-btn {
+      padding: 8px 12px;
+      font-size: 14px;
+      border: 1px solid var(--color-border-input);
+      background: var(--color-surface);
+      color: var(--color-text);
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .secondary-btn:hover {
+      background: var(--color-surface-hover);
+    }
+    .status-line {
+      margin-top: 10px;
+      min-height: 20px;
+      font-size: 13px;
+      color: var(--color-text-muted);
+    }
+    .status-line.error {
+      color: var(--color-error);
+      font-weight: 600;
+    }
+    .status-line.warn {
+      color: var(--color-warning);
+    }
+    .output-title {
+      margin-bottom: 8px;
+    }
+    .copy-row {
+      margin-top: 12px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .copy-btn {
+      padding: 8px 12px;
+      font-size: 14px;
+      border: 1px solid var(--color-border-input);
+      border-radius: 4px;
+      background: var(--color-surface);
+      color: var(--color-text);
+      cursor: pointer;
+    }
+    .copy-btn:hover {
+      background: var(--color-surface-hover);
+    }
+    .copy-feedback {
+      font-size: 13px;
+      color: var(--color-text-muted);
+    }
+  </style>
+</head>
+<body data-affiliate-cta="true">
+
+<a href="/" class="back-link">&larr; Sprint19 Tools</a>
+<h1>LinkedIn Text Formatter</h1>
+<p>Format plain text into copy-ready Unicode styling for LinkedIn posts and comments.</p>
+<p class="disclaimer">This tool formats text using Unicode characters. LinkedIn does not officially support rich text formatting, so appearance may vary across devices.</p>
+
+<label for="inputText">Input text</label>
+<textarea
+  id="inputText"
+  class="tool-input"
+  rows="10"
+  placeholder="Paste or type text here. Select part of the text to style only that segment."
+  aria-label="LinkedIn text formatter input"
+></textarea>
+
+<div class="controls-row">
+  <label for="scopeSelect">Apply to</label>
+  <select id="scopeSelect" class="scope-select" aria-label="Choose formatting scope">
+    <option value="selection">Selected text</option>
+    <option value="all">Full text</option>
+  </select>
+  <button type="button" class="style-btn" data-style="bold">Bold</button>
+  <button type="button" class="style-btn" data-style="italic">Italic</button>
+  <button type="button" class="style-btn" data-style="underline">Underline</button>
+  <button type="button" class="style-btn" data-style="strike">Strike</button>
+  <button type="button" class="style-btn" data-style="monospace">Monospace</button>
+  <button type="button" id="resetBtn" class="secondary-btn">Reset to Plain</button>
+</div>
+
+<p id="statusLine" class="status-line" role="status" aria-live="polite"></p>
+
+<h2 class="output-title">Preview</h2>
+<div class="card">
+  <pre id="previewText" class="raw-block"></pre>
+</div>
+
+<h2 class="output-title">Copy-Ready Output</h2>
+<div class="card">
+  <pre id="outputText" class="raw-block"></pre>
+  <div class="copy-row">
+    <button type="button" id="copyBtn" class="copy-btn">Copy Output</button>
+    <span id="copyFeedback" class="copy-feedback"></span>
+  </div>
+</div>
+
+<footer class="site-footer">
+  <hr>
+  <p>All formatting runs locally in your browser.</p>
+  <p>Built by <a href="https://sprint19.com" target="_blank" rel="noopener noreferrer">Sprint19</a>. Product engineering for startups.</p>
+  <p class="guardrail">Best-effort visual formatting only. Unicode styling may render differently across LinkedIn clients and fonts.</p>
+  <p class="copyright">&copy; 2026 Sprint19. Code licensed under <a href="/LICENSE.md">MIT</a>. Sprint19 name and branding may not be used without permission.</p>
+</footer>
+
+<script src="/shared/utils.js"></script>
+<script>
+var MAX_INPUT_CHARS = 12000;
+var ASCII_VISIBLE_RE = /^[\u0021-\u007E]$/;
+
+function buildMap(startUpper, startLower, startDigit) {
+  var map = {};
+  var i;
+  for (i = 0; i < 26; i++) {
+    map[String.fromCharCode(65 + i)] = String.fromCodePoint(startUpper + i);
+    map[String.fromCharCode(97 + i)] = String.fromCodePoint(startLower + i);
+  }
+  if (typeof startDigit === 'number') {
+    for (i = 0; i < 10; i++) {
+      map[String(i)] = String.fromCodePoint(startDigit + i);
+    }
+  }
+  return map;
+}
+
+var STYLE_MAPS = {
+  bold: buildMap(0x1D5D4, 0x1D5EE, 0x1D7EC),
+  italic: buildMap(0x1D608, 0x1D622, null),
+  monospace: buildMap(0x1D670, 0x1D68A, 0x1D7F6)
+};
+
+var REVERSE_BASE_MAP = {};
+
+function fillReverseMap(map) {
+  Object.keys(map).forEach(function(key) {
+    REVERSE_BASE_MAP[map[key]] = key;
+  });
+}
+
+fillReverseMap(STYLE_MAPS.bold);
+fillReverseMap(STYLE_MAPS.italic);
+fillReverseMap(STYLE_MAPS.monospace);
+
+function normalizeToBase(text) {
+  var chars = Array.from(String(text || ''));
+  var out = [];
+  var i;
+  for (i = 0; i < chars.length; i++) {
+    var ch = chars[i];
+    if (ch === '\u0332' || ch === '\u0336') {
+      continue;
+    }
+    out.push(REVERSE_BASE_MAP[ch] || ch);
+  }
+  return out.join('');
+}
+
+function applyMappedStyle(baseText, styleName) {
+  var map = STYLE_MAPS[styleName];
+  var chars = Array.from(baseText);
+  var out = [];
+  var unsupportedCount = 0;
+  var i;
+
+  for (i = 0; i < chars.length; i++) {
+    var ch = chars[i];
+    if (map[ch]) {
+      out.push(map[ch]);
+      continue;
+    }
+    out.push(ch);
+    if (ch.charCodeAt(0) > 127) {
+      unsupportedCount += 1;
+    }
+  }
+  return { text: out.join(''), unsupportedCount: unsupportedCount };
+}
+
+function applyCombiningStyle(baseText, marker) {
+  var chars = Array.from(baseText);
+  var out = [];
+  var unsupportedCount = 0;
+  var i;
+
+  for (i = 0; i < chars.length; i++) {
+    var ch = chars[i];
+    if (ch === '\n' || ch === '\r' || ch === '\t' || ch === ' ') {
+      out.push(ch);
+      continue;
+    }
+    if (ASCII_VISIBLE_RE.test(ch)) {
+      out.push(ch + marker);
+      continue;
+    }
+    out.push(ch);
+    unsupportedCount += 1;
+  }
+  return { text: out.join(''), unsupportedCount: unsupportedCount };
+}
+
+function applyStyle(rawText, styleName) {
+  var baseText = normalizeToBase(rawText);
+  if (styleName === 'underline') {
+    return applyCombiningStyle(baseText, '\u0332');
+  }
+  if (styleName === 'strike') {
+    return applyCombiningStyle(baseText, '\u0336');
+  }
+  if (styleName === 'bold' || styleName === 'italic' || styleName === 'monospace') {
+    return applyMappedStyle(baseText, styleName);
+  }
+  return { text: baseText, unsupportedCount: 0 };
+}
+
+function setStatus(message, kind) {
+  var line = document.getElementById('statusLine');
+  line.textContent = message || '';
+  line.className = 'status-line';
+  if (kind === 'error') line.classList.add('error');
+  if (kind === 'warn') line.classList.add('warn');
+}
+
+function fallbackCopy(text) {
+  var ta = document.createElement('textarea');
+  ta.value = text;
+  ta.setAttribute('readonly', '');
+  ta.style.position = 'fixed';
+  ta.style.opacity = '0';
+  document.body.appendChild(ta);
+  ta.focus();
+  ta.select();
+  var copied = false;
+  try {
+    copied = document.execCommand('copy');
+  } catch (e) {
+    copied = false;
+  }
+  document.body.removeChild(ta);
+  return copied;
+}
+
+function copyWithFallback(text, feedbackEl) {
+  if (window.Sprint19Utils && typeof window.Sprint19Utils.copyTextWithFeedback === 'function') {
+    window.Sprint19Utils.copyTextWithFeedback(text, feedbackEl);
+    return;
+  }
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(function() {
+      feedbackEl.textContent = 'Copied';
+    }).catch(function() {
+      feedbackEl.textContent = fallbackCopy(text) ? 'Copied' : 'Copy failed';
+    });
+    return;
+  }
+  feedbackEl.textContent = fallbackCopy(text) ? 'Copied' : 'Copy failed';
+}
+
+function updateOutput() {
+  var inputValue = document.getElementById('inputText').value;
+  document.getElementById('previewText').textContent = inputValue;
+  document.getElementById('outputText').textContent = inputValue;
+}
+
+function applyStyleToEditor(styleName) {
+  var inputEl = document.getElementById('inputText');
+  var scope = document.getElementById('scopeSelect').value;
+  var value = inputEl.value;
+
+  if (!value) {
+    setStatus('Add some text before applying formatting.', 'warn');
+    return;
+  }
+
+  if (value.length > MAX_INPUT_CHARS) {
+    setStatus('Input exceeds the 12,000 character limit.', 'error');
+    return;
+  }
+
+  var start = inputEl.selectionStart;
+  var end = inputEl.selectionEnd;
+  var result;
+  var unsupportedCount = 0;
+
+  if (scope === 'selection') {
+    if (start === end) {
+      setStatus('Select text first, or switch scope to full text.', 'warn');
+      return;
+    }
+    result = applyStyle(value.slice(start, end), styleName);
+    unsupportedCount = result.unsupportedCount;
+    inputEl.value = value.slice(0, start) + result.text + value.slice(end);
+    inputEl.focus();
+    inputEl.setSelectionRange(start, start + result.text.length);
+  } else {
+    result = applyStyle(value, styleName);
+    unsupportedCount = result.unsupportedCount;
+    inputEl.value = result.text;
+    inputEl.focus();
+    inputEl.setSelectionRange(0, 0);
+  }
+
+  updateOutput();
+
+  if (unsupportedCount > 0) {
+    setStatus(
+      unsupportedCount + ' non-Latin or emoji character' + (unsupportedCount === 1 ? ' was' : 's were') +
+      ' left unchanged for safe output.',
+      'warn'
+    );
+    return;
+  }
+
+  setStatus('Formatting applied. Existing styling was normalized before applying the new style.', null);
+}
+
+function resetToPlain() {
+  var inputEl = document.getElementById('inputText');
+  inputEl.value = normalizeToBase(inputEl.value);
+  updateOutput();
+  setStatus('Converted to plain text characters.', null);
+}
+
+function bindEvents() {
+  var inputEl = document.getElementById('inputText');
+  inputEl.addEventListener('input', function() {
+    updateOutput();
+    if (inputEl.value.length > MAX_INPUT_CHARS) {
+      setStatus('Input exceeds the 12,000 character limit.', 'error');
+    } else {
+      setStatus('', null);
+    }
+  });
+
+  var styleButtons = document.querySelectorAll('.style-btn');
+  Array.prototype.forEach.call(styleButtons, function(btn) {
+    btn.addEventListener('click', function() {
+      applyStyleToEditor(btn.getAttribute('data-style'));
+    });
+  });
+
+  document.getElementById('resetBtn').addEventListener('click', resetToPlain);
+
+  document.getElementById('copyBtn').addEventListener('click', function() {
+    var text = document.getElementById('outputText').textContent || '';
+    var feedbackEl = document.getElementById('copyFeedback');
+    if (!text) {
+      setStatus('Nothing to copy yet.', 'warn');
+      return;
+    }
+    copyWithFallback(text, feedbackEl);
+  });
+}
+
+bindEvents();
+updateOutput();
+</script>
+
+</body>
+</html>
