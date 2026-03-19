@@ -200,7 +200,13 @@ window.Sprint19Utils.bindPrimaryActionShortcut = function(options) {
 
     wrapper.appendChild(text);
     wrapper.appendChild(link);
-    document.body.insertBefore(wrapper, document.body.firstChild);
+
+    var sidebarMount = document.getElementById('sidebarCtaMount');
+    if (sidebarMount) {
+      sidebarMount.appendChild(wrapper);
+    } else {
+      document.body.insertBefore(wrapper, document.body.firstChild);
+    }
   }
 
   if (document.readyState === 'loading') {

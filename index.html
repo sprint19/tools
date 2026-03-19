@@ -52,6 +52,25 @@
       background: var(--color-surface);
       text-decoration: none;
     }
+    .sidebar-cta-mount {
+      margin-top: 12px;
+    }
+    .sidebar-cta-mount .affiliate-cta {
+      display: block;
+      margin: 0;
+      padding: 10px;
+    }
+    .sidebar-cta-mount .affiliate-cta-text {
+      margin-bottom: 8px;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+    .sidebar-cta-mount .affiliate-cta-btn {
+      width: 100%;
+      box-sizing: border-box;
+      justify-content: center;
+      text-align: center;
+    }
 
     .hero {
       margin-bottom: 40px;
@@ -60,6 +79,58 @@
       color: var(--color-text-secondary);
       font-size: 17px;
       max-width: 600px;
+    }
+    .hero-meta {
+      color: var(--color-text-muted);
+      font-size: 13px;
+      margin-top: 8px;
+    }
+    .search-wrap {
+      margin-bottom: 28px;
+    }
+    .search-wrap label {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 13px;
+      color: var(--color-text-muted);
+    }
+    .search-controls {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .search-input {
+      flex: 1;
+      min-width: 160px;
+      padding: 10px 12px;
+      border: 1px solid var(--color-border-input);
+      border-radius: 4px;
+      font-size: 14px;
+      background: var(--color-card-bg);
+      color: var(--color-text);
+      box-sizing: border-box;
+    }
+    .search-clear-btn {
+      padding: 10px 12px;
+      border: 1px solid var(--color-border-input);
+      border-radius: 4px;
+      background: var(--color-surface);
+      color: var(--color-text);
+      font-size: 13px;
+      cursor: pointer;
+    }
+    .search-clear-btn:hover {
+      background: var(--color-surface-hover);
+    }
+    .search-summary {
+      margin-top: 8px;
+      font-size: 13px;
+      color: var(--color-text-muted);
+    }
+    .search-empty {
+      margin-top: 8px;
+      font-size: 14px;
+      color: var(--color-text-muted);
     }
 
     .category-section {
@@ -168,6 +239,12 @@
         border: 1px solid var(--color-border);
         border-radius: 20px;
       }
+      .sidebar-cta-mount {
+        margin-top: 10px;
+      }
+      .sidebar-cta-mount .affiliate-cta {
+        margin-top: 8px;
+      }
     }
     @media (max-width: 600px) {
       .tool-grid {
@@ -198,6 +275,7 @@
       <li><a href="#devops-logs">DevOps &amp; Logs</a></li>
       <li><a href="#utilities">Utilities</a></li>
     </ul>
+    <div id="sidebarCtaMount" class="sidebar-cta-mount" aria-label="Recommended service"></div>
   </nav>
 
   <div class="main-content">
@@ -205,6 +283,24 @@
     <div class="hero">
       <h1>Sprint19 Tools</h1>
       <p>Privacy-first, browser-based engineering utilities. No data leaves your browser. No tracking. No backend.</p>
+      <p class="hero-meta" id="localUsageCounter" aria-live="polite"></p>
+    </div>
+
+    <div class="search-wrap" aria-label="Homepage quick search">
+      <label for="toolSearchInput">Quick Search Tools</label>
+      <div class="search-controls">
+        <input
+          id="toolSearchInput"
+          class="search-input"
+          type="search"
+          placeholder="Search by title, description, category, or keyword"
+          autocomplete="off"
+          spellcheck="false"
+        >
+        <button type="button" id="toolSearchClearBtn" class="search-clear-btn">Clear</button>
+      </div>
+      <p id="toolSearchResultCount" class="search-summary" aria-live="polite"></p>
+      <p id="toolSearchEmptyState" class="search-empty" hidden>No matching tools found</p>
     </div>
 
     <section id="email-dns" class="category-section">
@@ -427,6 +523,139 @@
 </div>
 
 <script src="/shared/utils.js"></script>
+<script>
+(function initHomepageEnhancements() {
+  var counterEl = document.getElementById('localUsageCounter');
+  if (counterEl) {
+    var storageAvailable = false;
+    try {
+      var probeKey = 'sprint19-counter-probe';
+      localStorage.setItem(probeKey, '1');
+      localStorage.removeItem(probeKey);
+      storageAvailable = true;
+    } catch (e) {
+      storageAvailable = false;
+    }
+
+    if (!storageAvailable) {
+      counterEl.textContent = 'Local usage counter unavailable in this browser.';
+    } else {
+      var key = 'sprint19-homepage-visit-count';
+      var current = 0;
+      try {
+        var raw = localStorage.getItem(key);
+        current = raw ? parseInt(raw, 10) : 0;
+        if (isNaN(current) || current < 0) current = 0;
+        current += 1;
+        localStorage.setItem(key, String(current));
+        counterEl.textContent = 'Local-only counter for this browser: ' + current + ' visit' + (current === 1 ? '' : 's') + '.';
+      } catch (e) {
+        counterEl.textContent = 'Local usage counter unavailable in this browser.';
+      }
+    }
+  }
+
+  var searchInput = document.getElementById('toolSearchInput');
+  var clearBtn = document.getElementById('toolSearchClearBtn');
+  var countEl = document.getElementById('toolSearchResultCount');
+  var emptyEl = document.getElementById('toolSearchEmptyState');
+  if (!searchInput || !clearBtn || !countEl || !emptyEl) return;
+
+  var cards = Array.prototype.slice.call(document.querySelectorAll('.tool-card'));
+  var sections = Array.prototype.slice.call(document.querySelectorAll('.category-section'));
+
+  function normalize(text) {
+    return String(text || '').toLowerCase().trim().replace(/\s+/g, ' ');
+  }
+
+  function routeKeyword(route) {
+    var map = {
+      dkim_builder: 'dkim dns email auth record builder',
+      dkim_inspector: 'dkim signature inspect parse email auth',
+      dmarc_builder: 'dmarc policy dns email auth',
+      dmarc_reader: 'dmarc xml report parse email auth',
+      spf_builder: 'spf dns email auth record builder',
+      spf_analyzer: 'spf analyze parse lookup dns',
+      dns_txt_inspector: 'dns txt inspect parse verification',
+      message_header_analyzer: 'email header parse auth',
+      eml_viewer: 'eml email mime viewer parser',
+      idn_converter: 'idn punycode unicode domain converter',
+      openssl_csr_builder: 'openssl csr ssl tls certificate command',
+      letsencrypt_builder: 'letsencrypt certbot ssl tls command',
+      hsts_builder: 'hsts strict transport security header',
+      jwt_decoder: 'jwt token decode auth',
+      basic_auth_generator: 'basic auth authorization header base64',
+      oauth_scope_formatter: 'oauth scope formatter auth token',
+      cors_checker: 'cors header api browser policy',
+      http_header_analyzer: 'http headers cache csp cors hsts',
+      csp_parser: 'csp content security policy parser',
+      webhook_viewer: 'webhook json payload viewer parser',
+      env_formatter: 'env dotenv config formatter',
+      redis_url_parser: 'redis url parser data config',
+      postgres_json_formatter: 'postgres json formatter beautify',
+      calendar_file_viewer: 'ics calendar parser events',
+      dockerfile_linter: 'dockerfile linter devops containers',
+      nginx_formatter: 'nginx config formatter devops',
+      rails_log_beautifier: 'rails logs beautifier parser',
+      port_check: 'port check command tcp udp network',
+      color_picker: 'color picker palette wcag',
+      js_to_ts_converter: 'javascript typescript converter code',
+      encode_decode: 'base64 url html encode decode'
+    };
+    return map[route] || '';
+  }
+
+  cards.forEach(function(card) {
+    var title = normalize(card.querySelector('h3') ? card.querySelector('h3').textContent : '');
+    var desc = normalize(card.querySelector('p') ? card.querySelector('p').textContent : '');
+    var tag = normalize(card.querySelector('.tag') ? card.querySelector('.tag').textContent : '');
+    var section = card.closest('.category-section');
+    var category = normalize(section && section.querySelector('h2') ? section.querySelector('h2').textContent : '');
+    var routeMatch = card.getAttribute('href') && card.getAttribute('href').match(/^\/([a-z0-9_-]+)\//i);
+    var route = routeMatch ? routeMatch[1].toLowerCase() : '';
+    var keywords = normalize(routeKeyword(route));
+
+    card.setAttribute('data-title', title);
+    card.setAttribute('data-description', desc);
+    card.setAttribute('data-category', category);
+    card.setAttribute('data-keywords', keywords + (tag ? ' ' + tag : ''));
+  });
+
+  function applyFilter() {
+    var query = normalize(searchInput.value);
+    var visibleCards = 0;
+
+    cards.forEach(function(card) {
+      var haystack = [
+        card.getAttribute('data-title'),
+        card.getAttribute('data-description'),
+        card.getAttribute('data-category'),
+        card.getAttribute('data-keywords')
+      ].join(' ');
+      var isVisible = !query || haystack.indexOf(query) !== -1;
+      card.hidden = !isVisible;
+      if (isVisible) visibleCards += 1;
+    });
+
+    sections.forEach(function(section) {
+      var hasVisible = section.querySelector('.tool-card:not([hidden])') !== null;
+      section.hidden = !hasVisible;
+    });
+
+    countEl.textContent = visibleCards + ' tool' + (visibleCards === 1 ? '' : 's') + ' found';
+    emptyEl.hidden = visibleCards !== 0;
+  }
+
+  searchInput.addEventListener('input', applyFilter);
+  clearBtn.addEventListener('click', function() {
+    searchInput.value = '';
+    applyFilter();
+    searchInput.focus();
+  });
+
+  applyFilter();
+})();
+</script>
 
 </body>
 </html>

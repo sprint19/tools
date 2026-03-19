@@ -70,7 +70,9 @@ Tracked work for Sprint19 Tools.
 
 ## Site & Infrastructure
 
-- [ ] Add a 404 page
-- [ ] Add favicon.png and og-image.png assets
-- [ ] Update sitemap.xml as new tools ship
-- [ ] Add analytics-free usage counters (local storage only)
+- [x] Add a 404 page (evidence: `.cursor/plans/site-infra-release-verification-v4.md`)
+- [x] Add favicon.png and og-image.png assets (evidence: `.cursor/plans/site-infra-release-verification-v4.md`)
+- [x] Update sitemap.xml as new tools ship (evidence: `.cursor/plans/sitemap-process-v1.md`, `.cursor/plans/site-infra-release-verification-v4.md`)
+- [x] Add analytics-free usage counters (local storage only) (evidence: `.cursor/plans/site-infra-release-verification-v4.md`)
+- [x] Add homepage quick search for tool cards (browser-only, no persistence) (evidence: `.cursor/plans/site-infra-release-verification-v4.md`)
+- [x] Move Zoho CTA to the left sidebar on the homepage (evidence: `.cursor/plans/site-infra-release-verification-v4.md`)
