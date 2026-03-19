@@ -182,6 +182,8 @@ window.Sprint19Utils.bindPrimaryActionShortcut = function(options) {
     if (!document.body) return;
     if (document.getElementById('affiliate-cta')) return;
     if (document.body.getAttribute('data-affiliate-cta') !== 'true') return;
+    var sidebarMount = document.getElementById('sidebarCtaMount');
+    if (!sidebarMount) return;
 
     var wrapper = document.createElement('div');
     wrapper.className = 'affiliate-cta';
@@ -200,13 +202,7 @@ window.Sprint19Utils.bindPrimaryActionShortcut = function(options) {
 
     wrapper.appendChild(text);
     wrapper.appendChild(link);
-
-    var sidebarMount = document.getElementById('sidebarCtaMount');
-    if (sidebarMount) {
-      sidebarMount.appendChild(wrapper);
-    } else {
-      document.body.insertBefore(wrapper, document.body.firstChild);
-    }
+    sidebarMount.appendChild(wrapper);
   }
 
   if (document.readyState === 'loading') {
