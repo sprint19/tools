@@ -65,6 +65,13 @@
       text-underline-offset: 2px;
     }
     .preset-btn:hover { color: var(--color-link); }
+    .brand-presets {
+      display: flex;
+      align-items: center;
+      gap: 6px 14px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
     .hex-error {
       color: var(--color-error);
       font-size: 13px;
@@ -257,7 +264,13 @@
 <div class="picker-row">
   <input type="color" id="colorPicker" value="#4CA38C" aria-label="Base color picker">
   <input type="text" id="hexInput" value="#4CA38C" placeholder="#4CA38C" spellcheck="false" autocomplete="off" aria-label="HEX color input">
-  <button class="preset-btn" id="presetBtn">Sprint19 teal</button>
+</div>
+<div class="brand-presets" aria-label="Sprint19 brand colors">
+  <button type="button" class="preset-btn" data-hex="#4CA38C">Sprint19 Teal</button>
+  <button type="button" class="preset-btn" data-hex="#FFC857">Solar Yellow</button>
+  <button type="button" class="preset-btn" data-hex="#1F3D5C">Midnight Navy</button>
+  <button type="button" class="preset-btn" data-hex="#36454F">Slate Ink</button>
+  <button type="button" class="preset-btn" data-hex="#F7F7F7">Cloud Gray</button>
 </div>
 <div class="hex-error" id="hexError" role="status" aria-live="polite"></div>
 
@@ -334,7 +347,7 @@
   var rgbOut    = document.getElementById('rgbOut');
   var hslOut    = document.getElementById('hslOut');
   var hint      = document.getElementById('contrastHint');
-  var presetBtn = document.getElementById('presetBtn');
+  var brandPresets = document.querySelector('.brand-presets');
   var swatchComp     = document.getElementById('swatchComplementary');
   var swatchAnalog   = document.getElementById('swatchAnalogous');
   var swatchTriad    = document.getElementById('swatchTriadic');
@@ -547,11 +560,14 @@
     }
   });
 
-  presetBtn.addEventListener('click', function () {
-    hexInput.value = SPRINT19;
-    picker.value = SPRINT19.toLowerCase();
+  brandPresets.addEventListener('click', function (e) {
+    var btn = e.target.closest('.preset-btn[data-hex]');
+    if (!btn) return;
+    var hex = btn.getAttribute('data-hex').toUpperCase();
+    hexInput.value = hex;
+    picker.value = hex.toLowerCase();
     hexError.textContent = '';
-    update(SPRINT19);
+    update(hex);
   });
 
   function copyToClipboard(text) {
