@@ -18,7 +18,7 @@
   }
   </script>
 
-  <meta property="og:title" content="CSP Policy Parser — Built by Sprint19">
+  <meta property="og:title" content="CSP Policy Parser · Built by Sprint19">
   <meta property="og:description" content="Parse CSP strings into directive rows and copy-ready normalized output with deterministic local-only behavior.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://tools.sprint19.com/csp_parser/">
@@ -60,7 +60,7 @@
 </head>
 <body data-affiliate-cta="true" data-shortcut-input="#cspInput" data-shortcut-action="#parseBtn">
 
-<a href="/" class="back-link">&larr; Sprint19 Tools</a>
+<a href="/" class="back-link">Sprint19 Tools</a>
 <h1>CSP Policy Parser</h1>
 <p>Paste a CSP value or full CSP header line for deterministic parsing and normalized output.</p>
 
@@ -253,7 +253,7 @@ function renderResult(result) {
     var tdDirective = document.createElement('td');
     tdDirective.textContent = result.rows[i].directive;
     var tdSources = document.createElement('td');
-    tdSources.textContent = result.rows[i].sources.length > 0 ? result.rows[i].sources.join(' ') : '—';
+    tdSources.textContent = result.rows[i].sources.length > 0 ? result.rows[i].sources.join(' ') : '–';
     tr.appendChild(tdIdx);
     tr.appendChild(tdDirective);
     tr.appendChild(tdSources);
@@ -304,7 +304,7 @@ function renderResult(result) {
   for (var s = 0; s < result.sortedRows.length; s++) {
     var li = document.createElement('li');
     li.textContent = result.sortedRows[s].directive + ': ' +
-      (result.sortedRows[s].sources.length > 0 ? result.sortedRows[s].sources.join(' ') : '—');
+      (result.sortedRows[s].sources.length > 0 ? result.sortedRows[s].sources.join(' ') : '–');
     sortedList.appendChild(li);
   }
   sortedCard.appendChild(sortedList);

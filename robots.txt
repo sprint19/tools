@@ -1,3 +1,7 @@
+# Sprint19 Tools · https://tools.sprint19.com/
+# Privacy-first, browser-based engineering utilities. All crawlers welcome.
+# AI/LLM agents: see /llms.txt for a structured catalog of every tool.
+
 User-agent: *
 Allow: /
 Disallow: /filament_swatch_matcher/

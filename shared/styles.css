@@ -1,88 +1,117 @@
 /*
- * Sprint19 Tools — Shared Styles
+ * Sprint19 Tools: Shared Styles
  *
  * Common CSS used across all tool pages.
  * Each tool links this via <link rel="stylesheet" href="/shared/styles.css">
  * and may add tool-specific overrides inline.
+ *
+ * Brand: Sprint19 (teal #4CA38C on ink #0D2420, Plus Jakarta Sans).
  */
+
+/* ── Brand font (self-hosted, no third-party requests) ── */
+
+@font-face {
+  font-family: "Plus Jakarta Sans";
+  font-style: normal;
+  font-weight: 200 800;
+  font-display: swap;
+  src: url("/shared/vendor/fonts/plus-jakarta-sans.woff2") format("woff2");
+}
 
 /* ── Theme variables ────────────────────────────────── */
 
 :root {
+  --font-sans: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+
+  /* Sprint19 brand */
+  --color-teal: #4CA38C;
+  --color-teal-dark: #2E7A69;
+  --color-teal-light: #6BBFA7;
+  --color-teal-pale: #EAF5F1;
+
   --color-bg: #ffffff;
-  --color-text: #1a1a1a;
-  --color-text-secondary: #555;
-  --color-text-muted: #666;
-  --color-text-faint: #888;
-  --color-text-passive: #999;
-  --color-text-dim: #aaa;
-  --color-text-ghost: #bbb;
+  --color-text: #0D2420;
+  --color-text-secondary: #3a4f4a;
+  --color-text-muted: #5A7C76;
+  --color-text-faint: #6f8d87;
+  --color-text-passive: #88a39d;
+  --color-text-dim: #a6bbb6;
+  --color-text-ghost: #c2d2ce;
   --color-card-bg: #fff;
-  --color-surface: #f5f5f5;
-  --color-surface-code: #f9f9f9;
-  --color-surface-hover: #eaeaea;
-  --color-border: #ddd;
-  --color-border-input: #ccc;
-  --color-link: #0066cc;
-  --color-btn-bg: #1a1a1a;
+  --color-surface: #f2faf7;
+  --color-surface-code: #f6faf9;
+  --color-surface-hover: #e6f3ee;
+  --color-border: #d9e6e2;
+  --color-border-input: #c2d4cf;
+  --color-link: #2E7A69;
+  --color-btn-bg: #0D2420;
   --color-btn-text: #fff;
-  --color-btn-hover: #333;
+  --color-btn-hover: #2E7A69;
   --color-success: #1a7f37;
   --color-warning: #b35900;
   --color-error: #cf222e;
-  --color-shadow: rgba(0, 0, 0, 0.06);
+  --color-shadow: rgba(13, 36, 32, 0.07);
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --color-bg: #0d0d0d;
-    --color-text: #e8e8e8;
-    --color-text-secondary: #aaa;
-    --color-text-muted: #999;
-    --color-text-faint: #777;
-    --color-text-passive: #666;
-    --color-text-dim: #555;
-    --color-text-ghost: #444;
-    --color-card-bg: #161616;
-    --color-surface: #1e1e1e;
-    --color-surface-code: #141414;
-    --color-surface-hover: #2a2a2a;
-    --color-border: #2a2a2a;
-    --color-border-input: #3a3a3a;
-    --color-link: #5fa8ff;
-    --color-btn-bg: #e8e8e8;
-    --color-btn-text: #0d0d0d;
-    --color-btn-hover: #d0d0d0;
+    --color-teal: #6BBFA7;
+    --color-teal-dark: #4CA38C;
+    --color-teal-light: #8ed3bf;
+    --color-teal-pale: #16302b;
+    --color-bg: #0a1816;
+    --color-text: #e7f0ed;
+    --color-text-secondary: #b4c8c2;
+    --color-text-muted: #8fa8a2;
+    --color-text-faint: #748b86;
+    --color-text-passive: #62786f;
+    --color-text-dim: #51635c;
+    --color-text-ghost: #41504a;
+    --color-card-bg: #112320;
+    --color-surface: #16302b;
+    --color-surface-code: #0e1f1c;
+    --color-surface-hover: #1d3d37;
+    --color-border: #22443e;
+    --color-border-input: #2f5750;
+    --color-link: #6BBFA7;
+    --color-btn-bg: #4CA38C;
+    --color-btn-text: #062019;
+    --color-btn-hover: #6BBFA7;
     --color-success: #2ea043;
     --color-warning: #d97706;
     --color-error: #f85149;
-    --color-shadow: rgba(255, 255, 255, 0.04);
+    --color-shadow: rgba(0, 0, 0, 0.4);
   }
 }
 
 :root[data-theme="dark"] {
-    --color-bg: #0d0d0d;
-    --color-text: #e8e8e8;
-    --color-text-secondary: #aaa;
-    --color-text-muted: #999;
-    --color-text-faint: #777;
-    --color-text-passive: #666;
-    --color-text-dim: #555;
-    --color-text-ghost: #444;
-    --color-card-bg: #161616;
-    --color-surface: #1e1e1e;
-    --color-surface-code: #141414;
-    --color-surface-hover: #2a2a2a;
-    --color-border: #2a2a2a;
-    --color-border-input: #3a3a3a;
-    --color-link: #5fa8ff;
-    --color-btn-bg: #e8e8e8;
-    --color-btn-text: #0d0d0d;
-    --color-btn-hover: #d0d0d0;
+    --color-teal: #6BBFA7;
+    --color-teal-dark: #4CA38C;
+    --color-teal-light: #8ed3bf;
+    --color-teal-pale: #16302b;
+    --color-bg: #0a1816;
+    --color-text: #e7f0ed;
+    --color-text-secondary: #b4c8c2;
+    --color-text-muted: #8fa8a2;
+    --color-text-faint: #748b86;
+    --color-text-passive: #62786f;
+    --color-text-dim: #51635c;
+    --color-text-ghost: #41504a;
+    --color-card-bg: #112320;
+    --color-surface: #16302b;
+    --color-surface-code: #0e1f1c;
+    --color-surface-hover: #1d3d37;
+    --color-border: #22443e;
+    --color-border-input: #2f5750;
+    --color-link: #6BBFA7;
+    --color-btn-bg: #4CA38C;
+    --color-btn-text: #062019;
+    --color-btn-hover: #6BBFA7;
     --color-success: #2ea043;
     --color-warning: #d97706;
     --color-error: #f85149;
-    --color-shadow: rgba(255, 255, 255, 0.04);
+    --color-shadow: rgba(0, 0, 0, 0.4);
 }
 
 /* ── Theme toggle ────────────────────────────────────── */
@@ -128,31 +157,58 @@
 /* ── Base ────────────────────────────────────────────── */
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family: var(--font-sans);
   max-width: 800px;
   margin: 40px auto;
   padding: 0 20px;
   background: var(--color-bg);
   color: var(--color-text);
-  line-height: 1.5;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
-h1 { margin-bottom: 4px; }
-h2 { margin-top: 32px; }
+h1, h2, h3 { color: var(--color-text); letter-spacing: -0.02em; text-wrap: balance; }
+h1 { margin-bottom: 4px; font-weight: 700; letter-spacing: -0.03em; }
+h2 { margin-top: 32px; font-weight: 600; }
 
 a { color: var(--color-link); text-decoration: none; }
 a:hover { text-decoration: underline; }
 
+::selection { background: var(--color-teal); color: #fff; }
+:focus-visible { outline: 2px solid var(--color-teal-dark); outline-offset: 2px; }
+
 /* ── Back link (shared across tool pages) ───────────── */
 
 .back-link {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
   font-size: 13px;
+  font-weight: 500;
   color: var(--color-text-muted);
   text-decoration: none;
   margin-bottom: 8px;
 }
-.back-link:hover { color: var(--color-link); text-decoration: underline; }
+.back-link::before {
+  content: "";
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  background: url("/shared/brand/s19-mark-dark.png") center / contain no-repeat;
+}
+.back-link:hover { color: var(--color-teal-dark); text-decoration: none; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .back-link::before {
+    background-image: url("/shared/brand/s19-mark-light.png");
+  }
+}
+:root[data-theme="dark"] .back-link::before {
+  background-image: url("/shared/brand/s19-mark-light.png");
+}
+:root[data-theme="light"] .back-link::before {
+  background-image: url("/shared/brand/s19-mark-dark.png");
+}
 
 /* ── Affiliate CTA (opt-in pages only) ──────────────── */
 
@@ -243,7 +299,7 @@ th       { background: var(--color-surface); }
   border-radius: 4px;
   padding: 12px;
   font-size: 13px;
-  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  font-family: var(--font-mono);
 }
 
 /* Legacy alias from DMARC reader */
@@ -275,7 +331,7 @@ th       { background: var(--color-surface); }
 .tool-input {
   width: 100%;
   min-height: 120px;
-  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  font-family: var(--font-mono);
   font-size: 14px;
   padding: 12px;
   border: 1px solid var(--color-border-input);

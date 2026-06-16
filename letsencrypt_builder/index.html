@@ -18,7 +18,7 @@
   }
   </script>
 
-  <meta property="og:title" content="Let's Encrypt Command Builder — Built by Sprint19">
+  <meta property="og:title" content="Let's Encrypt Command Builder · Built by Sprint19">
   <meta property="og:description" content="Select your web server and domain to generate a ready-to-run Certbot command. No data leaves your browser.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://tools.sprint19.com/letsencrypt_builder/">
@@ -116,7 +116,7 @@
 </head>
 <body data-affiliate-cta="true">
 
-<a href="/" class="back-link">&larr; Sprint19 Tools</a>
+<a href="/" class="back-link">Sprint19 Tools</a>
 <h1>Let's Encrypt Command Builder</h1>
 <p>Select your web server type and enter your domain to generate a Certbot command. No data leaves your browser.</p>
 
@@ -214,13 +214,13 @@ var METHOD_EXPLANATIONS = {
   standalone: [
     '<code>certonly --standalone</code> spins up a temporary web server on port 80 to verify domain ownership.',
     'No existing web server is needed, but port 80 must be free (stop Nginx/Apache first).',
-    'The certificate is saved to disk but not installed — you configure your web server manually.',
+    'The certificate is saved to disk but not installed; you configure your web server manually.',
     'Certificates auto-renew if <code>certbot renew</code> is configured (e.g. via cron or systemd timer).'
   ],
   webroot: [
     '<code>certonly --webroot</code> places a verification file in your existing web server\'s document root.',
     'Your web server must be running and serving the webroot path over HTTP.',
-    'The certificate is saved to disk but not installed — you configure your web server manually.',
+    'The certificate is saved to disk but not installed; you configure your web server manually.',
     'Certificates auto-renew if <code>certbot renew</code> is configured (e.g. via cron or systemd timer).'
   ]
 };

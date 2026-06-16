@@ -3,16 +3,29 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Sprint19 Tools — Privacy-first, browser-based engineering utilities. No data leaves your browser. Email auth, DNS, HTTP headers, SSL/TLS, auth tokens, config parsing, and DevOps tools.">
-  <meta name="robots" content="index, follow">
+  <meta name="description" content="32 privacy-first, browser-based engineering tools from Sprint19. DKIM, SPF, DMARC, DNS, JWT, HTTP headers, CSP, SSL/TLS, and config parsers. Nothing is uploaded. Everything runs locally in your browser.">
+  <meta name="keywords" content="DKIM builder, SPF analyzer, DMARC reader, JWT decoder, CSP parser, HTTP header analyzer, CORS checker, DNS TXT inspector, developer tools, webmaster tools">
+  <meta name="author" content="Sprint19">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <meta name="theme-color" content="#0D2420" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#F2FAF7" media="(prefers-color-scheme: light)">
   <link rel="canonical" href="https://tools.sprint19.com/">
-  <meta property="og:title" content="Sprint19 Tools — Engineering Utilities">
-  <meta property="og:description" content="Privacy-first, browser-based engineering utilities. No data leaves your browser.">
+  <link rel="preload" href="/shared/vendor/fonts/plus-jakarta-sans.woff2" as="font" type="font/woff2" crossorigin>
+  <meta property="og:site_name" content="Sprint19 Tools">
+  <meta property="og:title" content="Sprint19 Tools · Privacy-First Engineering Utilities">
+  <meta property="og:description" content="32 browser-based tools for email auth, DNS, HTTP headers, SSL/TLS, and config parsing. Nothing is uploaded. Everything runs locally.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://tools.sprint19.com/">
   <meta property="og:image" content="https://tools.sprint19.com/og-image.png">
+  <meta property="og:image:width" content="1024">
+  <meta property="og:image:height" content="536">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Sprint19 Tools · Privacy-First Engineering Utilities">
+  <meta name="twitter:description" content="32 browser-based tools for email auth, DNS, HTTP headers, SSL/TLS, and config parsing. Nothing is uploaded.">
+  <meta name="twitter:image" content="https://tools.sprint19.com/og-image.png">
   <link rel="icon" type="image/png" href="/favicon.png">
-  <title>Sprint19 Tools — Privacy-First Engineering Utilities</title>
+  <link rel="apple-touch-icon" href="/favicon.png">
+  <title>Sprint19 Tools · 32 Privacy-First Engineering Utilities</title>
   <link rel="stylesheet" href="/shared/styles.css">
   <style>
     body {
@@ -75,6 +88,43 @@
     .hero {
       margin-bottom: 40px;
     }
+    .brand-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+    .brand-mark {
+      flex-shrink: 0;
+      width: 46px;
+      height: 46px;
+      line-height: 0;
+    }
+    .brand-mark img {
+      width: 46px;
+      height: 46px;
+    }
+    .brand-mark .on-dark { display: none; }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) .brand-mark .on-light { display: none; }
+      :root:not([data-theme="light"]) .brand-mark .on-dark { display: block; }
+    }
+    :root[data-theme="dark"] .brand-mark .on-light { display: none; }
+    :root[data-theme="dark"] .brand-mark .on-dark { display: block; }
+    :root[data-theme="light"] .brand-mark .on-light { display: block; }
+    :root[data-theme="light"] .brand-mark .on-dark { display: none; }
+    .hero h1 {
+      margin: 0;
+      font-size: 30px;
+    }
+    .brand-back {
+      display: inline-block;
+      margin-top: 2px;
+      font-size: 13px;
+      color: var(--color-text-muted);
+      font-weight: 500;
+    }
+    .brand-back:hover { color: var(--color-teal-dark); }
     .hero p {
       color: var(--color-text-secondary);
       font-size: 17px;
@@ -191,7 +241,7 @@
       pointer-events: none;
     }
     .tool-card.coming-soon h3::after {
-      content: " — coming soon";
+      content: " · coming soon";
       font-weight: normal;
       font-size: 12px;
       color: var(--color-text-dim);
@@ -260,6 +310,601 @@
       }
     }
   </style>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": "https://sprint19.com/#organization",
+      "name": "Sprint19",
+      "url": "https://sprint19.com",
+      "logo": "https://tools.sprint19.com/favicon.png",
+      "sameAs": [
+        "https://www.linkedin.com/company/sprint19",
+        "https://www.facebook.com/meetsprint19",
+        "https://www.instagram.com/meetsprint19",
+        "https://profile.sprint19.com/"
+      ]
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://tools.sprint19.com/#website",
+      "name": "Sprint19 Tools",
+      "url": "https://tools.sprint19.com/",
+      "description": "Privacy-first, browser-based engineering utilities. Nothing is uploaded; everything runs locally.",
+      "publisher": {
+        "@id": "https://sprint19.com/#organization"
+      },
+      "inLanguage": "en"
+    },
+    {
+      "@type": "CollectionPage",
+      "@id": "https://tools.sprint19.com/#webpage",
+      "url": "https://tools.sprint19.com/",
+      "name": "Sprint19 Tools",
+      "isPartOf": {
+        "@id": "https://tools.sprint19.com/#website"
+      },
+      "about": {
+        "@id": "https://sprint19.com/#organization"
+      },
+      "mainEntity": {
+        "@type": "ItemList",
+        "name": "Sprint19 engineering tools",
+        "numberOfItems": 32,
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "item": {
+              "@type": "SoftwareApplication",
+              "name": "DKIM Record Builder",
+              "url": "https://tools.sprint19.com/dkim_builder/",
+              "applicationCategory": "DeveloperApplication",
+              "operatingSystem": "Web",
+              "description": "Paste your public key and selector to generate a DKIM DNS TXT record.",
+              "offers": {
+                "@type": "Offer",
+                "price": "0",
+                "priceCurrency": "USD"
+              }
+            }
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "item": {
+              "@type": "SoftwareApplication",
+              "name": "DKIM Inspector",
+              "url": "https://tools.sprint19.com/dkim_inspector/",
+              "applicationCategory": "DeveloperApplication",
+              "operatingSystem": "Web",
+              "description": "Paste a DKIM TXT record or signature header to inspect fields, flags, and key status.",
+              "offers": {
+                "@type": "Offer",
+                "price": "0",
+                "priceCurrency": "USD"
+              }
+            }
+          },
+          {
+            "@type": "ListItem",
+            "position": 3,
+            "item": {
+              "@type": "SoftwareApplication",
+              "name": "DMARC Record Builder",
+              "url": "https://tools.sprint19.com/dmarc_builder/",
+              "applicationCategory": "DeveloperApplication",
+              "operatingSystem": "Web",
+              "description": "Fill in your DMARC policy settings and get a ready-to-publish TXT record with field explanations.",
+              "offers": {
+                "@type": "Offer",
+                "price": "0",
+                "priceCurrency": "USD"
+              }
+            }
+          },
+          {
+            "@type": "ListItem",
+            "position": 4,
+            "item": {
+              "@type": "SoftwareApplication",
+              "name": "DMARC XML Reader",
+              "url": "https://tools.sprint19.com/dmarc_reader/",
+              "applicationCategory": "DeveloperApplication",
+              "operatingSystem": "Web",
+              "description": "Upload a DMARC aggregate report and get a clear, structured interpretation of authentication results.",
+              "offers": {
+                "@type": "Offer",
+                "price": "0",
+                "priceCurrency": "USD"
+              }
+            }
+          },
+          {
+            "@type": "ListItem",
+            "position": 5,
+            "item": {
+              "@type": "SoftwareApplication",
+              "name": "SPF Record Builder",
+              "url": "https://tools.sprint19.com/spf_builder/",
+              "applicationCategory": "DeveloperApplication",
+              "operatingSystem": "Web",
+              "description": "Enter your authorized senders and IP ranges to generate a complete SPF TXT record.",
+              "offers": {
+                "@type": "Offer",
+                "price": "0",
+                "priceCurrency": "USD"
+              }
+            }
+          },
+          {
+            "@type": "ListItem",
+            "position": 6,
+            "item": {
+              "@type": "SoftwareApplication",
+              "name": "SPF Analyzer",
+              "url": "https://tools.sprint19.com/spf_analyzer/",
+              "applicationCategory": "DeveloperApplication",
+              "operatingSystem": "Web",
+              "description": "Paste an SPF record to see mechanism breakdown, lookup count, and configuration warnings.",
+              "offers": {
+                "@type": "Offer",
+                "price": "0",
+                "priceCurrency": "USD"
+              }
+            }
+          },
+          {
+            "@type": "ListItem",
+            "position": 7,
+            "item": {
+              "@type": "SoftwareApplication",
+              "name": "DNS TXT Record Inspector",
+              "url": "https://tools.sprint19.com/dns_txt_inspector/",
+              "applicationCategory": "DeveloperApplication",
+              "operatingSystem": "Web",
+              "description": "Paste a DNS TXT record to parse key/value pairs. Works with DMARC, SPF, DKIM, and domain verification records.",
+              "offers": {
+                "@type": "Offer",
+                "price": "0",
+                "priceCurrency": "USD"
+              }
+            }
+          },
+          {
+            "@type": "ListItem",
+            "position": 8,
+            "item": {
+              "@type": "SoftwareApplication",
+              "name": "Message Header Analyzer",
+              "url": "https://tools.sprint19.com/message_header_analyzer/",
+              "applicationCategory": "DeveloperApplication",
+              "operatingSystem": "Web",
+              "description": "Paste message headers for a structured field breakdown, authentication signals, and transfer hop summary.",
+              "offers": {
+                "@type": "Offer",
+                "price": "0",
+                "priceCurrency": "USD"
+              }
+            }
+          },
+          {
+            "@type": "ListItem",
+            "position": 9,
+            "item": {
+              "@type": "SoftwareApplication",
+              "name": "EML Viewer",
+              "url": "https://tools.sprint19.com/eml_viewer/",
+              "applicationCategory": "DeveloperApplication",
+              "operatingSystem": "Web",
+              "description": "Open or paste EML source to inspect headers, body preview, MIME structure, and attachment hints.",
+              "offers": {
+                "@type": "Offer",
+                "price": "0",
+                "priceCurrency": "USD"
+              }
+            }
+          },
+          {
+            "@type": "ListItem",
+            "position": 10,
+            "item": {
+              "@type": "SoftwareApplication",
+              "name": "IDN Converter",
+              "url": "https://tools.sprint19.com/idn_converter/",
+              "applicationCategory": "DeveloperApplication",
+              "operatingSystem": "Web",
+              "description": "Convert internationalized domain names between Unicode and punycode formats for DNS-safe use.",
+              "offers": {
+                "@type": "Offer",
+                "price": "0",
+                "priceCurrency": "USD"
+              }
+            }
+          },
+          {
+            "@type": "ListItem",
+            "position": 11,
+            "item": {
+              "@type": "SoftwareApplication",
+              "name": "OpenSSL CSR Builder",
+              "url": "https://tools.sprint19.com/openssl_csr_builder/",
+              "applicationCategory": "DeveloperApplication",
+              "operatingSystem": "Web",
+              "description": "Enter your domain and organization details to generate an OpenSSL CSR command with optional SAN support.",
+              "offers": {
+                "@type": "Offer",
+                "price": "0",
+                "priceCurrency": "USD"
+              }
+            }
+          },
+          {
+            "@type": "ListItem",
+            "position": 12,
+            "item": {
+              "@type": "SoftwareApplication",
+              "name": "Let's Encrypt Command Builder",
+              "url": "https://tools.sprint19.com/letsencrypt_builder/",
+              "applicationCategory": "DeveloperApplication",
+              "operatingSystem": "Web",
+              "description": "Select your web server and domain to generate a ready-to-run Certbot command.",
+              "offers": {
+                "@type": "Offer",
+                "price": "0",
+                "priceCurrency": "USD"
+              }
+            }
+          },
+          {
+            "@type": "ListItem",
+            "position": 13,
+            "item": {
+              "@type": "SoftwareApplication",
+              "name": "HSTS Builder",
+              "url": "https://tools.sprint19.com/hsts_builder/",
+              "applicationCategory": "DeveloperApplication",
+              "operatingSystem": "Web",
+              "description": "Set max-age, includeSubDomains, and preload to generate a Strict-Transport-Security header.",
+              "offers": {
+                "@type": "Offer",
+                "price": "0",
+                "priceCurrency": "USD"
+              }
+            }
+          },
+          {
+            "@type": "ListItem",
+            "position": 14,
+            "item": {
+              "@type": "SoftwareApplication",
+              "name": "JWT Decoder",
+              "url": "https://tools.sprint19.com/jwt_decoder/",
+              "applicationCategory": "DeveloperApplication",
+              "operatingSystem": "Web",
+              "description": "Paste a JWT to decode header, payload, and signature. No verification. Decode only.",
+              "offers": {
+                "@type": "Offer",
+                "price": "0",
+                "priceCurrency": "USD"
+              }
+            }
+          },
+          {
+            "@type": "ListItem",
+            "position": 15,
+            "item": {
+              "@type": "SoftwareApplication",
+              "name": "Basic Auth Header Generator",
+              "url": "https://tools.sprint19.com/basic_auth_generator/",
+              "applicationCategory": "DeveloperApplication",
+              "operatingSystem": "Web",
+              "description": "Enter a username and password to generate a Base64-encoded Authorization header.",
+              "offers": {
+                "@type": "Offer",
+                "price": "0",
+                "priceCurrency": "USD"
+              }
+            }
+          },
+          {
+            "@type": "ListItem",
+            "position": 16,
+            "item": {
+              "@type": "SoftwareApplication",
+              "name": "OAuth Scope Formatter",
+              "url": "https://tools.sprint19.com/oauth_scope_formatter/",
+              "applicationCategory": "DeveloperApplication",
+              "operatingSystem": "Web",
+              "description": "Paste an OAuth scope string to get a formatted, readable list of scopes.",
+              "offers": {
+                "@type": "Offer",
+                "price": "0",
+                "priceCurrency": "USD"
+              }
+            }
+          },
+          {
+            "@type": "ListItem",
+            "position": 17,
+            "item": {
+              "@type": "SoftwareApplication",
+              "name": "CORS Checker",
+              "url": "https://tools.sprint19.com/cors_checker/",
+              "applicationCategory": "DeveloperApplication",
+              "operatingSystem": "Web",
+              "description": "Paste HTTP response headers to analyze CORS configuration and flag common misconfigurations.",
+              "offers": {
+                "@type": "Offer",
+                "price": "0",
+                "priceCurrency": "USD"
+              }
+            }
+          },
+          {
+            "@type": "ListItem",
+            "position": 18,
+            "item": {
+              "@type": "SoftwareApplication",
+              "name": "HTTP Header Analyzer",
+              "url": "https://tools.sprint19.com/http_header_analyzer/",
+              "applicationCategory": "DeveloperApplication",
+              "operatingSystem": "Web",
+              "description": "Paste HTTP response headers for a structured breakdown of Cache-Control, CSP, CORS, HSTS, and security headers.",
+              "offers": {
+                "@type": "Offer",
+                "price": "0",
+                "priceCurrency": "USD"
+              }
+            }
+          },
+          {
+            "@type": "ListItem",
+            "position": 19,
+            "item": {
+              "@type": "SoftwareApplication",
+              "name": "CSP Policy Parser",
+              "url": "https://tools.sprint19.com/csp_parser/",
+              "applicationCategory": "DeveloperApplication",
+              "operatingSystem": "Web",
+              "description": "Paste a Content-Security-Policy header to break it into a structured directives table.",
+              "offers": {
+                "@type": "Offer",
+                "price": "0",
+                "priceCurrency": "USD"
+              }
+            }
+          },
+          {
+            "@type": "ListItem",
+            "position": 20,
+            "item": {
+              "@type": "SoftwareApplication",
+              "name": "Webhook Viewer",
+              "url": "https://tools.sprint19.com/webhook_viewer/",
+              "applicationCategory": "DeveloperApplication",
+              "operatingSystem": "Web",
+              "description": "Paste a JSON webhook payload for formatted display, structure stats, and event detection.",
+              "offers": {
+                "@type": "Offer",
+                "price": "0",
+                "priceCurrency": "USD"
+              }
+            }
+          },
+          {
+            "@type": "ListItem",
+            "position": 21,
+            "item": {
+              "@type": "SoftwareApplication",
+              "name": "ENV File Formatter",
+              "url": "https://tools.sprint19.com/env_formatter/",
+              "applicationCategory": "DeveloperApplication",
+              "operatingSystem": "Web",
+              "description": "Paste a .env file to get a structured table with optional value masking.",
+              "offers": {
+                "@type": "Offer",
+                "price": "0",
+                "priceCurrency": "USD"
+              }
+            }
+          },
+          {
+            "@type": "ListItem",
+            "position": 22,
+            "item": {
+              "@type": "SoftwareApplication",
+              "name": "Redis URL Parser",
+              "url": "https://tools.sprint19.com/redis_url_parser/",
+              "applicationCategory": "DeveloperApplication",
+              "operatingSystem": "Web",
+              "description": "Paste a Redis connection URL to extract host, port, database, and auth details.",
+              "offers": {
+                "@type": "Offer",
+                "price": "0",
+                "priceCurrency": "USD"
+              }
+            }
+          },
+          {
+            "@type": "ListItem",
+            "position": 23,
+            "item": {
+              "@type": "SoftwareApplication",
+              "name": "Postgres JSON Formatter",
+              "url": "https://tools.sprint19.com/postgres_json_formatter/",
+              "applicationCategory": "DeveloperApplication",
+              "operatingSystem": "Web",
+              "description": "Paste JSON from psql output. Handles escaped formats, pretty-prints, and validates.",
+              "offers": {
+                "@type": "Offer",
+                "price": "0",
+                "priceCurrency": "USD"
+              }
+            }
+          },
+          {
+            "@type": "ListItem",
+            "position": 24,
+            "item": {
+              "@type": "SoftwareApplication",
+              "name": "Calendar File Viewer",
+              "url": "https://tools.sprint19.com/calendar_file_viewer/",
+              "applicationCategory": "DeveloperApplication",
+              "operatingSystem": "Web",
+              "description": "Upload or paste ICS calendar content to parse VEVENT entries into a readable event table.",
+              "offers": {
+                "@type": "Offer",
+                "price": "0",
+                "priceCurrency": "USD"
+              }
+            }
+          },
+          {
+            "@type": "ListItem",
+            "position": 25,
+            "item": {
+              "@type": "SoftwareApplication",
+              "name": "Dockerfile Linter",
+              "url": "https://tools.sprint19.com/dockerfile_linter/",
+              "applicationCategory": "DeveloperApplication",
+              "operatingSystem": "Web",
+              "description": "Paste a Dockerfile to flag unpinned base images, missing WORKDIR, and multiple RUN layers.",
+              "offers": {
+                "@type": "Offer",
+                "price": "0",
+                "priceCurrency": "USD"
+              }
+            }
+          },
+          {
+            "@type": "ListItem",
+            "position": 26,
+            "item": {
+              "@type": "SoftwareApplication",
+              "name": "NGINX Config Formatter",
+              "url": "https://tools.sprint19.com/nginx_formatter/",
+              "applicationCategory": "DeveloperApplication",
+              "operatingSystem": "Web",
+              "description": "Paste an NGINX config block to get pretty-printed, readable output.",
+              "offers": {
+                "@type": "Offer",
+                "price": "0",
+                "priceCurrency": "USD"
+              }
+            }
+          },
+          {
+            "@type": "ListItem",
+            "position": 27,
+            "item": {
+              "@type": "SoftwareApplication",
+              "name": "Rails Log Beautifier",
+              "url": "https://tools.sprint19.com/rails_log_beautifier/",
+              "applicationCategory": "DeveloperApplication",
+              "operatingSystem": "Web",
+              "description": "Paste Rails server logs to group requests, extract stats, and color-code status results.",
+              "offers": {
+                "@type": "Offer",
+                "price": "0",
+                "priceCurrency": "USD"
+              }
+            }
+          },
+          {
+            "@type": "ListItem",
+            "position": 28,
+            "item": {
+              "@type": "SoftwareApplication",
+              "name": "Port Check Command Generator",
+              "url": "https://tools.sprint19.com/port_check/",
+              "applicationCategory": "DeveloperApplication",
+              "operatingSystem": "Web",
+              "description": "Generate terminal commands for host/port checks with TCP or UDP options. Command snippets only.",
+              "offers": {
+                "@type": "Offer",
+                "price": "0",
+                "priceCurrency": "USD"
+              }
+            }
+          },
+          {
+            "@type": "ListItem",
+            "position": 29,
+            "item": {
+              "@type": "SoftwareApplication",
+              "name": "LinkedIn Text Formatter",
+              "url": "https://tools.sprint19.com/linkedin_text_formatter/",
+              "applicationCategory": "DeveloperApplication",
+              "operatingSystem": "Web",
+              "description": "Format plain text with Unicode styling for copy/paste into LinkedIn posts and comments.",
+              "offers": {
+                "@type": "Offer",
+                "price": "0",
+                "priceCurrency": "USD"
+              }
+            }
+          },
+          {
+            "@type": "ListItem",
+            "position": 30,
+            "item": {
+              "@type": "SoftwareApplication",
+              "name": "Color Picker & Palette Generator",
+              "url": "https://tools.sprint19.com/color_picker/",
+              "applicationCategory": "DeveloperApplication",
+              "operatingSystem": "Web",
+              "description": "Generate complementary, analogous, triadic, and monochrome palettes from any base color with WCAG contrast ratios.",
+              "offers": {
+                "@type": "Offer",
+                "price": "0",
+                "priceCurrency": "USD"
+              }
+            }
+          },
+          {
+            "@type": "ListItem",
+            "position": 31,
+            "item": {
+              "@type": "SoftwareApplication",
+              "name": "JavaScript to TypeScript Converter",
+              "url": "https://tools.sprint19.com/js_to_ts_converter/",
+              "applicationCategory": "DeveloperApplication",
+              "operatingSystem": "Web",
+              "description": "Paste JavaScript code to get a TypeScript version with basic type annotations and interface scaffolding.",
+              "offers": {
+                "@type": "Offer",
+                "price": "0",
+                "priceCurrency": "USD"
+              }
+            }
+          },
+          {
+            "@type": "ListItem",
+            "position": 32,
+            "item": {
+              "@type": "SoftwareApplication",
+              "name": "Encode / Decode",
+              "url": "https://tools.sprint19.com/encode_decode/",
+              "applicationCategory": "DeveloperApplication",
+              "operatingSystem": "Web",
+              "description": "Encode and decode text as Base64, URL, or HTML entities with deterministic local conversion.",
+              "offers": {
+                "@type": "Offer",
+                "price": "0",
+                "priceCurrency": "USD"
+              }
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
+</script>
 </head>
 <body data-affiliate-cta="true">
 
@@ -281,8 +926,17 @@
   <div class="main-content">
 
     <div class="hero">
-      <h1>Sprint19 Tools</h1>
-      <p>Privacy-first, browser-based engineering utilities. No data leaves your browser. No tracking. No backend.</p>
+      <div class="brand-row">
+        <span class="brand-mark">
+          <img class="on-light" src="/shared/brand/s19-mark-dark.png" width="46" height="46" alt="Sprint19">
+          <img class="on-dark" src="/shared/brand/s19-mark-light.png" width="46" height="46" alt="" aria-hidden="true">
+        </span>
+        <div>
+          <h1>Sprint19 Tools</h1>
+          <a class="brand-back" href="https://sprint19.com" target="_blank" rel="noopener">A Sprint19 project. sprint19.com &rarr;</a>
+        </div>
+      </div>
+      <p>Privacy-first, browser-based engineering utilities. Nothing is uploaded. Everything runs locally in your browser. No tracking, no backend, no sign-up.</p>
       <p class="hero-meta" id="localUsageCounter" aria-live="polite"></p>
     </div>
 
@@ -385,7 +1039,7 @@
       <div class="tool-grid">
         <a href="/jwt_decoder/" class="tool-card">
           <h3>JWT Decoder</h3>
-          <p>Paste a JWT to decode header, payload, and signature. No verification — decode only.</p>
+          <p>Paste a JWT to decode header, payload, and signature. Decode only, no verification.</p>
           <span class="tag">Auth &amp; Tokens</span>
         </a>
         <a href="/basic_auth_generator/" class="tool-card">
@@ -442,7 +1096,7 @@
         </a>
         <a href="/postgres_json_formatter/" class="tool-card">
           <h3>Postgres JSON Formatter</h3>
-          <p>Paste JSON from psql output — handles escaped formats, pretty-prints, and validates.</p>
+          <p>Paste JSON from psql output. Handles escaped formats, pretty-prints, and validates.</p>
           <span class="tag">Data</span>
         </a>
         <a href="/calendar_file_viewer/" class="tool-card">

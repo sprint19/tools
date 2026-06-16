@@ -18,7 +18,7 @@
   }
   </script>
 
-  <meta property="og:title" content="SPF Record Analyzer — Built by Sprint19">
+  <meta property="og:title" content="SPF Record Analyzer · Built by Sprint19">
   <meta property="og:description" content="Paste your SPF TXT record and receive a clear syntax breakdown with lookup warnings. No data leaves your browser.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://tools.sprint19.com/spf_analyzer/">
@@ -33,7 +33,7 @@
 </head>
 <body data-affiliate-cta="true">
 
-<a href="/" class="back-link">&larr; Sprint19 Tools</a>
+<a href="/" class="back-link">Sprint19 Tools</a>
 <h1>SPF Record Analyzer</h1>
 <p>Paste an SPF TXT record. Structured breakdown. No DNS lookups. No data leaves your browser.</p>
 
@@ -201,7 +201,7 @@ function renderOutput(r) {
       '<td><code>' + escapeHTML(m.raw) + '</code></td>' +
       '<td>' + escapeHTML(m.type) + '</td>' +
       '<td>' + escapeHTML(m.qualifierLabel) + ' (' + escapeHTML(m.qualifier) + ')</td>' +
-      '<td>' + (m.argument ? escapeHTML(m.argument) : '&mdash;') + '</td>' +
+      '<td>' + (m.argument ? escapeHTML(m.argument) : '&ndash;') + '</td>' +
       '<td>' + (m.dnsLookup ? 'Yes' : 'No') + '</td>' +
       '</tr>';
   }).join('');
@@ -211,7 +211,7 @@ function renderOutput(r) {
       '<td>' + m.order + '</td>' +
       '<td><code>' + escapeHTML(m.raw) + '</code></td>' +
       '<td>' + escapeHTML(m.type) + ' (modifier)</td>' +
-      '<td>&mdash;</td>' +
+      '<td>&ndash;</td>' +
       '<td>' + escapeHTML(m.value) + '</td>' +
       '<td>' + (m.type === 'redirect' ? 'Yes' : 'No') + '</td>' +
       '</tr>';

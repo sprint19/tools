@@ -18,7 +18,7 @@
   }
   </script>
 
-  <meta property="og:title" content="DMARC XML Reader — Built by Sprint19">
+  <meta property="og:title" content="DMARC XML Reader · Built by Sprint19">
   <meta property="og:description" content="Upload your DMARC XML and receive a clear, structured interpretation. No data leaves your browser.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://tools.sprint19.com/dmarc_reader/">
@@ -67,7 +67,7 @@
 </head>
 <body data-affiliate-cta="true">
 
-<a href="/" class="back-link">&larr; Sprint19 Tools</a>
+<a href="/" class="back-link">Sprint19 Tools</a>
 <h1>DMARC XML Reader</h1>
 <p>Structured interpretation. No speculation. No data leaves your browser.</p>
 
@@ -215,7 +215,7 @@ document.getElementById('fileInput').addEventListener('change', function(event) 
     const generatedAt = new Date().toLocaleString();
 
     document.getElementById("output").innerHTML = `
-      <p class="report-timestamp"><strong>${escapeHTML(file.name)}</strong> &mdash; Generated on: ${generatedAt}</p>
+      <p class="report-timestamp"><strong>${escapeHTML(file.name)}</strong> · Generated on: ${generatedAt}</p>
       <p class="report-source">This summary is generated from the DMARC aggregate report provided.</p>
       <h2>Summary of Findings</h2>
       <div class="card summary">
@@ -232,7 +232,7 @@ document.getElementById('fileInput').addEventListener('change', function(event) 
         <strong class="${riskClass}">Risk Level: ${riskClass.toUpperCase()}</strong>
       </div>
 
-      <h2>Failed Authentication &mdash; Unique Sending IPs</h2>
+      <h2>Failed Authentication: Unique Sending IPs</h2>
       <div class="card">
         ${failedIPHTML}
       </div>

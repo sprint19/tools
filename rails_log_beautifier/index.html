@@ -18,7 +18,7 @@
   }
   </script>
 
-  <meta property="og:title" content="Rails Log Beautifier — Built by Sprint19">
+  <meta property="og:title" content="Rails Log Beautifier · Built by Sprint19">
   <meta property="og:description" content="Group Rails request logs and extract summary fields without runtime inference. Local-only processing.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://tools.sprint19.com/rails_log_beautifier/">
@@ -51,7 +51,7 @@
 </head>
 <body data-affiliate-cta="true">
 
-<a href="/" class="back-link">&larr; Sprint19 Tools</a>
+<a href="/" class="back-link">Sprint19 Tools</a>
 <h1>Rails Log Beautifier</h1>
 <p>Paste Rails server logs to group request-like sections and extract high-level stats with tolerant parsing.</p>
 <p class="disclaimer">Be careful when pasting production logs that may contain sensitive data.</p>
@@ -264,7 +264,7 @@ function renderResult(result) {
     for (var i = 0; i < result.requests.length; i++) {
       var r = result.requests[i];
       var tr = document.createElement('tr');
-      var vals = [String(i + 1), r.method, r.path, r.status || '—', r.totalMs || '—', r.viewMs || '—', r.dbMs || '—'];
+      var vals = [String(i + 1), r.method, r.path, r.status || '–', r.totalMs || '–', r.viewMs || '–', r.dbMs || '–'];
       for (var c = 0; c < vals.length; c++) {
         var td = document.createElement('td');
         td.textContent = vals[c];

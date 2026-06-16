@@ -18,7 +18,7 @@
   }
   </script>
 
-  <meta property="og:title" content="Redis URL Parser — Built by Sprint19">
+  <meta property="og:title" content="Redis URL Parser · Built by Sprint19">
   <meta property="og:description" content="Extract Redis URL components, preserve query parameters in order, and generate copy-ready summaries locally.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://tools.sprint19.com/redis_url_parser/">
@@ -58,7 +58,7 @@
 </head>
 <body data-affiliate-cta="true">
 
-<a href="/" class="back-link">&larr; Sprint19 Tools</a>
+<a href="/" class="back-link">Sprint19 Tools</a>
 <h1>Redis URL Parser</h1>
 <p>Paste a Redis connection URL to extract components with masked-by-default secret handling.</p>
 <p class="disclaimer">Be careful when pasting production secrets into shared screens or recordings.</p>
@@ -182,9 +182,9 @@ function buildSummary(parsed, reveal) {
   lines.push('Port: ' + parsed.port);
   lines.push('Database index: ' + parsed.dbIndex);
   lines.push('TLS implied by scheme: ' + (parsed.tlsEnabled ? 'yes' : 'no'));
-  lines.push('Username: ' + (parsed.username || '—'));
+  lines.push('Username: ' + (parsed.username || '–'));
   lines.push('Password present: ' + (parsed.passwordPresent ? 'yes' : 'no'));
-  lines.push('Password: ' + (parsed.passwordPresent ? (reveal ? parsed.password : '••••••') : '—'));
+  lines.push('Password: ' + (parsed.passwordPresent ? (reveal ? parsed.password : '••••••') : '–'));
   lines.push('Query parameters: ' + parsed.queryParams.length);
   return lines.join('\n');
 }
@@ -256,12 +256,12 @@ function renderResult(result, reveal) {
   var tbody = document.createElement('tbody');
   var rows = [
     ['scheme', result.scheme],
-    ['host', result.host || '—'],
+    ['host', result.host || '–'],
     ['port', result.port],
     ['db index', result.dbIndex],
-    ['username', result.username || '—'],
+    ['username', result.username || '–'],
     ['password present', result.passwordPresent ? 'yes' : 'no'],
-    ['password', result.passwordPresent ? (reveal ? result.password : '••••••') : '—']
+    ['password', result.passwordPresent ? (reveal ? result.password : '••••••') : '–']
   ];
   for (var i = 0; i < rows.length; i++) {
     var tr = document.createElement('tr');

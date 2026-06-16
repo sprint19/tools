@@ -18,7 +18,7 @@
   }
   </script>
 
-  <meta property="og:title" content="SPF Record Builder — Built by Sprint19">
+  <meta property="og:title" content="SPF Record Builder · Built by Sprint19">
   <meta property="og:description" content="Enter your authorized senders and IP ranges to generate a complete SPF TXT record. No data leaves your browser.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://tools.sprint19.com/spf_builder/">
@@ -116,7 +116,7 @@
 </head>
 <body data-affiliate-cta="true">
 
-<a href="/" class="back-link">&larr; Sprint19 Tools</a>
+<a href="/" class="back-link">Sprint19 Tools</a>
 <h1>SPF Record Builder</h1>
 <p>Enter your authorized senders and IP ranges. Get a ready-to-publish SPF TXT record. No data leaves your browser.</p>
 
@@ -283,7 +283,7 @@ document.getElementById('generateBtn').addEventListener('click', function() {
 
   var mechItems = mechanisms.map(function(m) {
     var desc = MECHANISM_DESCRIPTIONS[m.type] || MECHANISM_DESCRIPTIONS[m.token] || '';
-    return '<li><code>' + escapeHTML(m.token) + '</code> — ' + desc + '</li>';
+    return '<li><code>' + escapeHTML(m.token) + '</code>: ' + desc + '</li>';
   }).join('');
 
   var warningsHTML = '';

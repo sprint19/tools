@@ -18,7 +18,7 @@
   }
   </script>
 
-  <meta property="og:title" content="HTTP Header Analyzer — Built by Sprint19">
+  <meta property="og:title" content="HTTP Header Analyzer · Built by Sprint19">
   <meta property="og:description" content="Parse and format HTTP response headers locally with neutral informational highlights and copy-ready output.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://tools.sprint19.com/http_header_analyzer/">
@@ -53,7 +53,7 @@
 </head>
 <body data-affiliate-cta="true" data-shortcut-input="#headerInput" data-shortcut-action="#analyzeBtn">
 
-<a href="/" class="back-link">&larr; Sprint19 Tools</a>
+<a href="/" class="back-link">Sprint19 Tools</a>
 <h1>HTTP Header Analyzer</h1>
 <p>Paste HTTP response headers for deterministic parsing and structured viewing. Duplicate headers are preserved as separate rows.</p>
 
@@ -319,7 +319,7 @@ function renderResult(result) {
     var tdCount = document.createElement('td');
     tdCount.textContent = String(row.count);
     var tdSample = document.createElement('td');
-    tdSample.textContent = row.sample || '—';
+    tdSample.textContent = row.sample || '–';
     trKnown.appendChild(tdHeader);
     trKnown.appendChild(tdStatus);
     trKnown.appendChild(tdCount);

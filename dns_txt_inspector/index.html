@@ -18,7 +18,7 @@
   }
   </script>
 
-  <meta property="og:title" content="DNS TXT Record Inspector — Built by Sprint19">
+  <meta property="og:title" content="DNS TXT Record Inspector · Built by Sprint19">
   <meta property="og:description" content="Parse TXT content into normalized value, detected type, and structured tags. No data leaves your browser.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://tools.sprint19.com/dns_txt_inspector/">
@@ -44,7 +44,7 @@
 </head>
 <body data-affiliate-cta="true">
 
-<a href="/" class="back-link">&larr; Sprint19 Tools</a>
+<a href="/" class="back-link">Sprint19 Tools</a>
 <h1>DNS TXT Record Inspector</h1>
 <p>Paste TXT record content to normalize it, detect common record patterns, and inspect parsed tags or segments.</p>
 
@@ -221,7 +221,7 @@ function parseSegments(normalizedValue) {
       rows.push({
         segment: token,
         key: key || '(token)',
-        value: value || '—',
+        value: value || '–',
         note: s === 0 ? 'Version token' : 'SPF mechanism or modifier'
       });
       if (idxEq > 0) pairs.push({ key: key, value: value });
@@ -262,7 +262,7 @@ function parseSegments(normalizedValue) {
     rows.push({
       segment: part,
       key: k || '(none)',
-      value: v || '—',
+      value: v || '–',
       note: note
     });
   }

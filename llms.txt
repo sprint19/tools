@@ -1,0 +1,69 @@
+# Sprint19 Tools
+
+> Privacy-first, browser-based engineering utilities from Sprint19. Every tool runs entirely in the visitor's browser: nothing is uploaded, stored, or sent to a server. No tracking, no accounts, no backend.
+
+Sprint19 is a product engineering studio that builds software and automation for startups and operators. These tools are free, ad-free utilities for email authentication, DNS, HTTP, TLS, auth tokens, and configuration parsing. They provide structured interpretation only and do not perform security assessment.
+
+- Site: https://tools.sprint19.com/
+- Company: https://sprint19.com
+- Company profile: https://profile.sprint19.com/
+- Contact: hello@sprint19.com
+
+All 32 tools, organized by category:
+
+## Email & DNS
+
+- [DKIM Record Builder](https://tools.sprint19.com/dkim_builder/): Paste your public key and selector to generate a DKIM DNS TXT record.
+- [DKIM Inspector](https://tools.sprint19.com/dkim_inspector/): Paste a DKIM TXT record or signature header to inspect fields, flags, and key status.
+- [DMARC Record Builder](https://tools.sprint19.com/dmarc_builder/): Fill in your DMARC policy settings and get a ready-to-publish TXT record with field explanations.
+- [DMARC XML Reader](https://tools.sprint19.com/dmarc_reader/): Upload a DMARC aggregate report and get a clear, structured interpretation of authentication results.
+- [SPF Record Builder](https://tools.sprint19.com/spf_builder/): Enter your authorized senders and IP ranges to generate a complete SPF TXT record.
+- [SPF Analyzer](https://tools.sprint19.com/spf_analyzer/): Paste an SPF record to see mechanism breakdown, lookup count, and configuration warnings.
+- [DNS TXT Record Inspector](https://tools.sprint19.com/dns_txt_inspector/): Paste a DNS TXT record to parse key/value pairs. Works with DMARC, SPF, DKIM, and domain verification records.
+- [Message Header Analyzer](https://tools.sprint19.com/message_header_analyzer/): Paste message headers for a structured field breakdown, authentication signals, and transfer hop summary.
+- [EML Viewer](https://tools.sprint19.com/eml_viewer/): Open or paste EML source to inspect headers, body preview, MIME structure, and attachment hints.
+- [IDN Converter](https://tools.sprint19.com/idn_converter/): Convert internationalized domain names between Unicode and punycode formats for DNS-safe use.
+
+## SSL & Certificates
+
+- [OpenSSL CSR Builder](https://tools.sprint19.com/openssl_csr_builder/): Enter your domain and organization details to generate an OpenSSL CSR command with optional SAN support.
+- [Let's Encrypt Command Builder](https://tools.sprint19.com/letsencrypt_builder/): Select your web server and domain to generate a ready-to-run Certbot command.
+- [HSTS Builder](https://tools.sprint19.com/hsts_builder/): Set max-age, includeSubDomains, and preload to generate a Strict-Transport-Security header.
+
+## Auth & Tokens
+
+- [JWT Decoder](https://tools.sprint19.com/jwt_decoder/): Paste a JWT to decode header, payload, and signature. Decode only, no verification.
+- [Basic Auth Header Generator](https://tools.sprint19.com/basic_auth_generator/): Enter a username and password to generate a Base64-encoded Authorization header.
+- [OAuth Scope Formatter](https://tools.sprint19.com/oauth_scope_formatter/): Paste an OAuth scope string to get a formatted, readable list of scopes.
+
+## HTTP & Headers
+
+- [CORS Checker](https://tools.sprint19.com/cors_checker/): Paste HTTP response headers to analyze CORS configuration and flag common misconfigurations.
+- [HTTP Header Analyzer](https://tools.sprint19.com/http_header_analyzer/): Paste HTTP response headers for a structured breakdown of Cache-Control, CSP, CORS, HSTS, and security headers.
+- [CSP Policy Parser](https://tools.sprint19.com/csp_parser/): Paste a Content-Security-Policy header to break it into a structured directives table.
+- [Webhook Viewer](https://tools.sprint19.com/webhook_viewer/): Paste a JSON webhook payload for formatted display, structure stats, and event detection.
+
+## Data & Config
+
+- [ENV File Formatter](https://tools.sprint19.com/env_formatter/): Paste a .env file to get a structured table with optional value masking.
+- [Redis URL Parser](https://tools.sprint19.com/redis_url_parser/): Paste a Redis connection URL to extract host, port, database, and auth details.
+- [Postgres JSON Formatter](https://tools.sprint19.com/postgres_json_formatter/): Paste JSON from psql output. Handles escaped formats, pretty-prints, and validates.
+- [Calendar File Viewer](https://tools.sprint19.com/calendar_file_viewer/): Upload or paste ICS calendar content to parse VEVENT entries into a readable event table.
+
+## DevOps & Logs
+
+- [Dockerfile Linter](https://tools.sprint19.com/dockerfile_linter/): Paste a Dockerfile to flag unpinned base images, missing WORKDIR, and multiple RUN layers.
+- [NGINX Config Formatter](https://tools.sprint19.com/nginx_formatter/): Paste an NGINX config block to get pretty-printed, readable output.
+- [Rails Log Beautifier](https://tools.sprint19.com/rails_log_beautifier/): Paste Rails server logs to group requests, extract stats, and color-code status results.
+- [Port Check Command Generator](https://tools.sprint19.com/port_check/): Generate terminal commands for host/port checks with TCP or UDP options. Command snippets only.
+
+## Utilities
+
+- [LinkedIn Text Formatter](https://tools.sprint19.com/linkedin_text_formatter/): Format plain text with Unicode styling for copy/paste into LinkedIn posts and comments.
+- [Color Picker & Palette Generator](https://tools.sprint19.com/color_picker/): Generate complementary, analogous, triadic, and monochrome palettes from any base color with WCAG contrast ratios.
+- [JavaScript to TypeScript Converter](https://tools.sprint19.com/js_to_ts_converter/): Paste JavaScript code to get a TypeScript version with basic type annotations and interface scaffolding.
+- [Encode / Decode](https://tools.sprint19.com/encode_decode/): Encode and decode text as Base64, URL, or HTML entities with deterministic local conversion.
+
+## About Sprint19
+
+Sprint19 builds MLPs, web and mobile apps, AI-assisted products, and automation for startups. Partners on four continents since 2008. Principles behind these tools: clear over clever, deterministic over speculative, minimal infrastructure, transparent logic.
