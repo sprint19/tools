@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Estimate Odoo subscription costs with a first-year discount, side-by-side plan options, hosting, and USD to PHP conversion. Runs entirely in your browser. Not an official quote.">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://tools.sprint19.com/odoo_calculator/">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Odoo Pricing Calculator | Sprint19",
+    "description": "Estimate Odoo subscription costs with a first-year discount, side-by-side plan options, hosting, and USD to PHP conversion. Runs entirely in your browser. Not an official quote.",
+    "applicationCategory": "DeveloperApplication",
+    "operatingSystem": "Web",
+    "url": "https://tools.sprint19.com/odoo_calculator/"
+  }
+  </script>
+
+  <meta property="og:title" content="Odoo Pricing Calculator · Built by Sprint19">
+  <meta property="og:description" content="Side-by-side Odoo cost worksheet with first-year discount, hosting, and offline USD→PHP conversion. Local estimate only.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://tools.sprint19.com/odoo_calculator/">
+  <meta property="og:image" content="https://tools.sprint19.com/og-image.png">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <link rel="stylesheet" href="/shared/styles.css">
+  <title>Odoo Pricing Calculator | Sprint19</title>
+  <style>
+    body { max-width: 960px; }
+
+    .intro {
+      margin: 0 0 20px;
+      color: var(--color-text-secondary);
+    }
+
+    .error-msg {
+      color: var(--color-error);
+      font-weight: 600;
+      margin: 0 0 14px;
+      min-height: 1.4em;
+    }
+
+    .calc-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+      font-size: 14px;
+    }
+    .calc-table th,
+    .calc-table td {
+      border: 1px solid var(--color-border);
+      padding: 8px 10px;
+      text-align: left;
+      vertical-align: middle;
+    }
+    .calc-table th {
+      background: var(--color-surface);
+      font-weight: 600;
+    }
+    .calc-table tbody tr:nth-child(even) {
+      background: var(--color-surface-code);
+    }
+    .calc-table .label-cell {
+      font-weight: 600;
+      color: var(--color-text);
+      width: 34%;
+    }
+    .calc-table .num {
+      font-variant-numeric: tabular-nums;
+      font-family: var(--font-mono);
+      font-size: 13px;
+    }
+    .calc-table .subhead {
+      background: var(--color-btn-bg);
+      color: var(--color-btn-text);
+      text-align: center;
+      font-weight: 600;
+    }
+    .calc-table .highlight {
+      color: var(--color-teal-dark);
+      font-weight: 700;
+    }
+    .calc-table .savings-row td {
+      font-style: italic;
+      color: var(--color-text-muted);
+    }
+    .calc-table .company-head {
+      font-weight: 700;
+    }
+
+    .field-input,
+    .field-select {
+      width: 100%;
+      max-width: 220px;
+      box-sizing: border-box;
+      padding: 7px 9px;
+      font-size: 14px;
+      border: 1px solid var(--color-border-input);
+      border-radius: 4px;
+      background: var(--color-card-bg);
+      color: var(--color-text);
+      font-family: inherit;
+    }
+    .field-input.narrow,
+    .field-select.narrow {
+      max-width: 140px;
+    }
+    .field-input.mono {
+      font-family: var(--font-mono);
+      font-size: 13px;
+    }
+
+    .hosting-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      align-items: flex-start;
+    }
+    .hosting-custom {
+      display: none;
+    }
+    .hosting-custom.is-visible {
+      display: block;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 8px 0 24px;
+    }
+    .actions .tool-btn,
+    .actions .print-btn {
+      margin-top: 0;
+    }
+
+    .print-only { display: none; }
+    .screen-only { display: inline; }
+
+    .hint {
+      display: block;
+      margin-top: 4px;
+      font-size: 12px;
+      color: var(--color-text-muted);
+      font-weight: 400;
+    }
+
+    @media (max-width: 720px) {
+      .calc-table .label-cell { width: auto; }
+      .field-input,
+      .field-select {
+        max-width: 100%;
+      }
+    }
+
+    @media print {
+      .back-link,
+      .actions,
+      .error-msg,
+      .hint,
+      .affiliate-cta,
+      .theme-toggle-wrap,
+      select {
+        display: none !important;
+      }
+      .screen-only { display: none !important; }
+      .print-only { display: inline !important; }
+      .hosting-custom { display: none !important; }
+      body {
+        max-width: none;
+        margin: 0;
+        color: #000;
+        background: #fff;
+      }
+      .calc-table th,
+      .calc-table td {
+        border-color: #333;
+      }
+      .calc-table .subhead {
+        background: #111 !important;
+        color: #fff !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      .calc-table .highlight {
+        color: #0D2420 !important;
+      }
+      .site-footer {
+        display: block !important;
+      }
+    }
+  </style>
+</head>
+<body data-affiliate-cta="true">
+
+<a href="/" class="back-link">Sprint19 Tools</a>
+<h1>Odoo Pricing Calculator</h1>
+<p class="intro">Local estimate worksheet for subscription options. Enter prices, users, and years to compare totals in USD and PHP. Not an official Odoo quote.</p>
+
+<p id="errorMsg" class="error-msg" role="alert" aria-live="assertive"></p>
+
+<table class="calc-table" aria-label="Pricing inputs">
+  <tbody>
+    <tr>
+      <td class="label-cell"><label for="companyName">Company Name</label></td>
+      <td colspan="2">
+        <input id="companyName" class="field-input screen-only" type="text" autocomplete="organization" placeholder="Acme Corp" maxlength="120">
+        <span id="companyNamePrint" class="print-only"></span>
+      </td>
+    </tr>
+    <tr>
+      <td class="label-cell">
+        <label for="regularPrice">Regular Price (USD / user / mo)</label>
+      </td>
+      <td colspan="2">
+        <input id="regularPrice" class="field-input narrow mono screen-only" type="number" inputmode="decimal" min="0" step="0.01" value="13.60">
+        <span id="regularPricePrint" class="print-only num"></span>
+      </td>
+    </tr>
+    <tr>
+      <td class="label-cell">
+        <label for="firstYearPrice">1st Year Discounted Price</label>
+        <span class="hint">Defaults to 20% off regular (editable)</span>
+      </td>
+      <td colspan="2">
+        <input id="firstYearPrice" class="field-input narrow mono screen-only" type="number" inputmode="decimal" min="0" step="0.01" value="10.88">
+        <span id="firstYearPricePrint" class="print-only num"></span>
+      </td>
+    </tr>
+    <tr>
+      <td class="label-cell">
+        <label for="forexRate">Forex (USD → PHP)</label>
+        <span class="hint">Editable offline rate; no live FX feed</span>
+      </td>
+      <td colspan="2">
+        <input id="forexRate" class="field-input narrow mono screen-only" type="number" inputmode="decimal" min="0" step="0.01" value="58">
+        <span id="forexRatePrint" class="print-only num"></span>
+      </td>
+    </tr>
+    <tr>
+      <td class="label-cell">Users</td>
+      <td>
+        <label class="screen-only" for="users1">Option 1</label>
+        <input id="users1" class="field-input narrow mono screen-only" type="number" inputmode="numeric" min="1" step="1" value="3" aria-label="Option 1 users">
+        <span id="users1Print" class="print-only num"></span>
+      </td>
+      <td>
+        <label class="screen-only" for="users2">Option 2</label>
+        <input id="users2" class="field-input narrow mono screen-only" type="number" inputmode="numeric" min="1" step="1" value="3" aria-label="Option 2 users">
+        <span id="users2Print" class="print-only num"></span>
+      </td>
+    </tr>
+    <tr>
+      <td class="label-cell">Years</td>
+      <td>
+        <label class="screen-only" for="years1">Option 1</label>
+        <input id="years1" class="field-input narrow mono screen-only" type="number" inputmode="numeric" min="1" step="1" value="3" aria-label="Option 1 years">
+        <span id="years1Print" class="print-only num"></span>
+      </td>
+      <td>
+        <label class="screen-only" for="years2">Option 2</label>
+        <input id="years2" class="field-input narrow mono screen-only" type="number" inputmode="numeric" min="1" step="1" value="5" aria-label="Option 2 years">
+        <span id="years2Print" class="print-only num"></span>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<div id="results" role="status" aria-live="polite"></div>
+
+<div class="actions no-print">
+  <button type="button" id="printBtn" class="print-btn">Print / Save as PDF</button>
+  <button type="button" id="csvBtn" class="tool-btn">Download CSV</button>
+</div>
+
+<footer class="site-footer">
+  <hr>
+  <p>Calculated locally in your browser. Nothing is uploaded.</p>
+  <p>Built by <a href="https://sprint19.com" target="_blank" rel="noopener noreferrer">Sprint19</a>. Product engineering for startups.</p>
+  <p class="guardrail">This tool is an estimate worksheet only. It is not an official Odoo quote, invoice, or pricing guarantee. Forex rates are user-entered and may differ from live market rates.</p>
+  <p class="copyright">&copy; 2026 Sprint19. Code licensed under <a href="/LICENSE.md">MIT</a>. Sprint19 name and branding may not be used without permission.</p>
+</footer>
+
+<script src="/shared/utils.js"></script>
+<script>
+(function() {
+  var FIRST_YEAR_FACTOR = 0.8;
+  var firstYearDirty = false;
+  var lastResults = null;
+
+  var els = {
+    companyName: document.getElementById('companyName'),
+    regularPrice: document.getElementById('regularPrice'),
+    firstYearPrice: document.getElementById('firstYearPrice'),
+    forexRate: document.getElementById('forexRate'),
+    users1: document.getElementById('users1'),
+    users2: document.getElementById('users2'),
+    years1: document.getElementById('years1'),
+    years2: document.getElementById('years2'),
+    errorMsg: document.getElementById('errorMsg'),
+    results: document.getElementById('results'),
+    printBtn: document.getElementById('printBtn'),
+    csvBtn: document.getElementById('csvBtn'),
+    companyNamePrint: document.getElementById('companyNamePrint'),
+    regularPricePrint: document.getElementById('regularPricePrint'),
+    firstYearPricePrint: document.getElementById('firstYearPricePrint'),
+    forexRatePrint: document.getElementById('forexRatePrint'),
+    users1Print: document.getElementById('users1Print'),
+    users2Print: document.getElementById('users2Print'),
+    years1Print: document.getElementById('years1Print'),
+    years2Print: document.getElementById('years2Print')
+  };
+
+  function escapeText(value) {
+    if (window.Sprint19Utils && typeof window.Sprint19Utils.escapeHTML === 'function') {
+      return window.Sprint19Utils.escapeHTML(String(value == null ? '' : value));
+    }
+    if (typeof escapeHTML === 'function') {
+      return escapeHTML(String(value == null ? '' : value));
+    }
+    return String(value == null ? '' : value)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  function formatMoney(n, currency) {
+    var abs = Math.abs(n);
+    var formatted = abs.toLocaleString('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+    var sign = n < 0 ? '-' : '';
+    if (currency === 'PHP') return sign + '\u20B1' + formatted;
+    return sign + '$' + formatted;
+  }
+
+  function parsePositiveNumber(raw, label, options) {
+    options = options || {};
+    var allowZero = !!options.allowZero;
+    var requireInteger = !!options.requireInteger;
+    var trimmed = String(raw == null ? '' : raw).trim();
+    if (trimmed === '') {
+      return { ok: false, error: label + ' is required.' };
+    }
+    var n = Number(trimmed);
+    if (!isFinite(n)) {
+      return { ok: false, error: label + ' must be a valid number.' };
+    }
+    if (requireInteger && !Number.isInteger(n)) {
+      return { ok: false, error: label + ' must be a whole number.' };
+    }
+    if (allowZero) {
+      if (n < 0) return { ok: false, error: label + ' must be zero or greater.' };
+    } else if (n <= 0) {
+      return { ok: false, error: label + ' must be a positive number.' };
+    }
+    return { ok: true, value: n };
+  }
+
+  function syncFirstYearFromRegular() {
+    if (firstYearDirty) return;
+    var regular = Number(els.regularPrice.value);
+    if (!isFinite(regular) || regular < 0) return;
+    var next = Math.round(regular * FIRST_YEAR_FACTOR * 100) / 100;
+    els.firstYearPrice.value = next.toFixed(2);
+  }
+
+  function readInputs() {
+    var company = String(els.companyName.value || '').trim();
+    var regular = parsePositiveNumber(els.regularPrice.value, 'Regular price', { allowZero: false });
+    if (!regular.ok) return regular;
+    var firstYear = parsePositiveNumber(els.firstYearPrice.value, '1st-year price', { allowZero: true });
+    if (!firstYear.ok) return firstYear;
+    if (firstYear.value > regular.value) {
+      return { ok: false, error: '1st-year price should not exceed regular price.' };
+    }
+    var forex = parsePositiveNumber(els.forexRate.value, 'Forex rate', { allowZero: false });
+    if (!forex.ok) return forex;
+
+    var users1 = parsePositiveNumber(els.users1.value, 'Option 1 users', { requireInteger: true });
+    if (!users1.ok) return users1;
+    var users2 = parsePositiveNumber(els.users2.value, 'Option 2 users', { requireInteger: true });
+    if (!users2.ok) return users2;
+    var years1 = parsePositiveNumber(els.years1.value, 'Option 1 years', { requireInteger: true });
+    if (!years1.ok) return years1;
+    var years2 = parsePositiveNumber(els.years2.value, 'Option 2 years', { requireInteger: true });
+    if (!years2.ok) return years2;
+
+    return {
+      ok: true,
+      value: {
+        company: company,
+        regular: regular.value,
+        firstYear: firstYear.value,
+        forex: forex.value,
+        options: [
+          { users: users1.value, years: years1.value },
+          { users: users2.value, years: years2.value }
+        ]
+      }
+    };
+  }
+
+  function computeOption(shared, opt, hostingMonthly) {
+    var licenses = shared.regular * opt.users * 12 * opt.years;
+    var discount = (shared.regular - shared.firstYear) * opt.users * 12;
+    var hosting = hostingMonthly * 12 * opt.years;
+    var totalUsd = licenses - discount + hosting;
+    var totalPhp = totalUsd * shared.forex;
+    var savingsPhp = discount * shared.forex;
+    return {
+      users: opt.users,
+      years: opt.years,
+      licenses: licenses,
+      discount: discount,
+      hosting: hosting,
+      hostingMonthly: hostingMonthly,
+      totalUsd: totalUsd,
+      totalPhp: totalPhp,
+      savingsPhp: savingsPhp
+    };
+  }
+
+  function getHostingMonthly(selectEl, customEl, optionLabel) {
+    var mode = selectEl ? selectEl.value : 'saas';
+    if (mode === 'saas') {
+      return { ok: true, value: 0, mode: 'saas' };
+    }
+    var parsed = parsePositiveNumber(customEl.value, optionLabel + ' hosting monthly', { allowZero: true });
+    if (!parsed.ok) return parsed;
+    return { ok: true, value: parsed.value, mode: 'custom' };
+  }
+
+  function updatePrintMirrors(shared) {
+    els.companyNamePrint.textContent = shared.company || '(no company name)';
+    els.regularPricePrint.textContent = formatMoney(shared.regular, 'USD');
+    els.firstYearPricePrint.textContent = formatMoney(shared.firstYear, 'USD');
+    els.forexRatePrint.textContent = String(shared.forex);
+    els.users1Print.textContent = String(shared.options[0].users);
+    els.users2Print.textContent = String(shared.options[1].users);
+    els.years1Print.textContent = String(shared.options[0].years);
+    els.years2Print.textContent = String(shared.options[1].years);
+  }
+
+  function buildResultsHtml(shared, computed) {
+    var companyLabel = shared.company ? escapeText(shared.company) : 'Estimate';
+    var forexLabel = escapeText(String(shared.forex));
+    var o1 = computed[0];
+    var o2 = computed[1];
+
+    return (
+      '<table class="calc-table" aria-label="Side-by-side estimate">' +
+        '<thead>' +
+          '<tr>' +
+            '<th class="company-head" scope="col">' + companyLabel + '</th>' +
+            '<th scope="col">OPTION 1</th>' +
+            '<th scope="col">OPTION 2</th>' +
+          '</tr>' +
+          '<tr>' +
+            '<td></td>' +
+            '<td class="subhead">' + escapeText(String(o1.years)) + ' Years</td>' +
+            '<td class="subhead">' + escapeText(String(o2.years)) + ' Years</td>' +
+          '</tr>' +
+        '</thead>' +
+        '<tbody>' +
+          '<tr>' +
+            '<td class="label-cell">User Licenses</td>' +
+            '<td class="num">' + escapeText(formatMoney(o1.licenses, 'USD')) + '</td>' +
+            '<td class="num">' + escapeText(formatMoney(o2.licenses, 'USD')) + '</td>' +
+          '</tr>' +
+          '<tr>' +
+            '<td class="label-cell">1st Year Discount</td>' +
+            '<td class="num">' + escapeText(formatMoney(-o1.discount, 'USD')) + '</td>' +
+            '<td class="num">' + escapeText(formatMoney(-o2.discount, 'USD')) + '</td>' +
+          '</tr>' +
+          '<tr class="savings-row">' +
+            '<td class="label-cell">Total Savings (PHP) · Forex ' + forexLabel + '</td>' +
+            '<td class="num">' + escapeText(formatMoney(o1.savingsPhp, 'PHP')) + '</td>' +
+            '<td class="num">' + escapeText(formatMoney(o2.savingsPhp, 'PHP')) + '</td>' +
+          '</tr>' +
+          '<tr>' +
+            '<td class="label-cell">Hosting</td>' +
+            '<td>' + hostingCellHtml(1, o1) + '</td>' +
+            '<td>' + hostingCellHtml(2, o2) + '</td>' +
+          '</tr>' +
+          '<tr>' +
+            '<td class="label-cell highlight">Total Payable</td>' +
+            '<td class="num highlight">' + escapeText(formatMoney(o1.totalUsd, 'USD')) + '</td>' +
+            '<td class="num highlight">' + escapeText(formatMoney(o2.totalUsd, 'USD')) + '</td>' +
+          '</tr>' +
+          '<tr>' +
+            '<td class="label-cell highlight">PHP (' + forexLabel + ' Forex)</td>' +
+            '<td class="num highlight">' + escapeText(formatMoney(o1.totalPhp, 'PHP')) + '</td>' +
+            '<td class="num highlight">' + escapeText(formatMoney(o2.totalPhp, 'PHP')) + '</td>' +
+          '</tr>' +
+        '</tbody>' +
+      '</table>'
+    );
+  }
+
+  function hostingCellHtml(optionIndex, computed) {
+    var selectId = 'hostingMode' + optionIndex;
+    var customId = 'hostingCustom' + optionIndex;
+    var mode = computed.hostingMode || 'saas';
+    var customVal = computed.hostingMonthly > 0 ? String(computed.hostingMonthly) : '';
+    var printLabel = mode === 'saas'
+      ? 'SAAS · ' + formatMoney(0, 'USD')
+      : 'Custom · ' + formatMoney(computed.hosting, 'USD') + ' total (' + formatMoney(computed.hostingMonthly, 'USD') + '/mo)';
+
+    return (
+      '<div class="hosting-stack">' +
+        '<label class="screen-only" for="' + selectId + '">Hosting type</label>' +
+        '<select id="' + selectId + '" class="field-select narrow screen-only" data-option="' + optionIndex + '" aria-label="Option ' + optionIndex + ' hosting type">' +
+          '<option value="saas"' + (mode === 'saas' ? ' selected' : '') + '>SAAS ($0)</option>' +
+          '<option value="custom"' + (mode === 'custom' ? ' selected' : '') + '>Custom monthly</option>' +
+        '</select>' +
+        '<div class="hosting-custom' + (mode === 'custom' ? ' is-visible' : '') + ' screen-only">' +
+          '<label class="screen-only" for="' + customId + '">Monthly USD</label>' +
+          '<input id="' + customId + '" class="field-input narrow mono" type="number" inputmode="decimal" min="0" step="0.01" value="' + escapeText(customVal) + '" data-option="' + optionIndex + '" aria-label="Option ' + optionIndex + ' hosting monthly USD">' +
+        '</div>' +
+        '<span class="num screen-only">' + escapeText(formatMoney(computed.hosting, 'USD')) + '</span>' +
+        '<span class="print-only num">' + escapeText(printLabel) + '</span>' +
+      '</div>'
+    );
+  }
+
+  function bindHostingControls() {
+    [1, 2].forEach(function(idx) {
+      var selectEl = document.getElementById('hostingMode' + idx);
+      var customEl = document.getElementById('hostingCustom' + idx);
+      if (selectEl) {
+        selectEl.addEventListener('change', recalculate);
+      }
+      if (customEl) {
+        customEl.addEventListener('input', recalculate);
+      }
+    });
+  }
+
+  function readHostingState(optionIndex) {
+    var selectEl = document.getElementById('hostingMode' + optionIndex);
+    var customEl = document.getElementById('hostingCustom' + optionIndex);
+    return getHostingMonthly(selectEl, customEl, 'Option ' + optionIndex);
+  }
+
+  function recalculate() {
+    els.errorMsg.textContent = '';
+    var parsed = readInputs();
+    if (!parsed.ok) {
+      els.errorMsg.textContent = parsed.error;
+      lastResults = null;
+      els.results.innerHTML = '';
+      return;
+    }
+
+    var shared = parsed.value;
+    updatePrintMirrors(shared);
+
+    var hostingStates = [];
+    for (var i = 1; i <= 2; i++) {
+      var host = readHostingState(i);
+      if (!host.ok) {
+        // First render: selects may not exist yet — default to SAAS
+        if (!document.getElementById('hostingMode' + i)) {
+          hostingStates.push({ ok: true, value: 0, mode: 'saas' });
+          continue;
+        }
+        els.errorMsg.textContent = host.error;
+        lastResults = null;
+        return;
+      }
+      hostingStates.push(host);
+    }
+
+    var computed = shared.options.map(function(opt, idx) {
+      var result = computeOption(shared, opt, hostingStates[idx].value);
+      result.hostingMode = hostingStates[idx].mode;
+      return result;
+    });
+
+    lastResults = { shared: shared, computed: computed };
+    els.results.innerHTML = buildResultsHtml(shared, computed);
+    bindHostingControls();
+  }
+
+  function csvEscape(value) {
+    var s = String(value == null ? '' : value);
+    if (/[",\n\r]/.test(s)) {
+      return '"' + s.replace(/"/g, '""') + '"';
+    }
+    return s;
+  }
+
+  function downloadCsv() {
+    if (!lastResults) {
+      els.errorMsg.textContent = 'Fix the inputs before downloading CSV.';
+      return;
+    }
+    var shared = lastResults.shared;
+    var computed = lastResults.computed;
+    var rows = [
+      ['Field', 'Option 1', 'Option 2'],
+      ['Company', shared.company, shared.company],
+      ['Regular price (USD/user/mo)', shared.regular, shared.regular],
+      ['1st-year price (USD/user/mo)', shared.firstYear, shared.firstYear],
+      ['Forex (USD to PHP)', shared.forex, shared.forex],
+      ['Users', computed[0].users, computed[1].users],
+      ['Years', computed[0].years, computed[1].years],
+      ['Hosting mode', computed[0].hostingMode, computed[1].hostingMode],
+      ['Hosting monthly (USD)', computed[0].hostingMonthly, computed[1].hostingMonthly],
+      ['User licenses (USD)', computed[0].licenses.toFixed(2), computed[1].licenses.toFixed(2)],
+      ['1st-year discount (USD)', (-computed[0].discount).toFixed(2), (-computed[1].discount).toFixed(2)],
+      ['Total savings (PHP)', computed[0].savingsPhp.toFixed(2), computed[1].savingsPhp.toFixed(2)],
+      ['Hosting total (USD)', computed[0].hosting.toFixed(2), computed[1].hosting.toFixed(2)],
+      ['Total payable (USD)', computed[0].totalUsd.toFixed(2), computed[1].totalUsd.toFixed(2)],
+      ['Total payable (PHP)', computed[0].totalPhp.toFixed(2), computed[1].totalPhp.toFixed(2)]
+    ];
+
+    var csv = rows.map(function(row) {
+      return row.map(csvEscape).join(',');
+    }).join('\r\n') + '\r\n';
+
+    var blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    var stamp = new Date().toISOString().slice(0, 10);
+    var safeName = (shared.company || 'odoo-estimate')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 40) || 'odoo-estimate';
+    a.href = url;
+    a.download = safeName + '-odoo-estimate-' + stamp + '.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function() {
+      URL.revokeObjectURL(url);
+    }, 1000);
+  }
+
+  els.regularPrice.addEventListener('input', function() {
+    syncFirstYearFromRegular();
+    recalculate();
+  });
+  els.firstYearPrice.addEventListener('input', function() {
+    firstYearDirty = true;
+    recalculate();
+  });
+
+  [
+    els.companyName,
+    els.forexRate,
+    els.users1,
+    els.users2,
+    els.years1,
+    els.years2
+  ].forEach(function(el) {
+    el.addEventListener('input', recalculate);
+  });
+
+  els.printBtn.addEventListener('click', function() {
+    window.print();
+  });
+  els.csvBtn.addEventListener('click', downloadCsv);
+
+  syncFirstYearFromRegular();
+  recalculate();
+})();
+</script>
+</body>
+</html>

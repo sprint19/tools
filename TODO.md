@@ -12,6 +12,7 @@ Tracked work for Sprint19 Tools.
 - [x] Encode / Decode
 - [x] Calendar File Viewer
 - [x] Port Check (command generator only)
+- [x] Odoo Pricing Calculator
 
 ---
 
@@ -55,6 +56,7 @@ Tracked work for Sprint19 Tools.
 - [x] JavaScript to TypeScript Converter: basic type annotations and interface scaffolding from JS input
 - [x] Encode / Decode: deterministic Base64, URL, and HTML entity conversion
 - [x] IDN Converter: Unicode and punycode conversion for domain labels
+- [x] Odoo Pricing Calculator: side-by-side subscription estimate with first-year discount, hosting, and offline USD→PHP conversion
 
 ---
 
