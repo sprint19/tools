@@ -152,6 +152,10 @@
       font-weight: 400;
     }
 
+    .print-disclaimer {
+      display: none;
+    }
+
     @media (max-width: 720px) {
       .calc-table .label-cell { width: auto; }
       .field-input,
@@ -161,27 +165,56 @@
     }
 
     @media print {
+      @page {
+        size: A4 portrait;
+        margin: 10mm;
+      }
+
       .back-link,
+      .intro,
       .actions,
       .error-msg,
       .hint,
       .affiliate-cta,
       .theme-toggle-wrap,
+      .no-print,
+      .site-footer,
       select {
         display: none !important;
       }
       .screen-only { display: none !important; }
       .print-only { display: inline !important; }
       .hosting-custom { display: none !important; }
-      body {
+
+      html, body {
         max-width: none;
+        width: 100%;
         margin: 0;
+        padding: 0;
         color: #000;
         background: #fff;
+        font-size: 11px;
+        line-height: 1.3;
+      }
+
+      h1 {
+        margin: 0 0 8px;
+        font-size: 16px;
+        line-height: 1.2;
+      }
+
+      .calc-table {
+        margin-bottom: 8px;
+        font-size: 11px;
+        page-break-inside: avoid;
       }
       .calc-table th,
       .calc-table td {
         border-color: #333;
+        padding: 4px 6px;
+      }
+      .calc-table .num {
+        font-size: 11px;
       }
       .calc-table .subhead {
         background: #111 !important;
@@ -192,8 +225,22 @@
       .calc-table .highlight {
         color: #0D2420 !important;
       }
-      .site-footer {
+      .calc-table tbody tr:nth-child(even) {
+        background: #f5f5f5 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+
+      .print-disclaimer {
         display: block !important;
+        margin: 6px 0 0;
+        font-size: 9px;
+        color: #444;
+        font-style: italic;
+      }
+
+      #results {
+        page-break-inside: avoid;
       }
     }
   </style>
@@ -208,7 +255,7 @@
 
 <table class="calc-table" aria-label="Pricing inputs">
   <tbody>
-    <tr>
+    <tr class="no-print">
       <td class="label-cell"><label for="companyName">Company Name</label></td>
       <td colspan="2">
         <input id="companyName" class="field-input screen-only" type="text" autocomplete="organization" placeholder="Acme Corp" maxlength="120">
@@ -267,7 +314,7 @@
         <span id="users2Print" class="print-only num"></span>
       </td>
     </tr>
-    <tr>
+    <tr class="no-print">
       <td class="label-cell">Years</td>
       <td>
         <label class="screen-only" for="years1">Option 1</label>
@@ -292,7 +339,9 @@
   <span id="shareFeedback" class="copy-feedback" aria-live="polite"></span>
 </div>
 
-<footer class="site-footer">
+<p class="print-disclaimer">Estimate only. Not an official Odoo quote. Forex and annual increase rates are assumptions.</p>
+
+<footer class="site-footer no-print">
   <hr>
   <p>Calculated locally in your browser. Nothing is uploaded.</p>
   <p>Built by <a href="https://sprint19.com" target="_blank" rel="noopener noreferrer">Sprint19</a>. Product engineering for startups.</p>
@@ -734,13 +783,8 @@
         '<thead>' +
           '<tr>' +
             '<th class="company-head" scope="col">' + companyLabel + '</th>' +
-            '<th scope="col">OPTION 1</th>' +
-            '<th scope="col">OPTION 2</th>' +
-          '</tr>' +
-          '<tr>' +
-            '<td></td>' +
-            '<td class="subhead">' + escapeText(String(o1.years)) + ' Years</td>' +
-            '<td class="subhead">' + escapeText(String(o2.years)) + ' Years</td>' +
+            '<th class="subhead" scope="col">OPTION 1 · ' + escapeText(String(o1.years)) + ' Years</th>' +
+            '<th class="subhead" scope="col">OPTION 2 · ' + escapeText(String(o2.years)) + ' Years</th>' +
           '</tr>' +
         '</thead>' +
         '<tbody>' +
@@ -759,13 +803,13 @@
             '<td class="num">' + escapeText(formatMoney(o1.avoidedIncrease, 'USD')) + '</td>' +
             '<td class="num">' + escapeText(formatMoney(o2.avoidedIncrease, 'USD')) + '</td>' +
           '</tr>' +
-          '<tr class="savings-row">' +
+          '<tr class="savings-row no-print">' +
             '<td class="label-cell">Avg annual avoided</td>' +
             '<td class="num">' + escapeText(formatMoney(o1.avgAnnualAvoided, 'USD')) + '</td>' +
             '<td class="num">' + escapeText(formatMoney(o2.avgAnnualAvoided, 'USD')) + '</td>' +
           '</tr>' +
           '<tr class="savings-row">' +
-            '<td class="label-cell">Total Savings (PHP) · Forex ' + forexLabel + '</td>' +
+            '<td class="label-cell">Total Savings (PHP)</td>' +
             '<td class="num">' + escapeText(formatMoney(o1.savingsPhp, 'PHP')) + '</td>' +
             '<td class="num">' + escapeText(formatMoney(o2.savingsPhp, 'PHP')) + '</td>' +
           '</tr>' +
@@ -775,12 +819,12 @@
             '<td>' + hostingCellHtml(2, o2) + '</td>' +
           '</tr>' +
           '<tr>' +
-            '<td class="label-cell highlight">Total Payable</td>' +
+            '<td class="label-cell highlight">Total Payable (USD)</td>' +
             '<td class="num highlight">' + escapeText(formatMoney(o1.totalUsd, 'USD')) + '</td>' +
             '<td class="num highlight">' + escapeText(formatMoney(o2.totalUsd, 'USD')) + '</td>' +
           '</tr>' +
           '<tr>' +
-            '<td class="label-cell highlight">PHP (' + forexLabel + ' Forex)</td>' +
+            '<td class="label-cell highlight">Total Payable (PHP)</td>' +
             '<td class="num highlight">' + escapeText(formatMoney(o1.totalPhp, 'PHP')) + '</td>' +
             '<td class="num highlight">' + escapeText(formatMoney(o2.totalPhp, 'PHP')) + '</td>' +
           '</tr>' +
@@ -795,8 +839,8 @@
     var mode = computed.hostingMode || 'saas';
     var customVal = computed.hostingMonthly > 0 ? String(computed.hostingMonthly) : '';
     var printLabel = mode === 'saas'
-      ? 'SAAS · ' + formatMoney(0, 'USD')
-      : 'Custom · ' + formatMoney(computed.hosting, 'USD') + ' total (' + formatMoney(computed.hostingMonthly, 'USD') + '/mo)';
+      ? formatMoney(0, 'USD')
+      : formatMoney(computed.hosting, 'USD');
 
     return (
       '<div class="hosting-stack">' +
