@@ -202,7 +202,7 @@
 
 <a href="/" class="back-link">Sprint19 Tools</a>
 <h1>Odoo Pricing Calculator</h1>
-<p class="intro">Local estimate worksheet for subscription options. Enter prices, users, and years to compare totals in USD and PHP. Share via a compact link hash (nothing uploaded). Not an official Odoo quote.</p>
+<p class="intro">Local estimate worksheet for subscription options. Enter prices, users, and years to compare totals in USD and PHP. Share via a link with query parameters (nothing uploaded). Not an official Odoo quote.</p>
 
 <p id="errorMsg" class="error-msg" role="alert" aria-live="assertive"></p>
 
@@ -298,7 +298,7 @@
   var firstYearDirty = false;
   var lastResults = null;
   var hostingOverride = null;
-  var applyingHash = false;
+  var applyingShare = false;
 
   var els = {
     companyName: document.getElementById('companyName'),
@@ -405,42 +405,45 @@
     els.firstYearPrice.value = next.toFixed(2);
   }
 
-  function parseShareHash(rawHash) {
+  function decodeLegacyHashPayload(rawHash) {
     var hash = String(rawHash || '').replace(/^#/, '');
-    if (!hash) return null;
-    var parts = hash.split('|');
-    if (parts[0] !== 'v1' || parts.length < 10) return null;
+    if (!hash) return '';
+    for (var i = 0; i < 3; i++) {
+      try {
+        var next = decodeURIComponent(hash.replace(/\+/g, ' '));
+        if (next === hash) break;
+        hash = next;
+      } catch (e) {
+        break;
+      }
+    }
+    return hash;
+  }
 
-    var regular = parsePositiveNumber(parts[1], 'Regular price', { allowZero: false });
+  function parseShareFields(fields) {
+    if (!fields || fields.v !== '1') return null;
+
+    var regular = parsePositiveNumber(fields.p, 'Regular price', { allowZero: false });
     if (!regular.ok) return null;
-    var firstYear = parsePositiveNumber(parts[2], '1st-year price', { allowZero: true });
+    var firstYear = parsePositiveNumber(fields.fy, '1st-year price', { allowZero: true });
     if (!firstYear.ok) return null;
     if (firstYear.value > regular.value) return null;
-    var forex = parsePositiveNumber(parts[3], 'Forex rate', { allowZero: false });
+    var forex = parsePositiveNumber(fields.fx, 'Forex rate', { allowZero: false });
     if (!forex.ok) return null;
-    var users1 = parsePositiveNumber(parts[4], 'Option 1 users', { requireInteger: true });
+    var users1 = parsePositiveNumber(fields.u1, 'Option 1 users', { requireInteger: true });
     if (!users1.ok) return null;
-    var years1 = parsePositiveNumber(parts[5], 'Option 1 years', { requireInteger: true });
+    var years1 = parsePositiveNumber(fields.y1, 'Option 1 years', { requireInteger: true });
     if (!years1.ok) return null;
-    var users2 = parsePositiveNumber(parts[6], 'Option 2 users', { requireInteger: true });
+    var users2 = parsePositiveNumber(fields.u2, 'Option 2 users', { requireInteger: true });
     if (!users2.ok) return null;
-    var years2 = parsePositiveNumber(parts[7], 'Option 2 years', { requireInteger: true });
+    var years2 = parsePositiveNumber(fields.y2, 'Option 2 years', { requireInteger: true });
     if (!years2.ok) return null;
-    var host1 = parseHostToken(parts[8]);
+    var host1 = parseHostToken(fields.h1);
     if (!host1.ok) return null;
-    var host2 = parseHostToken(parts[9]);
+    var host2 = parseHostToken(fields.h2);
     if (!host2.ok) return null;
 
-    var companyRaw = parts.slice(10).join('|');
-    var company = '';
-    if (companyRaw) {
-      try {
-        company = decodeURIComponent(companyRaw.replace(/\+/g, ' '));
-      } catch (e) {
-        company = companyRaw.replace(/\+/g, ' ');
-      }
-      company = company.trim().slice(0, COMPANY_MAX);
-    }
+    var company = String(fields.c || '').trim().slice(0, COMPANY_MAX);
 
     return {
       company: company,
@@ -456,56 +459,114 @@
     };
   }
 
-  function encodeShareHash(shared, computed) {
-    var parts = [
-      'v1',
-      formatCompactNumber(shared.regular),
-      formatCompactNumber(shared.firstYear),
-      formatCompactNumber(shared.forex),
-      String(computed[0].users),
-      String(computed[0].years),
-      String(computed[1].users),
-      String(computed[1].years),
-      encodeHostToken(computed[0].hostingMode, computed[0].hostingMonthly),
-      encodeHostToken(computed[1].hostingMode, computed[1].hostingMonthly)
-    ];
-    if (shared.company) {
-      parts.push(encodeURIComponent(shared.company));
-    }
-    return parts.join('|');
+  function parseShareQuery(search) {
+    var params = new URLSearchParams(search || location.search);
+    if (params.get('v') !== '1') return null;
+    return parseShareFields({
+      v: params.get('v'),
+      p: params.get('p'),
+      fy: params.get('fy'),
+      fx: params.get('fx'),
+      u1: params.get('u1'),
+      y1: params.get('y1'),
+      u2: params.get('u2'),
+      y2: params.get('y2'),
+      h1: params.get('h1'),
+      h2: params.get('h2'),
+      c: params.get('c') || ''
+    });
   }
 
-  function normalizeShareHash(rawHash) {
-    var hash = String(rawHash || '').replace(/^#/, '');
-    if (!hash) return '';
-    try {
-      return decodeURIComponent(hash);
-    } catch (e) {
-      return hash;
+  function parseLegacyShareHash(rawHash) {
+    var hash = decodeLegacyHashPayload(rawHash);
+    if (!hash) return null;
+    var parts = hash.split('|');
+    if (parts[0] !== 'v1' || parts.length < 10) return null;
+
+    var companyRaw = parts.slice(10).join('|');
+    var company = '';
+    if (companyRaw) {
+      try {
+        company = decodeURIComponent(companyRaw.replace(/\+/g, ' '));
+      } catch (e) {
+        company = companyRaw.replace(/\+/g, ' ');
+      }
+      company = company.trim().slice(0, COMPANY_MAX);
     }
+
+    return parseShareFields({
+      v: '1',
+      p: parts[1],
+      fy: parts[2],
+      fx: parts[3],
+      u1: parts[4],
+      y1: parts[5],
+      u2: parts[6],
+      y2: parts[7],
+      h1: parts[8],
+      h2: parts[9],
+      c: company
+    });
+  }
+
+  function parseShareLocation() {
+    var fromQuery = parseShareQuery(location.search);
+    if (fromQuery) return fromQuery;
+    if (location.hash && location.hash.length > 1) {
+      return parseLegacyShareHash(location.hash);
+    }
+    return null;
+  }
+
+  function hasShareLocation() {
+    if (location.search && location.search.length > 1) {
+      return new URLSearchParams(location.search).get('v') === '1';
+    }
+    if (location.hash && location.hash.length > 1) {
+      var decoded = decodeLegacyHashPayload(location.hash);
+      return decoded.indexOf('v1|') === 0;
+    }
+    return false;
+  }
+
+  function encodeShareQuery(shared, computed) {
+    var params = new URLSearchParams();
+    params.set('v', '1');
+    params.set('p', formatCompactNumber(shared.regular));
+    params.set('fy', formatCompactNumber(shared.firstYear));
+    params.set('fx', formatCompactNumber(shared.forex));
+    params.set('u1', String(computed[0].users));
+    params.set('y1', String(computed[0].years));
+    params.set('u2', String(computed[1].users));
+    params.set('y2', String(computed[1].years));
+    params.set('h1', encodeHostToken(computed[0].hostingMode, computed[0].hostingMonthly));
+    params.set('h2', encodeHostToken(computed[1].hostingMode, computed[1].hostingMonthly));
+    if (shared.company) {
+      params.set('c', shared.company);
+    }
+    return params.toString();
   }
 
   function buildShareUrl() {
     if (!lastResults) return '';
-    return location.origin + location.pathname + location.search + '#' + encodeShareHash(lastResults.shared, lastResults.computed);
+    return location.origin + location.pathname + '?' + encodeShareQuery(lastResults.shared, lastResults.computed);
   }
 
-  function syncShareHash() {
-    if (applyingHash || !lastResults) return;
-    var fragment = encodeShareHash(lastResults.shared, lastResults.computed);
-    var nextHash = '#' + fragment;
-    if (normalizeShareHash(location.hash) === normalizeShareHash(nextHash)) return;
-    var nextUrl = location.pathname + location.search + nextHash;
+  function syncShareUrl() {
+    if (applyingShare || !lastResults) return;
+    var nextSearch = '?' + encodeShareQuery(lastResults.shared, lastResults.computed);
+    if (location.search === nextSearch && !location.hash) return;
+    var nextUrl = location.pathname + nextSearch;
     if (history.replaceState) {
       history.replaceState(null, '', nextUrl);
     } else {
-      location.hash = nextHash;
+      location.search = nextSearch.slice(1);
     }
   }
 
   function applyShareState(state) {
     if (!state) return false;
-    applyingHash = true;
+    applyingShare = true;
     els.companyName.value = state.company;
     els.regularPrice.value = formatCompactNumber(state.regular);
     els.firstYearPrice.value = formatCompactNumber(state.firstYear);
@@ -519,15 +580,15 @@
     firstYearDirty = Math.abs(state.firstYear - autoFirst) > 0.0001;
     hostingOverride = [state.host1, state.host2];
     recalculate();
-    syncShareHash();
+    syncShareUrl();
     setTimeout(function() {
-      applyingHash = false;
+      applyingShare = false;
     }, 0);
     return true;
   }
 
-  function bootstrapFromLocationHash() {
-    var state = parseShareHash(location.hash);
+  function bootstrapFromShareLocation() {
+    var state = parseShareLocation();
     if (state) {
       applyShareState(state);
       return true;
@@ -756,8 +817,8 @@
     els.results.innerHTML = buildResultsHtml(shared, computed);
     bindHostingControls();
     hostingOverride = null;
-    if (!options.skipHashSync) {
-      syncShareHash();
+    if (!options.skipShareSync) {
+      syncShareUrl();
     }
   }
 
@@ -856,29 +917,27 @@
   els.csvBtn.addEventListener('click', downloadCsv);
   els.shareBtn.addEventListener('click', copyShareLink);
 
+  window.addEventListener('popstate', function() {
+    if (applyingShare) return;
+    bootstrapFromShareLocation();
+  });
+
   window.addEventListener('hashchange', function() {
-    if (applyingHash) return;
-    var state = parseShareHash(location.hash);
-    if (state) {
-      applyShareState(state);
-      return;
-    }
-    if (!location.hash || location.hash === '#') {
-      return;
-    }
-    els.errorMsg.textContent = 'Share link could not be read. Check the hash format and try again.';
+    if (applyingShare) return;
+    if (location.search && new URLSearchParams(location.search).get('v') === '1') return;
+    bootstrapFromShareLocation();
   });
 
   window.addEventListener('pageshow', function(event) {
     if (!event.persisted) return;
-    bootstrapFromLocationHash();
+    bootstrapFromShareLocation();
   });
 
-  if (!bootstrapFromLocationHash()) {
-    if (location.hash && location.hash.length > 1) {
-      els.errorMsg.textContent = 'Share link could not be read. Check the hash format and try again.';
+  if (!bootstrapFromShareLocation()) {
+    if (hasShareLocation()) {
+      els.errorMsg.textContent = 'Share link could not be read. Check the link format and try again.';
       syncFirstYearFromRegular();
-      recalculate({ skipHashSync: true });
+      recalculate({ skipShareSync: true });
     } else {
       syncFirstYearFromRegular();
       recalculate();
