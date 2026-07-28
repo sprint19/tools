@@ -245,6 +245,16 @@
       </td>
     </tr>
     <tr>
+      <td class="label-cell">
+        <label for="increaseRate">Annual price increase (%)</label>
+        <span class="hint">Assumed yearly rise if renewing annually vs locking today’s rates</span>
+      </td>
+      <td colspan="2">
+        <input id="increaseRate" class="field-input narrow mono screen-only" type="number" inputmode="decimal" min="0" step="0.1" value="30">
+        <span id="increaseRatePrint" class="print-only num"></span>
+      </td>
+    </tr>
+    <tr>
       <td class="label-cell">Users</td>
       <td>
         <label class="screen-only" for="users1">Option 1</label>
@@ -286,7 +296,7 @@
   <hr>
   <p>Calculated locally in your browser. Nothing is uploaded.</p>
   <p>Built by <a href="https://sprint19.com" target="_blank" rel="noopener noreferrer">Sprint19</a>. Product engineering for startups.</p>
-  <p class="guardrail">This tool is an estimate worksheet only. It is not an official Odoo quote, invoice, or pricing guarantee. Forex rates are user-entered and may differ from live market rates.</p>
+  <p class="guardrail">This tool is an estimate worksheet only. It is not an official Odoo quote, invoice, or pricing guarantee. Forex rates and annual increase assumptions are user-entered and may differ from live market rates or actual renewals.</p>
   <p class="copyright">&copy; 2026 Sprint19. Code licensed under <a href="/LICENSE.md">MIT</a>. Sprint19 name and branding may not be used without permission.</p>
 </footer>
 
@@ -305,6 +315,7 @@
     regularPrice: document.getElementById('regularPrice'),
     firstYearPrice: document.getElementById('firstYearPrice'),
     forexRate: document.getElementById('forexRate'),
+    increaseRate: document.getElementById('increaseRate'),
     users1: document.getElementById('users1'),
     users2: document.getElementById('users2'),
     years1: document.getElementById('years1'),
@@ -319,6 +330,7 @@
     regularPricePrint: document.getElementById('regularPricePrint'),
     firstYearPricePrint: document.getElementById('firstYearPricePrint'),
     forexRatePrint: document.getElementById('forexRatePrint'),
+    increaseRatePrint: document.getElementById('increaseRatePrint'),
     users1Print: document.getElementById('users1Print'),
     users2Print: document.getElementById('users2Print'),
     years1Print: document.getElementById('years1Print'),
@@ -430,6 +442,12 @@
     if (firstYear.value > regular.value) return null;
     var forex = parsePositiveNumber(fields.fx, 'Forex rate', { allowZero: false });
     if (!forex.ok) return null;
+    var increasePct = parsePositiveNumber(
+      fields.inc == null || fields.inc === '' ? '30' : fields.inc,
+      'Annual price increase',
+      { allowZero: true }
+    );
+    if (!increasePct.ok) return null;
     var users1 = parsePositiveNumber(fields.u1, 'Option 1 users', { requireInteger: true });
     if (!users1.ok) return null;
     var years1 = parsePositiveNumber(fields.y1, 'Option 1 years', { requireInteger: true });
@@ -450,6 +468,7 @@
       regular: regular.value,
       firstYear: firstYear.value,
       forex: forex.value,
+      increasePct: increasePct.value,
       users1: users1.value,
       years1: years1.value,
       users2: users2.value,
@@ -467,6 +486,7 @@
       p: params.get('p'),
       fy: params.get('fy'),
       fx: params.get('fx'),
+      inc: params.get('inc'),
       u1: params.get('u1'),
       y1: params.get('y1'),
       u2: params.get('u2'),
@@ -535,6 +555,7 @@
     params.set('p', formatCompactNumber(shared.regular));
     params.set('fy', formatCompactNumber(shared.firstYear));
     params.set('fx', formatCompactNumber(shared.forex));
+    params.set('inc', formatCompactNumber(shared.increasePct));
     params.set('u1', String(computed[0].users));
     params.set('y1', String(computed[0].years));
     params.set('u2', String(computed[1].users));
@@ -571,6 +592,7 @@
     els.regularPrice.value = formatCompactNumber(state.regular);
     els.firstYearPrice.value = formatCompactNumber(state.firstYear);
     els.forexRate.value = formatCompactNumber(state.forex);
+    els.increaseRate.value = formatCompactNumber(state.increasePct);
     els.users1.value = String(state.users1);
     els.years1.value = String(state.years1);
     els.users2.value = String(state.users2);
@@ -607,6 +629,8 @@
     }
     var forex = parsePositiveNumber(els.forexRate.value, 'Forex rate', { allowZero: false });
     if (!forex.ok) return forex;
+    var increasePct = parsePositiveNumber(els.increaseRate.value, 'Annual price increase', { allowZero: true });
+    if (!increasePct.ok) return increasePct;
 
     var users1 = parsePositiveNumber(els.users1.value, 'Option 1 users', { requireInteger: true });
     if (!users1.ok) return users1;
@@ -624,6 +648,7 @@
         regular: regular.value,
         firstYear: firstYear.value,
         forex: forex.value,
+        increasePct: increasePct.value,
         options: [
           { users: users1.value, years: years1.value },
           { users: users2.value, years: years2.value }
@@ -632,22 +657,45 @@
     };
   }
 
+  function escalateLicensesUsd(shared, opt) {
+    var rate = shared.increasePct / 100;
+    var total = 0;
+    for (var yearIndex = 0; yearIndex < opt.years; yearIndex++) {
+      var monthly = yearIndex === 0
+        ? shared.firstYear
+        : shared.regular * Math.pow(1 + rate, yearIndex);
+      total += monthly * opt.users * 12;
+    }
+    return total;
+  }
+
   function computeOption(shared, opt, hostingMonthly) {
     var licenses = shared.regular * opt.users * 12 * opt.years;
     var discount = (shared.regular - shared.firstYear) * opt.users * 12;
+    var lockedLicenses = licenses - discount;
+    var escalatingLicenses = escalateLicensesUsd(shared, opt);
+    var avoidedIncrease = Math.max(0, escalatingLicenses - lockedLicenses);
     var hosting = hostingMonthly * 12 * opt.years;
-    var totalUsd = licenses - discount + hosting;
+    var totalUsd = lockedLicenses + hosting;
     var totalPhp = totalUsd * shared.forex;
-    var savingsPhp = discount * shared.forex;
+    var firstYearSavingsPhp = discount * shared.forex;
+    var avoidedIncreasePhp = avoidedIncrease * shared.forex;
+    var savingsPhp = firstYearSavingsPhp + avoidedIncreasePhp;
+    var avgAnnualAvoided = opt.years > 0 ? avoidedIncrease / opt.years : 0;
     return {
       users: opt.users,
       years: opt.years,
       licenses: licenses,
       discount: discount,
+      escalatingLicenses: escalatingLicenses,
+      avoidedIncrease: avoidedIncrease,
+      avoidedIncreasePhp: avoidedIncreasePhp,
+      avgAnnualAvoided: avgAnnualAvoided,
       hosting: hosting,
       hostingMonthly: hostingMonthly,
       totalUsd: totalUsd,
       totalPhp: totalPhp,
+      firstYearSavingsPhp: firstYearSavingsPhp,
       savingsPhp: savingsPhp
     };
   }
@@ -667,6 +715,7 @@
     els.regularPricePrint.textContent = formatMoney(shared.regular, 'USD');
     els.firstYearPricePrint.textContent = formatMoney(shared.firstYear, 'USD');
     els.forexRatePrint.textContent = String(shared.forex);
+    els.increaseRatePrint.textContent = formatCompactNumber(shared.increasePct) + '%';
     els.users1Print.textContent = String(shared.options[0].users);
     els.users2Print.textContent = String(shared.options[1].users);
     els.years1Print.textContent = String(shared.options[0].years);
@@ -676,6 +725,7 @@
   function buildResultsHtml(shared, computed) {
     var companyLabel = shared.company ? escapeText(shared.company) : 'Estimate';
     var forexLabel = escapeText(String(shared.forex));
+    var increaseLabel = escapeText(formatCompactNumber(shared.increasePct));
     var o1 = computed[0];
     var o2 = computed[1];
 
@@ -703,6 +753,16 @@
             '<td class="label-cell">1st Year Discount</td>' +
             '<td class="num">' + escapeText(formatMoney(-o1.discount, 'USD')) + '</td>' +
             '<td class="num">' + escapeText(formatMoney(-o2.discount, 'USD')) + '</td>' +
+          '</tr>' +
+          '<tr class="savings-row">' +
+            '<td class="label-cell">Avoided increase @ ' + increaseLabel + '%/yr</td>' +
+            '<td class="num">' + escapeText(formatMoney(o1.avoidedIncrease, 'USD')) + '</td>' +
+            '<td class="num">' + escapeText(formatMoney(o2.avoidedIncrease, 'USD')) + '</td>' +
+          '</tr>' +
+          '<tr class="savings-row">' +
+            '<td class="label-cell">Avg annual avoided</td>' +
+            '<td class="num">' + escapeText(formatMoney(o1.avgAnnualAvoided, 'USD')) + '</td>' +
+            '<td class="num">' + escapeText(formatMoney(o2.avgAnnualAvoided, 'USD')) + '</td>' +
           '</tr>' +
           '<tr class="savings-row">' +
             '<td class="label-cell">Total Savings (PHP) · Forex ' + forexLabel + '</td>' +
@@ -843,12 +903,16 @@
       ['Regular price (USD/user/mo)', shared.regular, shared.regular],
       ['1st-year price (USD/user/mo)', shared.firstYear, shared.firstYear],
       ['Forex (USD to PHP)', shared.forex, shared.forex],
+      ['Annual price increase (%)', shared.increasePct, shared.increasePct],
       ['Users', computed[0].users, computed[1].users],
       ['Years', computed[0].years, computed[1].years],
       ['Hosting mode', computed[0].hostingMode, computed[1].hostingMode],
       ['Hosting monthly (USD)', computed[0].hostingMonthly, computed[1].hostingMonthly],
       ['User licenses (USD)', computed[0].licenses.toFixed(2), computed[1].licenses.toFixed(2)],
       ['1st-year discount (USD)', (-computed[0].discount).toFixed(2), (-computed[1].discount).toFixed(2)],
+      ['Escalating licenses if annual increase (USD)', computed[0].escalatingLicenses.toFixed(2), computed[1].escalatingLicenses.toFixed(2)],
+      ['Avoided increase (USD)', computed[0].avoidedIncrease.toFixed(2), computed[1].avoidedIncrease.toFixed(2)],
+      ['Avg annual avoided (USD)', computed[0].avgAnnualAvoided.toFixed(2), computed[1].avgAnnualAvoided.toFixed(2)],
       ['Total savings (PHP)', computed[0].savingsPhp.toFixed(2), computed[1].savingsPhp.toFixed(2)],
       ['Hosting total (USD)', computed[0].hosting.toFixed(2), computed[1].hosting.toFixed(2)],
       ['Total payable (USD)', computed[0].totalUsd.toFixed(2), computed[1].totalUsd.toFixed(2)],
@@ -903,6 +967,7 @@
   [
     els.companyName,
     els.forexRate,
+    els.increaseRate,
     els.users1,
     els.users2,
     els.years1,
