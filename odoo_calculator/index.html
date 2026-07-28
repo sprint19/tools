@@ -127,12 +127,18 @@
     .actions {
       display: flex;
       flex-wrap: wrap;
+      align-items: center;
       gap: 10px;
       margin: 8px 0 24px;
     }
     .actions .tool-btn,
     .actions .print-btn {
       margin-top: 0;
+    }
+    .copy-feedback {
+      font-size: 13px;
+      color: var(--color-text-muted);
+      min-height: 1.2em;
     }
 
     .print-only { display: none; }
@@ -196,7 +202,7 @@
 
 <a href="/" class="back-link">Sprint19 Tools</a>
 <h1>Odoo Pricing Calculator</h1>
-<p class="intro">Local estimate worksheet for subscription options. Enter prices, users, and years to compare totals in USD and PHP. Not an official Odoo quote.</p>
+<p class="intro">Local estimate worksheet for subscription options. Enter prices, users, and years to compare totals in USD and PHP. Share via a compact link hash (nothing uploaded). Not an official Odoo quote.</p>
 
 <p id="errorMsg" class="error-msg" role="alert" aria-live="assertive"></p>
 
@@ -272,6 +278,8 @@
 <div class="actions no-print">
   <button type="button" id="printBtn" class="print-btn">Print / Save as PDF</button>
   <button type="button" id="csvBtn" class="tool-btn">Download CSV</button>
+  <button type="button" id="shareBtn" class="tool-btn">Copy share link</button>
+  <span id="shareFeedback" class="copy-feedback" aria-live="polite"></span>
 </div>
 
 <footer class="site-footer">
@@ -286,8 +294,11 @@
 <script>
 (function() {
   var FIRST_YEAR_FACTOR = 0.8;
+  var COMPANY_MAX = 120;
   var firstYearDirty = false;
   var lastResults = null;
+  var hostingOverride = null;
+  var applyingHash = false;
 
   var els = {
     companyName: document.getElementById('companyName'),
@@ -302,6 +313,8 @@
     results: document.getElementById('results'),
     printBtn: document.getElementById('printBtn'),
     csvBtn: document.getElementById('csvBtn'),
+    shareBtn: document.getElementById('shareBtn'),
+    shareFeedback: document.getElementById('shareFeedback'),
     companyNamePrint: document.getElementById('companyNamePrint'),
     regularPricePrint: document.getElementById('regularPricePrint'),
     firstYearPricePrint: document.getElementById('firstYearPricePrint'),
@@ -338,6 +351,11 @@
     return sign + '$' + formatted;
   }
 
+  function formatCompactNumber(n) {
+    if (!isFinite(n)) return '';
+    return String(Number(Number(n).toFixed(6)));
+  }
+
   function parsePositiveNumber(raw, label, options) {
     options = options || {};
     var allowZero = !!options.allowZero;
@@ -361,6 +379,24 @@
     return { ok: true, value: n };
   }
 
+  function parseHostToken(raw) {
+    var trimmed = String(raw == null ? '' : raw).trim();
+    if (trimmed === '' || trimmed === '0' || trimmed.toLowerCase() === 'saas') {
+      return { ok: true, value: 0, mode: 'saas' };
+    }
+    var n = Number(trimmed);
+    if (!isFinite(n) || n < 0) {
+      return { ok: false, error: 'Hosting value must be zero or a positive monthly amount.' };
+    }
+    if (n === 0) return { ok: true, value: 0, mode: 'saas' };
+    return { ok: true, value: n, mode: 'custom' };
+  }
+
+  function encodeHostToken(mode, monthly) {
+    if (mode === 'saas' || !monthly) return '0';
+    return formatCompactNumber(monthly);
+  }
+
   function syncFirstYearFromRegular() {
     if (firstYearDirty) return;
     var regular = Number(els.regularPrice.value);
@@ -369,8 +405,116 @@
     els.firstYearPrice.value = next.toFixed(2);
   }
 
+  function parseShareHash(rawHash) {
+    var hash = String(rawHash || '').replace(/^#/, '');
+    if (!hash) return null;
+    var parts = hash.split('|');
+    if (parts[0] !== 'v1' || parts.length < 10) return null;
+
+    var regular = parsePositiveNumber(parts[1], 'Regular price', { allowZero: false });
+    if (!regular.ok) return null;
+    var firstYear = parsePositiveNumber(parts[2], '1st-year price', { allowZero: true });
+    if (!firstYear.ok) return null;
+    if (firstYear.value > regular.value) return null;
+    var forex = parsePositiveNumber(parts[3], 'Forex rate', { allowZero: false });
+    if (!forex.ok) return null;
+    var users1 = parsePositiveNumber(parts[4], 'Option 1 users', { requireInteger: true });
+    if (!users1.ok) return null;
+    var years1 = parsePositiveNumber(parts[5], 'Option 1 years', { requireInteger: true });
+    if (!years1.ok) return null;
+    var users2 = parsePositiveNumber(parts[6], 'Option 2 users', { requireInteger: true });
+    if (!users2.ok) return null;
+    var years2 = parsePositiveNumber(parts[7], 'Option 2 years', { requireInteger: true });
+    if (!years2.ok) return null;
+    var host1 = parseHostToken(parts[8]);
+    if (!host1.ok) return null;
+    var host2 = parseHostToken(parts[9]);
+    if (!host2.ok) return null;
+
+    var companyRaw = parts.slice(10).join('|');
+    var company = '';
+    if (companyRaw) {
+      try {
+        company = decodeURIComponent(companyRaw.replace(/\+/g, ' '));
+      } catch (e) {
+        company = companyRaw.replace(/\+/g, ' ');
+      }
+      company = company.trim().slice(0, COMPANY_MAX);
+    }
+
+    return {
+      company: company,
+      regular: regular.value,
+      firstYear: firstYear.value,
+      forex: forex.value,
+      users1: users1.value,
+      years1: years1.value,
+      users2: users2.value,
+      years2: years2.value,
+      host1: host1,
+      host2: host2
+    };
+  }
+
+  function encodeShareHash(shared, computed) {
+    var parts = [
+      'v1',
+      formatCompactNumber(shared.regular),
+      formatCompactNumber(shared.firstYear),
+      formatCompactNumber(shared.forex),
+      String(computed[0].users),
+      String(computed[0].years),
+      String(computed[1].users),
+      String(computed[1].years),
+      encodeHostToken(computed[0].hostingMode, computed[0].hostingMonthly),
+      encodeHostToken(computed[1].hostingMode, computed[1].hostingMonthly)
+    ];
+    if (shared.company) {
+      parts.push(encodeURIComponent(shared.company));
+    }
+    return parts.join('|');
+  }
+
+  function buildShareUrl() {
+    if (!lastResults) return '';
+    var base = location.href.replace(/#.*$/, '');
+    return base + '#' + encodeShareHash(lastResults.shared, lastResults.computed);
+  }
+
+  function syncShareHash() {
+    if (applyingHash || !lastResults) return;
+    var next = '#' + encodeShareHash(lastResults.shared, lastResults.computed);
+    if (location.hash === next) return;
+    if (history.replaceState) {
+      history.replaceState(null, '', next);
+    } else {
+      location.hash = next;
+    }
+  }
+
+  function applyShareState(state) {
+    if (!state) return false;
+    applyingHash = true;
+    els.companyName.value = state.company;
+    els.regularPrice.value = formatCompactNumber(state.regular);
+    els.firstYearPrice.value = formatCompactNumber(state.firstYear);
+    els.forexRate.value = formatCompactNumber(state.forex);
+    els.users1.value = String(state.users1);
+    els.years1.value = String(state.years1);
+    els.users2.value = String(state.users2);
+    els.years2.value = String(state.years2);
+
+    var autoFirst = Math.round(state.regular * FIRST_YEAR_FACTOR * 100) / 100;
+    firstYearDirty = Math.abs(state.firstYear - autoFirst) > 0.0001;
+    hostingOverride = [state.host1, state.host2];
+    recalculate();
+    applyingHash = false;
+    syncShareHash();
+    return true;
+  }
+
   function readInputs() {
-    var company = String(els.companyName.value || '').trim();
+    var company = String(els.companyName.value || '').trim().slice(0, COMPANY_MAX);
     var regular = parsePositiveNumber(els.regularPrice.value, 'Regular price', { allowZero: false });
     if (!regular.ok) return regular;
     var firstYear = parsePositiveNumber(els.firstYearPrice.value, '1st-year price', { allowZero: true });
@@ -542,6 +686,9 @@
   }
 
   function readHostingState(optionIndex) {
+    if (hostingOverride && hostingOverride[optionIndex - 1]) {
+      return hostingOverride[optionIndex - 1];
+    }
     var selectEl = document.getElementById('hostingMode' + optionIndex);
     var customEl = document.getElementById('hostingCustom' + optionIndex);
     return getHostingMonthly(selectEl, customEl, 'Option ' + optionIndex);
@@ -565,7 +712,7 @@
       var host = readHostingState(i);
       if (!host.ok) {
         // First render: selects may not exist yet — default to SAAS
-        if (!document.getElementById('hostingMode' + i)) {
+        if (!document.getElementById('hostingMode' + i) && !hostingOverride) {
           hostingStates.push({ ok: true, value: 0, mode: 'saas' });
           continue;
         }
@@ -585,6 +732,8 @@
     lastResults = { shared: shared, computed: computed };
     els.results.innerHTML = buildResultsHtml(shared, computed);
     bindHostingControls();
+    hostingOverride = null;
+    syncShareHash();
   }
 
   function csvEscape(value) {
@@ -643,6 +792,19 @@
     }, 1000);
   }
 
+  function copyShareLink() {
+    var url = buildShareUrl();
+    if (!url) {
+      els.errorMsg.textContent = 'Fix the inputs before copying a share link.';
+      return;
+    }
+    if (window.Sprint19Utils && typeof window.Sprint19Utils.copyTextWithFeedback === 'function') {
+      window.Sprint19Utils.copyTextWithFeedback(url, els.shareFeedback);
+      return;
+    }
+    els.shareFeedback.textContent = 'Copy unavailable';
+  }
+
   els.regularPrice.addEventListener('input', function() {
     syncFirstYearFromRegular();
     recalculate();
@@ -667,9 +829,28 @@
     window.print();
   });
   els.csvBtn.addEventListener('click', downloadCsv);
+  els.shareBtn.addEventListener('click', copyShareLink);
 
-  syncFirstYearFromRegular();
-  recalculate();
+  window.addEventListener('hashchange', function() {
+    if (applyingHash) return;
+    var state = parseShareHash(location.hash);
+    if (state) {
+      applyShareState(state);
+      return;
+    }
+    if (!location.hash || location.hash === '#') {
+      return;
+    }
+    els.errorMsg.textContent = 'Share link could not be read. Check the hash format and try again.';
+  });
+
+  var initial = parseShareHash(location.hash);
+  if (initial) {
+    applyShareState(initial);
+  } else {
+    syncFirstYearFromRegular();
+    recalculate();
+  }
 })();
 </script>
 </body>
