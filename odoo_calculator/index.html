@@ -475,20 +475,31 @@
     return parts.join('|');
   }
 
+  function normalizeShareHash(rawHash) {
+    var hash = String(rawHash || '').replace(/^#/, '');
+    if (!hash) return '';
+    try {
+      return decodeURIComponent(hash);
+    } catch (e) {
+      return hash;
+    }
+  }
+
   function buildShareUrl() {
     if (!lastResults) return '';
-    var base = location.href.replace(/#.*$/, '');
-    return base + '#' + encodeShareHash(lastResults.shared, lastResults.computed);
+    return location.origin + location.pathname + location.search + '#' + encodeShareHash(lastResults.shared, lastResults.computed);
   }
 
   function syncShareHash() {
     if (applyingHash || !lastResults) return;
-    var next = '#' + encodeShareHash(lastResults.shared, lastResults.computed);
-    if (location.hash === next) return;
+    var fragment = encodeShareHash(lastResults.shared, lastResults.computed);
+    var nextHash = '#' + fragment;
+    if (normalizeShareHash(location.hash) === normalizeShareHash(nextHash)) return;
+    var nextUrl = location.pathname + location.search + nextHash;
     if (history.replaceState) {
-      history.replaceState(null, '', next);
+      history.replaceState(null, '', nextUrl);
     } else {
-      location.hash = next;
+      location.hash = nextHash;
     }
   }
 
@@ -508,9 +519,20 @@
     firstYearDirty = Math.abs(state.firstYear - autoFirst) > 0.0001;
     hostingOverride = [state.host1, state.host2];
     recalculate();
-    applyingHash = false;
     syncShareHash();
+    setTimeout(function() {
+      applyingHash = false;
+    }, 0);
     return true;
+  }
+
+  function bootstrapFromLocationHash() {
+    var state = parseShareHash(location.hash);
+    if (state) {
+      applyShareState(state);
+      return true;
+    }
+    return false;
   }
 
   function readInputs() {
@@ -694,7 +716,8 @@
     return getHostingMonthly(selectEl, customEl, 'Option ' + optionIndex);
   }
 
-  function recalculate() {
+  function recalculate(options) {
+    options = options || {};
     els.errorMsg.textContent = '';
     var parsed = readInputs();
     if (!parsed.ok) {
@@ -733,7 +756,9 @@
     els.results.innerHTML = buildResultsHtml(shared, computed);
     bindHostingControls();
     hostingOverride = null;
-    syncShareHash();
+    if (!options.skipHashSync) {
+      syncShareHash();
+    }
   }
 
   function csvEscape(value) {
@@ -844,12 +869,20 @@
     els.errorMsg.textContent = 'Share link could not be read. Check the hash format and try again.';
   });
 
-  var initial = parseShareHash(location.hash);
-  if (initial) {
-    applyShareState(initial);
-  } else {
-    syncFirstYearFromRegular();
-    recalculate();
+  window.addEventListener('pageshow', function(event) {
+    if (!event.persisted) return;
+    bootstrapFromLocationHash();
+  });
+
+  if (!bootstrapFromLocationHash()) {
+    if (location.hash && location.hash.length > 1) {
+      els.errorMsg.textContent = 'Share link could not be read. Check the hash format and try again.';
+      syncFirstYearFromRegular();
+      recalculate({ skipHashSync: true });
+    } else {
+      syncFirstYearFromRegular();
+      recalculate();
+    }
   }
 })();
 </script>
