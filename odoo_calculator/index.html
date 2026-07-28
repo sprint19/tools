@@ -134,7 +134,21 @@
     .actions .tool-btn,
     .actions .print-btn {
       margin-top: 0;
+      min-height: 44px;
+      transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
     }
+    .actions .print-btn {
+      background: var(--color-card-bg);
+      color: var(--color-text);
+      border: 1px solid var(--color-border-input);
+      cursor: pointer;
+    }
+    .actions .print-btn:hover {
+      background: var(--color-surface-hover);
+      color: var(--color-text);
+      border-color: var(--color-link);
+    }
+
     .copy-feedback {
       font-size: 13px;
       color: var(--color-text-muted);
@@ -152,7 +166,8 @@
       font-weight: 400;
     }
 
-    .print-disclaimer {
+    .print-disclaimer,
+    .print-brand {
       display: none;
     }
 
@@ -191,41 +206,66 @@
         width: 100%;
         margin: 0;
         padding: 0;
-        color: #000;
-        background: #fff;
+        color: #0D2420 !important;
+        background: #ffffff !important;
         font-size: 11px;
         line-height: 1.3;
+        color-scheme: light !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
       }
 
       h1 {
         margin: 0 0 8px;
         font-size: 16px;
         line-height: 1.2;
+        color: #0D2420 !important;
       }
 
       .calc-table {
         margin-bottom: 8px;
         font-size: 11px;
         page-break-inside: avoid;
+        color: #0D2420 !important;
+        background: #ffffff !important;
       }
       .calc-table th,
       .calc-table td {
-        border-color: #333;
+        border-color: #333 !important;
         padding: 4px 6px;
+        color: #0D2420 !important;
+        background: #ffffff !important;
+      }
+      .calc-table thead th {
+        background: #f3f3f3 !important;
       }
       .calc-table .num {
         font-size: 11px;
+        color: #0D2420 !important;
+      }
+      .calc-table .label-cell {
+        color: #0D2420 !important;
+      }
+      .calc-table .company-head {
+        color: #0D2420 !important;
+        background: #f3f3f3 !important;
       }
       .calc-table .subhead {
-        background: #111 !important;
-        color: #fff !important;
+        background: #1a1a1a !important;
+        color: #ffffff !important;
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
       }
       .calc-table .highlight {
         color: #0D2420 !important;
+        font-weight: 700;
       }
-      .calc-table tbody tr:nth-child(even) {
+      .calc-table .savings-row td {
+        color: #333 !important;
+        font-style: italic;
+      }
+      .calc-table tbody tr:nth-child(even) th,
+      .calc-table tbody tr:nth-child(even) td {
         background: #f5f5f5 !important;
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
@@ -233,10 +273,31 @@
 
       .print-disclaimer {
         display: block !important;
-        margin: 6px 0 0;
+        margin: 8px 0 0;
         font-size: 9px;
-        color: #444;
+        color: #444 !important;
         font-style: italic;
+      }
+
+      .print-brand {
+        display: flex !important;
+        align-items: center;
+        gap: 8px;
+        margin-top: 10px;
+        padding-top: 8px;
+        border-top: 1px solid #ccc;
+        color: #555 !important;
+        font-size: 9px;
+        line-height: 1.3;
+      }
+      .print-brand img {
+        width: 18px;
+        height: 18px;
+        display: block;
+      }
+      .print-brand a {
+        color: #555 !important;
+        text-decoration: none;
       }
 
       #results {
@@ -340,6 +401,11 @@
 </div>
 
 <p class="print-disclaimer">Estimate only. Not an official Odoo quote. Forex and annual increase rates are assumptions.</p>
+
+<div class="print-brand" aria-hidden="true">
+  <img src="/shared/brand/s19-mark-dark.png" width="18" height="18" alt="">
+  <span>Prepared with Sprint19 Tools · tools.sprint19.com</span>
+</div>
 
 <footer class="site-footer no-print">
   <hr>

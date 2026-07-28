@@ -321,10 +321,18 @@ th       { background: var(--color-surface); }
   font-size: 16px;
   cursor: pointer;
   background: var(--color-surface);
+  color: var(--color-text);
   border: 1px solid var(--color-border-input);
   border-radius: 4px;
 }
-.print-btn:hover { background: var(--color-surface-hover); }
+.print-btn:hover {
+  background: var(--color-surface-hover);
+  color: var(--color-text);
+}
+.print-btn:focus-visible {
+  outline: 2px solid var(--color-link);
+  outline-offset: 2px;
+}
 
 /* ── Textarea input (common across tools) ────────────── */
 
@@ -413,5 +421,28 @@ th       { background: var(--color-surface); }
   }
   .site-footer {
     display: block !important;
+  }
+
+  /* Force light, print-safe palette regardless of browser/theme dark mode */
+  :root,
+  :root[data-theme="dark"],
+  :root[data-theme="light"],
+  html,
+  body {
+    color-scheme: light !important;
+    --color-bg: #ffffff !important;
+    --color-text: #0D2420 !important;
+    --color-text-secondary: #3a4f4a !important;
+    --color-text-muted: #5A7C76 !important;
+    --color-card-bg: #ffffff !important;
+    --color-surface: #f2faf7 !important;
+    --color-surface-code: #f6faf9 !important;
+    --color-border: #c5d4cf !important;
+    --color-border-input: #c2d4cf !important;
+    --color-teal-dark: #0D2420 !important;
+    --color-btn-bg: #0D2420 !important;
+    --color-btn-text: #ffffff !important;
+    background: #ffffff !important;
+    color: #0D2420 !important;
   }
 }
