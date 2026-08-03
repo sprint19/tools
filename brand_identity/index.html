@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Private Sprint19 brand identity discovery questionnaire. Answers stay in your browser and share links.">
-  <meta name="robots" content="noindex, nofollow">
+  <meta name="robots" content="index, follow">
   <link rel="canonical" href="https://tools.sprint19.com/brand_identity/">
   <link rel="icon" type="image/png" href="/favicon.png">
   <link rel="stylesheet" href="/shared/styles.css">
@@ -104,6 +104,7 @@
     .copy-feedback { min-height: 18px; margin: 7px 0 0; color: var(--color-text-muted); font-size: 12px; }
     .warning { color: var(--color-warning) !important; font-size: 12px; }
     .print-header { display: none; }
+    .print-answer { display: none; white-space: pre-wrap; overflow-wrap: anywhere; }
     .live-region { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); }
     @media (max-width: 760px) {
       body { margin-top: 10px; }
@@ -134,14 +135,9 @@
       .section-header { margin-bottom: 12px; padding-bottom: 8px; }
       .section-header h2 { font-size: 16pt; }
       .question { margin-bottom: 12px; padding-bottom: 12px; break-inside: avoid; }
-      .field, textarea.field, .rank-input { display: block !important; min-height: 24px; padding: 3px 0; border: 0; border-bottom: 1px solid #9eaca8; background: #fff !important; color: #0D2420 !important; overflow: visible; }
-      textarea.field { min-height: 42px; resize: none; }
-      .choices { grid-template-columns: repeat(2, 1fr); gap: 3px 10px; }
-      .choice { min-height: 0; padding: 2px 0; border: 0; background: #fff !important; }
-      .choice input:not(:checked) + span { color: #9aa5a2; }
-      .choice:has(input:checked) { font-weight: 700; }
-      .scale-row { grid-template-columns: 90px 180px 90px; }
-      .scale-option { min-height: 25px; background: #fff !important; }
+      .question .field, .question .choices, .question .scale-list, .question .rank-list,
+      .question .positioning, .question .conditional, .question > label { display: none !important; }
+      .print-answer { display: block !important; min-height: 20px; margin-top: 6px; padding: 7px 9px; border: 1px solid #c5d4cf; background: #f7faf9 !important; color: #0D2420 !important; }
       .site-footer { margin-top: 20px; }
     }
   </style>
@@ -361,7 +357,7 @@
 
     <section id="section-8" class="form-section" data-section="8" aria-labelledby="section-8-title">
       <header class="section-header"><p class="section-kicker">08 · Logo requirements</p><h2 id="section-8-title">Where and how the mark must work</h2></header>
-      <fieldset id="q39" class="question"><legend><span class="q-number">Q39</span><span>Where will the logo be used most often?</span></legend><p class="helper">Select and rank the five most important. Use 1 for the highest priority.</p><div id="q39Ranks" class="rank-list"></div><input id="q39_other" name="q39_other" class="field other-field" type="text" aria-label="Other logo use" hidden></fieldset>
+      <fieldset id="q39" class="question"><legend><span class="q-number">Q39</span><span>Where will the logo be used most often?</span></legend><p class="helper">Select and rank the five most important. Use 1 for the highest priority.</p><div id="q39Ranks" class="rank-list"></div><input id="q39_other" name="q39_other" class="field other-field" type="text" aria-label="Other logo use" hidden><p id="q39_error" class="field-error" role="alert"></p></fieldset>
       <fieldset id="q40" class="question"><legend><span class="q-number">Q40</span><span>Are there any elements the logo must include?</span></legend><p class="helper">Only list genuine requirements such as a legal name, established symbol, founder name, certification, or mandated descriptor.</p><label class="no-print" for="q40_answer">Your answer</label><textarea id="q40_answer" name="q40" class="field"></textarea></fieldset>
       <fieldset id="q41" class="question"><legend><span class="q-number">Q41</span><span>Are there any symbols, visual clichés, or styles we must avoid?</span></legend><label class="no-print" for="q41_answer">Your answer</label><textarea id="q41_answer" name="q41" class="field"></textarea></fieldset>
       <fieldset id="q42" class="question"><legend><span class="q-number">Q42</span><span>Which logo variations may be needed?</span></legend><div class="choices">
@@ -574,6 +570,22 @@
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
   }
 
+  function validateRanks(showError) {
+    var selected = document.querySelectorAll('[data-rank-check]:checked');
+    var used = {};
+    var message = '';
+    selected.forEach(function (check) {
+      var raw = check.closest('.rank-row').querySelector('.rank-input').value;
+      var rank = Number(raw);
+      if (!/^[1-5]$/.test(raw)) message = 'Give every selected logo use a rank from 1 to 5.';
+      else if (used[rank]) message = 'Use each Q39 rank only once.';
+      else used[rank] = true;
+    });
+    var error = document.getElementById('q39_error');
+    if (showError || !message) error.textContent = message;
+    return !message;
+  }
+
   function validateClient(showErrors) {
     var fields = [
       { el: document.getElementById('client_name'), message: 'Enter your full name.', valid: function (v) { return !!v; } },
@@ -750,6 +762,45 @@
     window.location.href = createMailto();
   }
 
+  function controlLabel(control) {
+    if (control.labels && control.labels.length) {
+      var label = control.labels[0].textContent.trim();
+      if (label && label !== 'Your answer') return label;
+    }
+    return control.getAttribute('aria-label') || '';
+  }
+
+  function buildPrintAnswers() {
+    form.querySelectorAll('.question').forEach(function (question) {
+      var existing = question.querySelector('.print-answer');
+      if (existing) existing.remove();
+      var lines = [];
+      question.querySelectorAll('input, textarea, select').forEach(function (control) {
+        if (control.closest('[hidden]')) return;
+        if ((control.type === 'checkbox' || control.type === 'radio') && !control.checked) return;
+        var value = (control.type === 'checkbox' || control.type === 'radio') ? control.value : control.value.trim();
+        if (!value) return;
+        if (control.matches('[data-rank-check]')) {
+          var rank = control.closest('.rank-row').querySelector('.rank-input').value;
+          lines.push(control.value + (rank ? ' — rank ' + rank : ''));
+          return;
+        }
+        if (/^q39_rank_/.test(control.name)) return;
+        var group = control.closest('[role="radiogroup"]');
+        if (control.type === 'checkbox' || control.type === 'radio') {
+          lines.push(group && group.getAttribute('aria-label') ? group.getAttribute('aria-label') + ': ' + value : value);
+          return;
+        }
+        var label = controlLabel(control);
+        lines.push(label ? label + ': ' + value : value);
+      });
+      var answer = document.createElement('div');
+      answer.className = 'print-answer';
+      answer.textContent = lines.length ? lines.join('\n') : 'No answer provided.';
+      question.appendChild(answer);
+    });
+  }
+
   function submit() {
     if (!validateClient(true)) {
       document.getElementById('client-info').scrollIntoView({ block: 'center' });
@@ -758,6 +809,11 @@
     }
     if (!document.getElementById('q1_answer').value.trim() && !window.confirm('Brand name (Q1) is empty. Continue anyway?')) {
       document.getElementById('q1').scrollIntoView({ block: 'center' });
+      return;
+    }
+    if (!validateRanks(true)) {
+      document.getElementById('q39').scrollIntoView({ block: 'center' });
+      announce(document.getElementById('q39_error').textContent);
       return;
     }
     try {
@@ -771,6 +827,7 @@
     document.getElementById('printName').textContent = document.getElementById('client_name').value.trim();
     document.getElementById('printCompany').textContent = document.getElementById('client_company').value.trim();
     document.getElementById('printEmail').textContent = document.getElementById('client_email').value.trim();
+    buildPrintAnswers();
     mailOpened = false;
     var afterPrint = function () {
       if (mailOpened) return;
@@ -804,7 +861,11 @@
     });
     document.querySelectorAll('[data-conditional-group]').forEach(function (group) {
       var selected = group.querySelector('input:checked');
-      document.getElementById(group.dataset.conditionalGroup).hidden = !selected || selected.value !== 'Yes';
+      var target = document.getElementById(group.dataset.conditionalGroup);
+      target.hidden = !selected || selected.value !== 'Yes';
+      if (target.hidden) {
+        target.querySelectorAll('input, textarea, select').forEach(function (control) { control.value = ''; });
+      }
     });
     document.querySelectorAll('[data-rank-check]').forEach(function (check) {
       var rank = check.closest('.rank-row').querySelector('.rank-input');
@@ -832,6 +893,7 @@
 
   form.addEventListener('input', function (event) {
     if (/^client_/.test(event.target.id)) validateClient(false);
+    if (event.target.matches('.rank-input')) validateRanks(false);
     updateProgress();
   });
   form.addEventListener('change', function (event) {
@@ -870,6 +932,7 @@
   });
   window.addEventListener('scroll', updateProgress, { passive: true });
   window.addEventListener('hashchange', hydrateFromHash);
+  window.addEventListener('beforeprint', buildPrintAnswers);
 
   createScales();
   createRanks();

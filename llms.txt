@@ -63,6 +63,8 @@ All 32 tools, organized by category:
 - [Color Picker & Palette Generator](https://tools.sprint19.com/color_picker/): Generate complementary, analogous, triadic, and monochrome palettes from any base color with WCAG contrast ratios.
 - [JavaScript to TypeScript Converter](https://tools.sprint19.com/js_to_ts_converter/): Paste JavaScript code to get a TypeScript version with basic type annotations and interface scaffolding.
 - [Encode / Decode](https://tools.sprint19.com/encode_decode/): Encode and decode text as Base64, URL, or HTML entities with deterministic local conversion.
+- [Odoo Pricing Calculator](https://tools.sprint19.com/odoo_calculator/): Estimate Odoo subscription costs with a first-year discount, side-by-side plan options, hosting, and offline USD to PHP conversion.
+- [Brand Identity Questionnaire](https://tools.sprint19.com/brand_identity/): Client brand discovery questionnaire with shareable link save and print-to-PDF handoff for design intake.
 
 ## About Sprint19
 

@@ -353,7 +353,7 @@
       "mainEntity": {
         "@type": "ItemList",
         "name": "Sprint19 engineering tools",
-        "numberOfItems": 33,
+        "numberOfItems": 34,
         "itemListElement": [
           {
             "@type": "ListItem",
@@ -915,6 +915,23 @@
                 "priceCurrency": "USD"
               }
             }
+          },
+          {
+            "@type": "ListItem",
+            "position": 34,
+            "item": {
+              "@type": "SoftwareApplication",
+              "name": "Brand Identity Questionnaire",
+              "url": "https://tools.sprint19.com/brand_identity/",
+              "applicationCategory": "DeveloperApplication",
+              "operatingSystem": "Web",
+              "description": "Client brand discovery questionnaire with shareable link save and print-to-PDF handoff for design intake.",
+              "offers": {
+                "@type": "Offer",
+                "price": "0",
+                "priceCurrency": "USD"
+              }
+            }
           }
         ]
       }
@@ -1178,6 +1195,11 @@
           <p>Estimate Odoo subscription costs with a first-year discount, side-by-side plan options, hosting, and offline USD to PHP conversion.</p>
           <span class="tag">Utility</span>
         </a>
+        <a href="/brand_identity/" class="tool-card">
+          <h3>Brand Identity Questionnaire</h3>
+          <p>Client brand discovery questionnaire with shareable link save and print-to-PDF handoff for design intake.</p>
+          <span class="tag">Utility</span>
+        </a>
       </div>
     </section>
 
@@ -1282,7 +1304,9 @@
       linkedin_text_formatter: 'linkedin text formatter unicode bold italic underline strike monospace post comment',
       color_picker: 'color picker palette wcag',
       js_to_ts_converter: 'javascript typescript converter code',
-      encode_decode: 'base64 url html encode decode'
+      encode_decode: 'base64 url html encode decode',
+      odoo_calculator: 'odoo pricing calculator subscription erp estimate',
+      brand_identity: 'brand identity questionnaire discovery design intake logo color typography'
     };
     return map[route] || '';
   }
