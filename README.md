@@ -19,5 +19,5 @@ Built and maintained by Sprint19.
 
 ---
 
-© 2026 Sprint19. Code licensed under [MIT](LICENSE.md).
+© 2026 Sprint19. Code licensed under [MIT](LICENSE).
 Sprint19 name and branding may not be used without permission.
