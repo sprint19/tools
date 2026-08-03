@@ -178,31 +178,48 @@ window.Sprint19Utils.bindPrimaryActionShortcut = function(options) {
 })();
 
 (function initAffiliateCTA() {
-  function mountCTA() {
-    if (!document.body) return;
-    if (document.getElementById('affiliate-cta')) return;
-    if (document.body.getAttribute('data-affiliate-cta') !== 'true') return;
-    var sidebarMount = document.getElementById('sidebarCtaMount');
-    if (!sidebarMount) return;
-
+  function createAffiliateBox(id, text, href, buttonText) {
     var wrapper = document.createElement('div');
     wrapper.className = 'affiliate-cta';
-    wrapper.id = 'affiliate-cta';
+    wrapper.id = id;
 
-    var text = document.createElement('p');
-    text.className = 'affiliate-cta-text';
-    text.textContent = 'Need hosted email? Use Zoho Workplace.';
+    var copy = document.createElement('p');
+    copy.className = 'affiliate-cta-text';
+    copy.textContent = text;
 
     var link = document.createElement('a');
     link.className = 'affiliate-cta-btn';
-    link.href = 'https://go.zoho.com/EpSd';
+    link.href = href;
     link.target = '_blank';
     link.rel = 'noopener noreferrer sponsored';
-    link.textContent = 'Create business email';
+    link.textContent = buttonText;
 
-    wrapper.appendChild(text);
+    wrapper.appendChild(copy);
     wrapper.appendChild(link);
-    sidebarMount.appendChild(wrapper);
+    return wrapper;
+  }
+
+  function mountCTA() {
+    if (!document.body) return;
+    if (document.body.getAttribute('data-affiliate-cta') !== 'true') return;
+    var sidebarMount = document.getElementById('sidebarCtaMount');
+    if (!sidebarMount) return;
+    if (sidebarMount.getAttribute('data-affiliate-mounted') === 'true') return;
+    sidebarMount.setAttribute('data-affiliate-mounted', 'true');
+
+    sidebarMount.appendChild(createAffiliateBox(
+      'affiliate-cta-zoho',
+      'Need hosted email? Use Zoho Workplace.',
+      'https://go.zoho.com/EpSd',
+      'Create business email'
+    ));
+
+    sidebarMount.appendChild(createAffiliateBox(
+      'affiliate-cta-odoo',
+      'Is there anything in your business today that you\'d like to automate or make more efficient?',
+      'https://www.odoo.com?utm_campaign=partner-6b55b690&utm_source=partner_ref',
+      'Try Odoo today'
+    ));
   }
 
   if (document.readyState === 'loading') {
