@@ -489,6 +489,7 @@
   var lastFocus = null;
   var lastShareUrl = '';
   var mailOpened = false;
+  var savedStateJson = '';
 
   var scales = [
     ['playful', 'Playful', 'Serious'], ['bold', 'Bold', 'Understated'],
@@ -638,6 +639,28 @@
     });
   }
 
+  function stateFingerprint() {
+    return JSON.stringify(collectState());
+  }
+
+  function markSaved() {
+    savedStateJson = stateFingerprint();
+  }
+
+  function hasQuestionnaireAnswers() {
+    var questions = form.querySelectorAll('.question');
+    for (var i = 0; i < questions.length; i++) {
+      if (questionAnswered(questions[i])) return true;
+    }
+    return false;
+  }
+
+  function shouldWarnBeforeUnload() {
+    if (stateFingerprint() === savedStateJson) return false;
+    if (validateClient(false)) return true;
+    return hasQuestionnaireAnswers();
+  }
+
   function collectState() {
     var state = { v: 1, fields: {} };
     Array.prototype.forEach.call(form.elements, function (el) {
@@ -727,6 +750,7 @@
       shareUrl.value = result.url;
       document.getElementById('linkWarning').hidden = result.length < 6000;
       window.history.replaceState(null, '', result.url);
+      markSaved();
       openModal(shareModal, trigger);
     } catch (error) {
       loadStatus.textContent = error.message;
@@ -819,6 +843,7 @@
     try {
       lastShareUrl = buildShareUrl().url;
       window.history.replaceState(null, '', lastShareUrl);
+      markSaved();
     } catch (error) {
       loadStatus.textContent = error.message;
       loadStatus.hidden = false;
@@ -933,11 +958,17 @@
   window.addEventListener('scroll', updateProgress, { passive: true });
   window.addEventListener('hashchange', hydrateFromHash);
   window.addEventListener('beforeprint', buildPrintAnswers);
+  window.addEventListener('beforeunload', function (event) {
+    if (!shouldWarnBeforeUnload()) return;
+    event.preventDefault();
+    event.returnValue = '';
+  });
 
   createScales();
   createRanks();
   validateClient(false);
   hydrateFromHash();
+  markSaved();
   updateProgress();
 })();
 </script>
