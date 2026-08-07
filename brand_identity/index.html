@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Private Sprint19 brand identity discovery questionnaire. Answers stay in your browser and share links.">
+  <meta name="description" content="Sprint19 brand identity questionnaire. Answers stay in your browser or in a link you create.">
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="https://tools.sprint19.com/brand_identity/">
   <link rel="icon" type="image/png" href="/favicon.png">
@@ -14,28 +14,28 @@
     body { max-width: 980px; margin-top: 24px; }
     .skip-link { position: absolute; left: 12px; top: -80px; z-index: 2000; padding: 8px 12px; background: var(--color-btn-bg); color: var(--color-btn-text); border-radius: 4px; }
     .skip-link:focus { top: 12px; }
-    .hero { max-width: 720px; padding: 52px 0 28px; }
-    .brand-signal { display: flex; align-items: center; gap: 10px; color: var(--color-text-muted); font-size: 13px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+    .hero { max-width: 680px; padding: 36px 0 24px; }
+    .brand-signal { display: flex; align-items: center; gap: 10px; color: var(--color-text-muted); font-size: 14px; font-weight: 600; }
     .brand-mark-image { width: 34px; height: 34px; flex: 0 0 34px; background: url("/shared/brand/s19-mark-dark.png") center / contain no-repeat; }
     @media (prefers-color-scheme: dark) {
       :root:not([data-theme="light"]) .brand-mark-image { background-image: url("/shared/brand/s19-mark-light.png"); }
     }
     :root[data-theme="dark"] .brand-mark-image { background-image: url("/shared/brand/s19-mark-light.png"); }
     :root[data-theme="light"] .brand-mark-image { background-image: url("/shared/brand/s19-mark-dark.png"); }
-    .hero h1 { margin: 18px 0 10px; font-size: clamp(34px, 7vw, 58px); line-height: 1.05; }
-    .hero p { max-width: 650px; margin: 0; color: var(--color-text-secondary); font-size: 18px; }
+    .hero h1 { margin: 14px 0 8px; font-size: 28px; line-height: 1.2; text-wrap: balance; }
+    .hero p { max-width: 65ch; margin: 0; color: var(--color-text-secondary); font-size: 16px; line-height: 1.55; }
     .privacy-note { margin-top: 16px !important; font-size: 13px !important; color: var(--color-text-muted) !important; }
     .status-banner { margin: 0 0 18px; padding: 10px 12px; border: 1px solid var(--color-border); border-radius: 6px; background: var(--color-surface); color: var(--color-text-secondary); font-size: 13px; }
     .status-banner[hidden] { display: none; }
-    .progress-shell { position: sticky; top: 0; z-index: 100; margin: 0 -20px 20px; padding: 10px 20px; border-block: 1px solid var(--color-border); background: color-mix(in srgb, var(--color-card-bg) 94%, transparent); backdrop-filter: blur(10px); }
+    .progress-shell { position: sticky; top: 0; z-index: 100; margin: 0 -20px 20px; padding: 10px 20px; border-block: 1px solid var(--color-border); background: var(--color-card-bg); }
     .progress-row { display: flex; align-items: center; gap: 12px; }
     .progress-meta { flex: 1; min-width: 150px; }
     .progress-labels { display: flex; justify-content: space-between; gap: 10px; margin-bottom: 5px; color: var(--color-text-muted); font-size: 12px; }
     .progress-track { height: 4px; overflow: hidden; border-radius: 999px; background: var(--color-border); }
-    .progress-fill { width: 0; height: 100%; background: var(--color-teal); transition: width .2s ease; }
+    .progress-fill { width: 100%; height: 100%; background: var(--color-teal); transform: scaleX(0); transform-origin: left center; transition: transform .2s ease-out; }
     .progress-actions { display: flex; gap: 8px; }
-    .section-nav { display: flex; gap: 5px; margin-top: 8px; overflow-x: auto; scrollbar-width: thin; }
-    .section-nav a { display: grid; flex: 0 0 34px; min-height: 34px; place-items: center; border: 1px solid var(--color-border); border-radius: 4px; background: var(--color-card-bg); color: var(--color-text-muted); font: 12px var(--font-mono); text-decoration: none; }
+    .section-nav { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+    .section-nav a { display: inline-flex; min-height: 34px; align-items: center; padding: 6px 10px; border: 1px solid var(--color-border); border-radius: 4px; background: var(--color-card-bg); color: var(--color-text-muted); font: 13px var(--font-sans); text-decoration: none; white-space: nowrap; }
     .section-nav a:hover, .section-nav a[aria-current="true"] { border-color: var(--color-teal); background: var(--color-surface-hover); color: var(--color-text); text-decoration: none; }
     .btn { min-height: 44px; padding: 9px 16px; border: 1px solid var(--color-border-input); border-radius: 4px; font: 600 14px var(--font-sans); cursor: pointer; }
     .btn-primary { border-color: var(--color-btn-bg); background: var(--color-btn-bg); color: var(--color-btn-text); }
@@ -43,8 +43,8 @@
     .btn-secondary { background: var(--color-card-bg); color: var(--color-text); }
     .btn-secondary:hover { background: var(--color-surface-hover); }
     .btn:disabled { cursor: not-allowed; opacity: .45; }
-    .client-card, .form-section, .action-card { border: 1px solid var(--color-border); border-radius: 8px; background: var(--color-card-bg); box-shadow: 0 8px 24px var(--color-shadow); }
-    .client-card { padding: 22px; margin-bottom: 20px; }
+    .client-card, .action-card { border: 1px solid var(--color-border); border-radius: 6px; background: var(--color-card-bg); }
+    .client-card { padding: 20px; margin-bottom: 24px; }
     .client-card h2 { margin: 0 0 4px; font-size: 20px; }
     .client-card > p { margin: 0 0 18px; color: var(--color-text-muted); font-size: 14px; }
     .client-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
@@ -55,16 +55,17 @@
     .field:focus { border-color: var(--color-teal-dark); outline: 2px solid color-mix(in srgb, var(--color-teal) 32%, transparent); outline-offset: 1px; }
     .field[aria-invalid="true"] { border-color: var(--color-error); }
     .field-error { min-height: 18px; margin: 4px 0 0; color: var(--color-error); font-size: 12px; }
-    .form-section { margin-bottom: 22px; padding: 24px; scroll-margin-top: 132px; }
-    .section-header { margin-bottom: 24px; padding-bottom: 18px; border-bottom: 1px solid var(--color-border); }
-    .section-kicker { margin: 0 0 5px; color: var(--color-teal-dark); font: 600 12px var(--font-mono); letter-spacing: .05em; text-transform: uppercase; }
-    .section-header h2 { margin: 0; font-size: 26px; }
+    .form-section { margin-bottom: 32px; padding: 0 0 28px; scroll-margin-top: 132px; border-bottom: 1px solid var(--color-border); }
+    .form-section:last-of-type { border-bottom: 0; }
+    .section-header { margin-bottom: 20px; }
+    .section-header h2 { margin: 0; font-size: 20px; line-height: 1.3; }
+    .section-lead { margin: 6px 0 0; max-width: 65ch; color: var(--color-text-secondary); font-size: 15px; line-height: 1.5; }
     .section-hint { margin: 8px 0 0; color: var(--color-text-muted); font-size: 13px; }
     .question { margin: 0 0 24px; padding: 0 0 24px; border: 0; border-bottom: 1px solid var(--color-border); }
     .question:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: 0; }
     .question legend { display: flex; width: 100%; gap: 8px; padding: 0; color: var(--color-text); font-size: 16px; font-weight: 650; }
     .q-number { flex: 0 0 auto; color: var(--color-text-faint); font: 12px var(--font-mono); line-height: 1.9; }
-    .optional { align-self: center; padding: 2px 6px; border: 1px solid var(--color-border); border-radius: 999px; color: var(--color-text-muted); font: 10px var(--font-mono); text-transform: uppercase; }
+    .optional { align-self: center; margin-left: 6px; color: var(--color-text-muted); font-size: 12px; font-weight: 500; }
     .helper { margin: 6px 0 10px; color: var(--color-text-muted); font-size: 13px; }
     .choices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
     .choice { display: flex; min-height: 44px; align-items: center; gap: 9px; box-sizing: border-box; padding: 8px 10px; border: 1px solid var(--color-border); border-radius: 5px; background: var(--color-surface-code); cursor: pointer; font-size: 14px; }
@@ -86,16 +87,16 @@
     .rank-row { display: grid; grid-template-columns: 1fr 72px; gap: 8px; align-items: center; }
     .rank-row .choice { margin: 0; }
     .rank-input { width: 100%; min-height: 44px; box-sizing: border-box; border: 1px solid var(--color-border-input); border-radius: 4px; background: var(--color-card-bg); color: var(--color-text); text-align: center; }
-    .conditional { margin-top: 10px; padding: 12px; border-left: 3px solid var(--color-teal); background: var(--color-surface); }
+    .conditional { margin-top: 10px; padding: 12px; border: 1px solid var(--color-border); border-radius: 4px; background: var(--color-surface); }
     .conditional[hidden], .other-field[hidden], .section-hint[hidden] { display: none; }
-    .action-card { padding: 24px; }
+    .action-card { padding: 20px; margin-top: 8px; }
     .action-card h2 { margin: 0 0 8px; }
     .action-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
     .action-note { margin: 6px 0; color: var(--color-text-muted); font-size: 13px; }
     .modal[hidden] { display: none; }
     .modal { position: fixed; inset: 0; z-index: 1500; display: grid; place-items: center; padding: 20px; }
     .modal-backdrop { position: absolute; inset: 0; background: rgba(5, 20, 17, .58); }
-    .modal-dialog { position: relative; width: min(520px, 100%); box-sizing: border-box; padding: 24px; border: 1px solid var(--color-border); border-radius: 8px; background: var(--color-card-bg); box-shadow: 0 20px 60px rgba(0, 0, 0, .28); }
+    .modal-dialog { position: relative; width: min(520px, 100%); box-sizing: border-box; padding: 20px; border: 1px solid var(--color-border); border-radius: 6px; background: var(--color-card-bg); box-shadow: 0 12px 32px var(--color-shadow); }
     .modal-dialog h2 { margin: 0 0 8px; }
     .modal-dialog p { color: var(--color-text-secondary); }
     .share-row { display: flex; gap: 8px; }
@@ -130,10 +131,11 @@
       .brand-mark-image { display: block !important; background-image: url("/shared/brand/s19-mark-dark.png") !important; }
       .print-header { display: block; margin-bottom: 14px; padding: 10px; border: 1px solid #b8c8c3; }
       .client-card { display: none; }
-      .form-section { margin: 0 0 12px; padding: 12px; box-shadow: none; break-before: page; }
+      .form-section { margin: 0 0 12px; padding: 0 0 12px; border-bottom: 1px solid #c5d4cf; break-before: page; }
       .form-section:first-of-type { break-before: auto; }
-      .section-header { margin-bottom: 12px; padding-bottom: 8px; }
+      .section-header { margin-bottom: 12px; }
       .section-header h2 { font-size: 16pt; }
+      .section-lead { font-size: 11pt; color: #3a4f4a; }
       .question { margin-bottom: 12px; padding-bottom: 12px; break-inside: avoid; }
       .question .field, .question .choices, .question .scale-list, .question .rank-list,
       .question .positioning, .question .conditional, .question > label { display: none !important; }
@@ -151,8 +153,8 @@
     <span>Sprint19 Design</span>
   </div>
   <h1>Brand identity questionnaire</h1>
-  <p>This helps us understand your business, audience, positioning, and visual preferences before we begin designing. There are no perfect answers—focus on what feels true.</p>
-  <p class="privacy-note">Your answers stay in this browser or inside a link you create. Nothing is uploaded or stored on our servers.</p>
+  <p>Answer questions about your business, audience, positioning, and visual direction. Skip optional fields if you do not have an answer yet.</p>
+  <p class="privacy-note">Answers stay in this browser or in a link you create. Nothing is uploaded.</p>
 </header>
 
 <div id="loadStatus" class="status-banner" role="status" aria-live="polite" hidden></div>
@@ -168,12 +170,17 @@
     </div>
   </div>
   <div class="section-nav">
-    <a href="#section-1" data-section-link="1">01</a><a href="#section-2" data-section-link="2">02</a>
-    <a href="#section-3" data-section-link="3">03</a><a href="#section-4" data-section-link="4">04</a>
-    <a href="#section-5" data-section-link="5">05</a><a href="#section-6" data-section-link="6">06</a>
-    <a href="#section-7" data-section-link="7">07</a><a href="#section-8" data-section-link="8">08</a>
-    <a href="#section-9" data-section-link="9">09</a><a href="#section-10" data-section-link="10">10</a>
-    <a href="#section-11" data-section-link="11">11</a>
+    <a href="#section-1" data-section-link="1">Business</a>
+    <a href="#section-2" data-section-link="2">Audience</a>
+    <a href="#section-3" data-section-link="3">Market</a>
+    <a href="#section-4" data-section-link="4">Personality</a>
+    <a href="#section-5" data-section-link="5">Voice</a>
+    <a href="#section-6" data-section-link="6">Assets</a>
+    <a href="#section-7" data-section-link="7">Visual</a>
+    <a href="#section-8" data-section-link="8">Logo</a>
+    <a href="#section-9" data-section-link="9">Applications</a>
+    <a href="#section-10" data-section-link="10">Constraints</a>
+    <a href="#section-11" data-section-link="11">Approval</a>
   </div>
 </nav>
 
@@ -181,7 +188,7 @@
   <form id="brandForm" novalidate>
     <div class="print-header" aria-hidden="true">
       <strong>Client details</strong><br>
-      <span id="printName"></span> · <span id="printCompany"></span> · <span id="printEmail"></span>
+      <span id="printName"></span>, <span id="printCompany"></span>, <span id="printEmail"></span>
     </div>
 
     <section id="client-info" class="client-card" aria-labelledby="client-heading">
@@ -207,10 +214,10 @@
     </section>
 
     <section id="section-1" class="form-section" data-section="1" aria-labelledby="section-1-title">
-      <header class="section-header"><p class="section-kicker">01 · Business overview</p><h2 id="section-1-title">Who you are and why this project exists</h2></header>
-      <fieldset id="q1" class="question"><legend><span class="q-number">Q1</span><span>What is the official name of the brand?</span></legend><p class="helper">Include the exact spelling, capitalization, and any legal or registered business name if different.</p><label class="no-print" for="q1_answer">Your answer</label><input id="q1_answer" name="q1" class="field" type="text"></fieldset>
-      <fieldset id="q2" class="question"><legend><span class="q-number">Q2</span><span>What does your company offer?</span></legend><p class="helper">Briefly describe your main products, services, or solutions in plain language.</p><label class="no-print" for="q2_answer">Your answer</label><textarea id="q2_answer" name="q2" class="field"></textarea></fieldset>
-      <fieldset id="q3" class="question"><legend><span class="q-number">Q3</span><span>Why does the company exist beyond making money?</span></legend><p class="helper">What problem are you committed to solving? What change do you want to create?</p><label class="no-print" for="q3_answer">Your answer</label><textarea id="q3_answer" name="q3" class="field"></textarea></fieldset>
+      <header class="section-header"><h2 id="section-1-title">Business overview</h2><p class="section-lead">Who you are and why this project exists</p></header>
+      <fieldset id="q1" class="question"><legend><span class="q-number">Q1</span><span>What is the official name of the brand?</span></legend><p class="helper">Exact spelling, capitalization, and legal name if different.</p><input id="q1_answer" name="q1" class="field" type="text"></fieldset>
+      <fieldset id="q2" class="question"><legend><span class="q-number">Q2</span><span>What does your company offer?</span></legend><p class="helper">Main products or services.</p><textarea id="q2_answer" name="q2" class="field"></textarea></fieldset>
+      <fieldset id="q3" class="question"><legend><span class="q-number">Q3</span><span>What is the company trying to achieve?</span></legend><p class="helper">The problem you solve and the outcome you want.</p><textarea id="q3_answer" name="q3" class="field"></textarea></fieldset>
       <fieldset id="q4" class="question"><legend><span class="q-number">Q4</span><span>What stage is the business currently in?</span></legend>
         <div class="choices" data-other-group>
           <label class="choice"><input type="radio" name="q4" value="Preparing to launch"><span>Preparing to launch</span></label>
@@ -223,15 +230,15 @@
         </div>
         <input id="q4_other" name="q4_other" class="field other-field" type="text" aria-label="Other business stage" hidden>
       </fieldset>
-      <fieldset id="q5" class="question"><legend><span class="q-number">Q5</span><span>Why are you creating or updating the brand now?</span></legend><p class="helper">Describe the event, problem, or opportunity that triggered this project.</p><label class="no-print" for="q5_answer">Your answer</label><textarea id="q5_answer" name="q5" class="field"></textarea></fieldset>
-      <fieldset id="q6" class="question stacked-fields"><legend><span class="q-number">Q6</span><span>What are the company’s three most important goals for the next 12 to 24 months?</span></legend><p class="helper">Examples: entering a new market, attracting larger clients, launching a product, building trust, recruiting talent, or becoming easier to recognize.</p><label for="q6_1">Goal 1</label><input id="q6_1" name="q6_1" class="field" type="text"><label for="q6_2">Goal 2</label><input id="q6_2" name="q6_2" class="field" type="text"><label for="q6_3">Goal 3</label><input id="q6_3" name="q6_3" class="field" type="text"></fieldset>
+      <fieldset id="q5" class="question"><legend><span class="q-number">Q5</span><span>Why are you creating or updating the brand now?</span></legend><p class="helper">What started this project?</p><textarea id="q5_answer" name="q5" class="field"></textarea></fieldset>
+      <fieldset id="q6" class="question stacked-fields"><legend><span class="q-number">Q6</span><span>What are the company’s three most important goals for the next 12 to 24 months?</span></legend><p class="helper">For example: new market, larger clients, new product, hiring, or recognition.</p><label for="q6_1">Goal 1</label><input id="q6_1" name="q6_1" class="field" type="text"><label for="q6_2">Goal 2</label><input id="q6_2" name="q6_2" class="field" type="text"><label for="q6_3">Goal 3</label><input id="q6_3" name="q6_3" class="field" type="text"></fieldset>
     </section>
 
     <section id="section-2" class="form-section" data-section="2" aria-labelledby="section-2-title">
-      <header class="section-header"><p class="section-kicker">02 · Audience</p><h2 id="section-2-title">Who you serve and how they decide</h2></header>
-      <fieldset id="q7" class="question"><legend><span class="q-number">Q7</span><span>Who is the brand primarily for?</span></legend><p class="helper">Consider industry, business size, age or life stage, location, purchasing power, buying role, and technical knowledge.</p><label class="no-print" for="q7_answer">Your answer</label><textarea id="q7_answer" name="q7" class="field"></textarea></fieldset>
-      <fieldset id="q8" class="question"><legend><span class="q-number">Q8</span><span>Does the brand serve any secondary audiences?</span></legend><p class="helper">Examples include employees, investors, partners, suppliers, franchisees, regulators, or community members.</p><label class="no-print" for="q8_answer">Your answer</label><textarea id="q8_answer" name="q8" class="field"></textarea></fieldset>
-      <fieldset id="q9" class="question"><legend><span class="q-number">Q9</span><span>What problem is your audience trying to solve?</span></legend><p class="helper">Describe the situation from their point of view.</p><label class="no-print" for="q9_answer">Your answer</label><textarea id="q9_answer" name="q9" class="field"></textarea></fieldset>
+      <header class="section-header"><h2 id="section-2-title">Audience</h2><p class="section-lead">Who you serve and how they decide</p></header>
+      <fieldset id="q7" class="question"><legend><span class="q-number">Q7</span><span>Who is the brand primarily for?</span></legend><p class="helper">Industry, company size, age, location, budget, role, and technical level.</p><textarea id="q7_answer" name="q7" class="field"></textarea></fieldset>
+      <fieldset id="q8" class="question"><legend><span class="q-number">Q8</span><span>Does the brand serve any secondary audiences?</span></legend><p class="helper">Employees, investors, partners, suppliers, regulators, or others.</p><textarea id="q8_answer" name="q8" class="field"></textarea></fieldset>
+      <fieldset id="q9" class="question"><legend><span class="q-number">Q9</span><span>What problem is your audience trying to solve?</span></legend><p class="helper">Write from their perspective.</p><textarea id="q9_answer" name="q9" class="field"></textarea></fieldset>
       <fieldset id="q10" class="question"><legend><span class="q-number">Q10</span><span>What usually matters most when they choose a provider like you?</span></legend><p class="helper">Select up to five.</p><div class="choices" data-max-select="5" data-other-group>
         <label class="choice"><input type="checkbox" name="q10" value="Price"><span>Price</span></label><label class="choice"><input type="checkbox" name="q10" value="Quality"><span>Quality</span></label>
         <label class="choice"><input type="checkbox" name="q10" value="Speed"><span>Speed</span></label><label class="choice"><input type="checkbox" name="q10" value="Trust"><span>Trust</span></label>
@@ -242,7 +249,7 @@
         <label class="choice"><input type="checkbox" name="q10" value="Premium experience"><span>Premium experience</span></label><label class="choice"><input type="checkbox" name="q10" value="Social or environmental impact"><span>Social or environmental impact</span></label>
         <label class="choice"><input type="checkbox" name="q10" value="Other" data-other-toggle="q10_other"><span>Other</span></label>
       </div><input id="q10_other" name="q10_other" class="field other-field" type="text" aria-label="Other selection factor" hidden></fieldset>
-      <fieldset id="q11" class="question"><legend><span class="q-number">Q11</span><span>How should people feel after interacting with the brand?</span></legend><p class="helper">Select up to five.</p><div class="choices" data-max-select="5" data-other-group>
+      <fieldset id="q11" class="question"><legend><span class="q-number">Q11</span><span>How should people feel after contact with the brand?</span></legend><p class="helper">Select up to five.</p><div class="choices" data-max-select="5" data-other-group>
         <label class="choice"><input type="checkbox" name="q11" value="Confident"><span>Confident</span></label><label class="choice"><input type="checkbox" name="q11" value="Excited"><span>Excited</span></label>
         <label class="choice"><input type="checkbox" name="q11" value="Safe"><span>Safe</span></label><label class="choice"><input type="checkbox" name="q11" value="Understood"><span>Understood</span></label>
         <label class="choice"><input type="checkbox" name="q11" value="Inspired"><span>Inspired</span></label><label class="choice"><input type="checkbox" name="q11" value="Empowered"><span>Empowered</span></label>
@@ -251,14 +258,14 @@
         <label class="choice"><input type="checkbox" name="q11" value="Supported"><span>Supported</span></label><label class="choice"><input type="checkbox" name="q11" value="Included"><span>Included</span></label>
         <label class="choice"><input type="checkbox" name="q11" value="Other" data-other-toggle="q11_other"><span>Other</span></label>
       </div><input id="q11_other" name="q11_other" class="field other-field" type="text" aria-label="Other desired feeling" hidden></fieldset>
-      <fieldset id="q12" class="question"><legend><span class="q-number">Q12</span><span>What misunderstandings or objections do customers commonly have about your company?</span></legend><label class="no-print" for="q12_answer">Your answer</label><textarea id="q12_answer" name="q12" class="field"></textarea></fieldset>
+      <fieldset id="q12" class="question"><legend><span class="q-number">Q12</span><span>What misunderstandings or objections do customers commonly have about your company?</span></legend><textarea id="q12_answer" name="q12" class="field"></textarea></fieldset>
     </section>
 
     <section id="section-3" class="form-section" data-section="3" aria-labelledby="section-3-title">
-      <header class="section-header"><p class="section-kicker">03 · Market positioning</p><h2 id="section-3-title">How you stand apart</h2></header>
-      <fieldset id="q13" class="question"><legend><span class="q-number">Q13</span><span>Who are your main competitors or alternatives?</span></legend><p class="helper">Include direct competitors, indirect competitors, and doing nothing or handling the problem internally.</p><label class="no-print" for="q13_answer">Your answer</label><textarea id="q13_answer" name="q13" class="field"></textarea></fieldset>
-      <fieldset id="q14" class="question"><legend><span class="q-number">Q14</span><span>Why should someone choose you instead?</span></legend><p class="helper">Focus on meaningful differences rather than general claims such as “high quality” or “good service.”</p><label class="no-print" for="q14_answer">Your answer</label><textarea id="q14_answer" name="q14" class="field"></textarea></fieldset>
-      <fieldset id="q15" class="question"><legend><span class="q-number">Q15</span><span>What can your company credibly promise customers?</span></legend><p class="helper">Something important, believable, and consistently deliverable.</p><label class="no-print" for="q15_answer">Your answer</label><textarea id="q15_answer" name="q15" class="field"></textarea></fieldset>
+      <header class="section-header"><h2 id="section-3-title">Market positioning</h2><p class="section-lead">How you stand apart</p></header>
+      <fieldset id="q13" class="question"><legend><span class="q-number">Q13</span><span>Who are your main competitors or alternatives?</span></legend><p class="helper">Direct and indirect competitors, doing nothing, or handling it in-house.</p><textarea id="q13_answer" name="q13" class="field"></textarea></fieldset>
+      <fieldset id="q14" class="question"><legend><span class="q-number">Q14</span><span>Why should someone choose you instead?</span></legend><p class="helper">Skip vague claims like "high quality" or "good service".</p><textarea id="q14_answer" name="q14" class="field"></textarea></fieldset>
+      <fieldset id="q15" class="question"><legend><span class="q-number">Q15</span><span>What can your company promise customers?</span></legend><p class="helper">Must be specific and deliverable.</p><textarea id="q15_answer" name="q15" class="field"></textarea></fieldset>
       <fieldset id="q16" class="question"><legend><span class="q-number">Q16</span><span>What evidence supports that promise?</span></legend><div class="choices" data-other-group>
         <label class="choice"><input type="checkbox" name="q16" value="Years of experience"><span>Years of experience</span></label><label class="choice"><input type="checkbox" name="q16" value="Client results"><span>Client results</span></label>
         <label class="choice"><input type="checkbox" name="q16" value="Proprietary technology"><span>Proprietary technology</span></label><label class="choice"><input type="checkbox" name="q16" value="Certifications"><span>Certifications</span></label>
@@ -274,11 +281,11 @@
         <label for="q17_benefit">that [main benefit]</label><input id="q17_benefit" name="q17_benefit" class="field" type="text">
         <label for="q17_reason">because [reason to believe]</label><input id="q17_reason" name="q17_reason" class="field" type="text">
       </div></fieldset>
-      <fieldset id="q18" class="question"><legend><span class="q-number">Q18</span><span>What should the brand never be mistaken for?</span></legend><p class="helper">Examples: cheap, overly corporate, intimidating, childish, generic, traditional, experimental, luxury, or mass-market.</p><label class="no-print" for="q18_answer">Your answer</label><textarea id="q18_answer" name="q18" class="field"></textarea></fieldset>
+      <fieldset id="q18" class="question"><legend><span class="q-number">Q18</span><span>What should the brand never be mistaken for?</span></legend><p class="helper">For example: cheap, corporate, intimidating, childish, generic, luxury, mass-market.</p><textarea id="q18_answer" name="q18" class="field"></textarea></fieldset>
     </section>
 
     <section id="section-4" class="form-section" data-section="4" aria-labelledby="section-4-title">
-      <header class="section-header"><p class="section-kicker">04 · Brand personality</p><h2 id="section-4-title">How the brand should feel</h2></header>
+      <header class="section-header"><h2 id="section-4-title">Brand personality</h2><p class="section-lead">How the brand should feel</p></header>
       <fieldset id="q19" class="question"><legend><span class="q-number">Q19</span><span>Choose three to five words that should describe the brand.</span></legend><div class="choices" data-max-select="5" data-other-group>
         <label class="choice"><input type="checkbox" name="q19" value="Accessible"><span>Accessible</span></label><label class="choice"><input type="checkbox" name="q19" value="Ambitious"><span>Ambitious</span></label><label class="choice"><input type="checkbox" name="q19" value="Bold"><span>Bold</span></label><label class="choice"><input type="checkbox" name="q19" value="Calm"><span>Calm</span></label>
         <label class="choice"><input type="checkbox" name="q19" value="Caring"><span>Caring</span></label><label class="choice"><input type="checkbox" name="q19" value="Creative"><span>Creative</span></label><label class="choice"><input type="checkbox" name="q19" value="Dependable"><span>Dependable</span></label><label class="choice"><input type="checkbox" name="q19" value="Expert"><span>Expert</span></label>
@@ -288,14 +295,14 @@
         <label class="choice"><input type="checkbox" name="q19" value="Simple"><span>Simple</span></label><label class="choice"><input type="checkbox" name="q19" value="Sophisticated"><span>Sophisticated</span></label><label class="choice"><input type="checkbox" name="q19" value="Trustworthy"><span>Trustworthy</span></label><label class="choice"><input type="checkbox" name="q19" value="Visionary"><span>Visionary</span></label>
         <label class="choice"><input type="checkbox" name="q19" value="Other" data-other-toggle="q19_other"><span>Other</span></label>
       </div><input id="q19_other" name="q19_other" class="field other-field" type="text" aria-label="Other brand personality" hidden></fieldset>
-      <fieldset id="q20" class="question"><legend><span class="q-number">Q20</span><span>Choose three words that should not describe the brand.</span></legend><label class="no-print" for="q20_answer">Your answer</label><input id="q20_answer" name="q20" class="field" type="text"></fieldset>
+      <fieldset id="q20" class="question"><legend><span class="q-number">Q20</span><span>Choose three words that should not describe the brand.</span></legend><input id="q20_answer" name="q20" class="field" type="text"></fieldset>
       <fieldset id="q21" class="question"><legend><span class="q-number">Q21</span><span>Where should the brand sit on each scale?</span></legend><div class="scale-list" id="brandScales"></div></fieldset>
-      <fieldset id="q22" class="question"><legend><span class="q-number">Q22</span><span>Imagine the brand as a person. How would they behave?</span></legend><p class="helper">Describe how they speak, dress, make decisions, treat people, and respond under pressure.</p><label class="no-print" for="q22_answer">Your answer</label><textarea id="q22_answer" name="q22" class="field"></textarea></fieldset>
-      <fieldset id="q23" class="question"><legend><span class="q-number">Q23</span><span>Name up to three brands whose personality or communication style you admire.</span></legend><p class="helper">Explain what you like about each one. They do not need to be competitors.</p><label class="no-print" for="q23_answer">Your answer</label><textarea id="q23_answer" name="q23" class="field"></textarea></fieldset>
+      <fieldset id="q22" class="question"><legend><span class="q-number">Q22</span><span>If the brand were a person, how would they act?</span></legend><p class="helper">Speech, dress, decisions, and how they treat people.</p><textarea id="q22_answer" name="q22" class="field"></textarea></fieldset>
+      <fieldset id="q23" class="question"><legend><span class="q-number">Q23</span><span>Name up to three brands whose personality or communication style you admire.</span></legend><p class="helper">Name the brand and what you like. Competitors not required.</p><textarea id="q23_answer" name="q23" class="field"></textarea></fieldset>
     </section>
 
     <section id="section-5" class="form-section" data-section="5" aria-labelledby="section-5-title">
-      <header class="section-header"><p class="section-kicker">05 · Brand voice and messaging</p><h2 id="section-5-title">How the brand speaks</h2></header>
+      <header class="section-header"><h2 id="section-5-title">Brand voice and messaging</h2><p class="section-lead">How the brand speaks</p></header>
       <fieldset id="q24" class="question"><legend><span class="q-number">Q24</span><span>How should the brand sound when communicating?</span></legend><p class="helper">Select up to five.</p><div class="choices" data-max-select="5" data-other-group>
         <label class="choice"><input type="checkbox" name="q24" value="Clear and direct"><span>Clear and direct</span></label><label class="choice"><input type="checkbox" name="q24" value="Warm and conversational"><span>Warm and conversational</span></label>
         <label class="choice"><input type="checkbox" name="q24" value="Confident and authoritative"><span>Confident and authoritative</span></label><label class="choice"><input type="checkbox" name="q24" value="Optimistic and energetic"><span>Optimistic and energetic</span></label>
@@ -304,20 +311,20 @@
         <label class="choice"><input type="checkbox" name="q24" value="Formal and professional"><span>Formal and professional</span></label><label class="choice"><input type="checkbox" name="q24" value="Simple and instructional"><span>Simple and instructional</span></label>
         <label class="choice"><input type="checkbox" name="q24" value="Other" data-other-toggle="q24_other"><span>Other</span></label>
       </div><input id="q24_other" name="q24_other" class="field other-field" type="text" aria-label="Other brand voice" hidden></fieldset>
-      <fieldset id="q25" class="question"><legend><span class="q-number">Q25</span><span>Are there words, phrases, or claims the brand should consistently use?</span></legend><label class="no-print" for="q25_answer">Your answer</label><textarea id="q25_answer" name="q25" class="field"></textarea></fieldset>
-      <fieldset id="q26" class="question"><legend><span class="q-number">Q26</span><span>Are there words, phrases, tones, or topics the brand should avoid?</span></legend><label class="no-print" for="q26_answer">Your answer</label><textarea id="q26_answer" name="q26" class="field"></textarea></fieldset>
-      <fieldset id="q27" class="question"><legend><span class="q-number">Q27</span><span>What is the single most important idea people should remember about the brand?</span></legend><label class="no-print" for="q27_answer">Your answer</label><input id="q27_answer" name="q27" class="field" type="text"></fieldset>
-      <fieldset id="q28" class="question"><legend><span class="q-number">Q28</span><span>Do you currently have a tagline, slogan, mission, or positioning statement?</span></legend><p class="helper">Indicate whether each item must be retained, may be revised, or may be replaced.</p><label class="no-print" for="q28_answer">Your answer</label><textarea id="q28_answer" name="q28" class="field"></textarea></fieldset>
+      <fieldset id="q25" class="question"><legend><span class="q-number">Q25</span><span>Are there words, phrases, or claims the brand should consistently use?</span></legend><textarea id="q25_answer" name="q25" class="field"></textarea></fieldset>
+      <fieldset id="q26" class="question"><legend><span class="q-number">Q26</span><span>Are there words, phrases, tones, or topics the brand should avoid?</span></legend><textarea id="q26_answer" name="q26" class="field"></textarea></fieldset>
+      <fieldset id="q27" class="question"><legend><span class="q-number">Q27</span><span>What is the single most important idea people should remember about the brand?</span></legend><input id="q27_answer" name="q27" class="field" type="text"></fieldset>
+      <fieldset id="q28" class="question"><legend><span class="q-number">Q28</span><span>Do you currently have a tagline, slogan, mission, or positioning statement?</span></legend><p class="helper">Say which items to keep, revise, or replace.</p><textarea id="q28_answer" name="q28" class="field"></textarea></fieldset>
       <fieldset id="q29" class="question stacked-fields"><legend><span class="q-number">Q29</span><span>What should we communicate at each stage of the customer journey?</span></legend>
-        <label for="q29_awareness">Awareness: What should initially get their attention?</label><textarea id="q29_awareness" name="q29_awareness" class="field"></textarea>
-        <label for="q29_consideration">Consideration: What should convince them to learn more?</label><textarea id="q29_consideration" name="q29_consideration" class="field"></textarea>
-        <label for="q29_decision">Decision: What should make them trust and choose you?</label><textarea id="q29_decision" name="q29_decision" class="field"></textarea>
-        <label for="q29_experience">Experience: What should the brand reinforce after they become a customer?</label><textarea id="q29_experience" name="q29_experience" class="field"></textarea>
+        <label for="q29_awareness">Awareness</label><textarea id="q29_awareness" name="q29_awareness" class="field"></textarea>
+        <label for="q29_consideration">Consideration</label><textarea id="q29_consideration" name="q29_consideration" class="field"></textarea>
+        <label for="q29_decision">Decision</label><textarea id="q29_decision" name="q29_decision" class="field"></textarea>
+        <label for="q29_experience">After purchase</label><textarea id="q29_experience" name="q29_experience" class="field"></textarea>
       </fieldset>
     </section>
 
     <section id="section-6" class="form-section" data-section="6" aria-labelledby="section-6-title">
-      <header class="section-header"><p class="section-kicker">06 · Existing brand assets</p><h2 id="section-6-title">What you already have</h2><p id="rebrandHint" class="section-hint" hidden>Your business stage suggests a rebrand. Please be specific about what should stay and what is no longer working.</p></header>
+      <header class="section-header"><h2 id="section-6-title">Existing brand assets</h2><p class="section-lead">What you already have</p><p id="rebrandHint" class="section-hint" hidden>You selected a rebrand stage. Say what to keep and what to change.</p></header>
       <fieldset id="q30" class="question"><legend><span class="q-number">Q30</span><span>Which existing materials are available?</span><span class="optional">Optional</span></legend><div class="choices" data-other-group>
         <label class="choice"><input type="checkbox" name="q30" value="Current logo"><span>Current logo</span></label><label class="choice"><input type="checkbox" name="q30" value="Logo source files"><span>Logo source files</span></label>
         <label class="choice"><input type="checkbox" name="q30" value="Brand guidelines"><span>Brand guidelines</span></label><label class="choice"><input type="checkbox" name="q30" value="Color palette"><span>Color palette</span></label>
@@ -328,16 +335,16 @@
         <label class="choice"><input type="checkbox" name="q30" value="Illustration library"><span>Illustration library</span></label><label class="choice"><input type="checkbox" name="q30" value="Templates"><span>Templates</span></label>
         <label class="choice"><input type="checkbox" name="q30" value="Other" data-other-toggle="q30_other"><span>Other</span></label>
       </div><input id="q30_other" name="q30_other" class="field other-field" type="text" aria-label="Other existing material" hidden></fieldset>
-      <fieldset id="q31" class="question"><legend><span class="q-number">Q31</span><span>What parts of the current identity should be retained?</span><span class="optional">Optional</span></legend><p class="helper">Recognizable colors, symbols, initials, typography, heritage, or customer familiarity.</p><label class="no-print" for="q31_answer">Your answer</label><textarea id="q31_answer" name="q31" class="field"></textarea></fieldset>
-      <fieldset id="q32" class="question"><legend><span class="q-number">Q32</span><span>What parts of the current identity are no longer working?</span><span class="optional">Optional</span></legend><p class="helper">Explain the practical problem, not only whether you like or dislike it.</p><label class="no-print" for="q32_answer">Your answer</label><textarea id="q32_answer" name="q32" class="field"></textarea></fieldset>
+      <fieldset id="q31" class="question"><legend><span class="q-number">Q31</span><span>What parts of the current identity should be retained?</span><span class="optional">Optional</span></legend><p class="helper">Colors, symbols, type, heritage, or recognition to keep.</p><textarea id="q31_answer" name="q31" class="field"></textarea></fieldset>
+      <fieldset id="q32" class="question"><legend><span class="q-number">Q32</span><span>What parts of the current identity are no longer working?</span><span class="optional">Optional</span></legend><p class="helper">What is the practical problem?</p><textarea id="q32_answer" name="q32" class="field"></textarea></fieldset>
     </section>
 
     <section id="section-7" class="form-section" data-section="7" aria-labelledby="section-7-title">
-      <header class="section-header"><p class="section-kicker">07 · Visual direction</p><h2 id="section-7-title">Look, feel, and references</h2></header>
-      <fieldset id="q33" class="question stacked-fields"><legend><span class="q-number">Q33</span><span>Share three to five visual references you like.</span></legend><p class="helper">Brands, websites, packaging, interiors, photography, posters, architecture, fashion, or artwork. Explain what you like: color, layout, typography, simplicity, energy, photography, illustration, or overall mood.</p><label for="q33_links">Reference links</label><textarea id="q33_links" name="q33_links" class="field"></textarea><label for="q33_notes">What you like about them</label><textarea id="q33_notes" name="q33_notes" class="field"></textarea></fieldset>
-      <fieldset id="q34" class="question"><legend><span class="q-number">Q34</span><span>Share any visual styles you strongly dislike.</span></legend><p class="helper">Add links or explain what should be avoided.</p><label class="no-print" for="q34_answer">Your answer</label><textarea id="q34_answer" name="q34" class="field"></textarea></fieldset>
-      <fieldset id="q35" class="question"><legend><span class="q-number">Q35</span><span>Are there colors you prefer, currently own, or need to avoid?</span></legend><p class="helper">Include industry conventions, competitor colors, cultural considerations, printing limitations, or accessibility requirements.</p><label class="no-print" for="q35_answer">Your answer</label><textarea id="q35_answer" name="q35" class="field"></textarea></fieldset>
-      <fieldset id="q36" class="question"><legend><span class="q-number">Q36</span><span>What should the typography feel like?</span></legend><p class="helper">Select up to three.</p><div class="choices" data-max-select="3" data-other-group>
+      <header class="section-header"><h2 id="section-7-title">Visual direction</h2><p class="section-lead">Look, feel, and references</p></header>
+      <fieldset id="q33" class="question stacked-fields"><legend><span class="q-number">Q33</span><span>List three to five visual references you like.</span></legend><p class="helper">Links or names. Note color, type, layout, mood, or other details.</p><label for="q33_links">Reference links</label><textarea id="q33_links" name="q33_links" class="field"></textarea><label for="q33_notes">Notes</label><textarea id="q33_notes" name="q33_notes" class="field"></textarea></fieldset>
+      <fieldset id="q34" class="question"><legend><span class="q-number">Q34</span><span>List visual styles you dislike.</span></legend><p class="helper">Links or short notes.</p><textarea id="q34_answer" name="q34" class="field"></textarea></fieldset>
+      <fieldset id="q35" class="question"><legend><span class="q-number">Q35</span><span>Are there colors you prefer, currently own, or need to avoid?</span></legend><p class="helper">Industry norms, competitor colors, culture, print limits, or accessibility needs.</p><textarea id="q35_answer" name="q35" class="field"></textarea></fieldset>
+      <fieldset id="q36" class="question"><legend><span class="q-number">Q36</span><span>What typography direction do you want?</span></legend><p class="helper">Select up to three.</p><div class="choices" data-max-select="3" data-other-group>
         <label class="choice"><input type="checkbox" name="q36" value="Modern"><span>Modern</span></label><label class="choice"><input type="checkbox" name="q36" value="Timeless"><span>Timeless</span></label><label class="choice"><input type="checkbox" name="q36" value="Technical"><span>Technical</span></label><label class="choice"><input type="checkbox" name="q36" value="Editorial"><span>Editorial</span></label>
         <label class="choice"><input type="checkbox" name="q36" value="Friendly"><span>Friendly</span></label><label class="choice"><input type="checkbox" name="q36" value="Premium"><span>Premium</span></label><label class="choice"><input type="checkbox" name="q36" value="Bold"><span>Bold</span></label><label class="choice"><input type="checkbox" name="q36" value="Elegant"><span>Elegant</span></label>
         <label class="choice"><input type="checkbox" name="q36" value="Playful"><span>Playful</span></label><label class="choice"><input type="checkbox" name="q36" value="Minimal"><span>Minimal</span></label><label class="choice"><input type="checkbox" name="q36" value="Institutional"><span>Institutional</span></label><label class="choice"><input type="checkbox" name="q36" value="Handcrafted"><span>Handcrafted</span></label>
@@ -352,14 +359,14 @@
         <label class="choice"><input type="checkbox" name="q37" value="Patterns and textures"><span>Patterns and textures</span></label><label class="choice"><input type="checkbox" name="q37" value="AI-generated imagery"><span>AI-generated imagery</span></label>
         <label class="choice"><input type="checkbox" name="q37" value="Primarily typography"><span>Primarily typography</span></label><label class="choice"><input type="checkbox" name="q37" value="Other" data-other-toggle="q37_other"><span>Other</span></label>
       </div><input id="q37_other" name="q37_other" class="field other-field" type="text" aria-label="Other imagery type" hidden></fieldset>
-      <fieldset id="q38" class="question"><legend><span class="q-number">Q38</span><span>Are there meaningful symbols, stories, places, objects, or cultural references connected to the company?</span></legend><p class="helper">Mention anything we may explore visually, as well as anything we should not use.</p><label class="no-print" for="q38_answer">Your answer</label><textarea id="q38_answer" name="q38" class="field"></textarea></fieldset>
+      <fieldset id="q38" class="question"><legend><span class="q-number">Q38</span><span>Are there symbols, stories, places, objects, or cultural references tied to the company?</span></legend><p class="helper">Symbols, stories, or references to use or avoid.</p><textarea id="q38_answer" name="q38" class="field"></textarea></fieldset>
     </section>
 
     <section id="section-8" class="form-section" data-section="8" aria-labelledby="section-8-title">
-      <header class="section-header"><p class="section-kicker">08 · Logo requirements</p><h2 id="section-8-title">Where and how the mark must work</h2></header>
-      <fieldset id="q39" class="question"><legend><span class="q-number">Q39</span><span>Where will the logo be used most often?</span></legend><p class="helper">Select and rank the five most important. Use 1 for the highest priority.</p><div id="q39Ranks" class="rank-list"></div><input id="q39_other" name="q39_other" class="field other-field" type="text" aria-label="Other logo use" hidden><p id="q39_error" class="field-error" role="alert"></p></fieldset>
-      <fieldset id="q40" class="question"><legend><span class="q-number">Q40</span><span>Are there any elements the logo must include?</span></legend><p class="helper">Only list genuine requirements such as a legal name, established symbol, founder name, certification, or mandated descriptor.</p><label class="no-print" for="q40_answer">Your answer</label><textarea id="q40_answer" name="q40" class="field"></textarea></fieldset>
-      <fieldset id="q41" class="question"><legend><span class="q-number">Q41</span><span>Are there any symbols, visual clichés, or styles we must avoid?</span></legend><label class="no-print" for="q41_answer">Your answer</label><textarea id="q41_answer" name="q41" class="field"></textarea></fieldset>
+      <header class="section-header"><h2 id="section-8-title">Logo requirements</h2><p class="section-lead">Logo use and constraints</p></header>
+      <fieldset id="q39" class="question"><legend><span class="q-number">Q39</span><span>Where will the logo be used most often?</span></legend><p class="helper">Pick up to five. Rank them 1 (highest) to 5.</p><div id="q39Ranks" class="rank-list"></div><input id="q39_other" name="q39_other" class="field other-field" type="text" aria-label="Other logo use" hidden><p id="q39_error" class="field-error" role="alert"></p></fieldset>
+      <fieldset id="q40" class="question"><legend><span class="q-number">Q40</span><span>Are there any elements the logo must include?</span></legend><p class="helper">Legal name, symbol, founder, certification, or required text only.</p><textarea id="q40_answer" name="q40" class="field"></textarea></fieldset>
+      <fieldset id="q41" class="question"><legend><span class="q-number">Q41</span><span>Are there any symbols, visual clichés, or styles we must avoid?</span></legend><textarea id="q41_answer" name="q41" class="field"></textarea></fieldset>
       <fieldset id="q42" class="question"><legend><span class="q-number">Q42</span><span>Which logo variations may be needed?</span></legend><div class="choices">
         <label class="choice"><input type="checkbox" name="q42" value="Primary horizontal logo"><span>Primary horizontal logo</span></label><label class="choice"><input type="checkbox" name="q42" value="Stacked logo"><span>Stacked logo</span></label>
         <label class="choice"><input type="checkbox" name="q42" value="Symbol or icon"><span>Symbol or icon</span></label><label class="choice"><input type="checkbox" name="q42" value="Wordmark"><span>Wordmark</span></label>
@@ -368,11 +375,11 @@
         <label class="choice"><input type="checkbox" name="q42" value="Small-size version"><span>Small-size version</span></label><label class="choice"><input type="checkbox" name="q42" value="Logo with tagline"><span>Logo with tagline</span></label>
         <label class="choice"><input type="checkbox" name="q42" value="Co-branded version"><span>Co-branded version</span></label><label class="choice"><input type="checkbox" name="q42" value="Animated version"><span>Animated version</span></label>
       </div></fieldset>
-      <fieldset id="q43" class="question"><legend><span class="q-number">Q43</span><span>Will the logo regularly appear beside partner, parent-company, certification, or sponsor logos?</span></legend><div class="choices" data-conditional-group="q43_detail"><label class="choice"><input type="radio" name="q43" value="Yes"><span>Yes</span></label><label class="choice"><input type="radio" name="q43" value="No"><span>No</span></label></div><div id="q43_detail" class="conditional" hidden><label for="q43_notes">List the relevant organizations and explain the relationship.</label><textarea id="q43_notes" name="q43_notes" class="field"></textarea></div></fieldset>
+      <fieldset id="q43" class="question"><legend><span class="q-number">Q43</span><span>Will the logo regularly appear beside partner, parent-company, certification, or sponsor logos?</span></legend><div class="choices" data-conditional-group="q43_detail"><label class="choice"><input type="radio" name="q43" value="Yes"><span>Yes</span></label><label class="choice"><input type="radio" name="q43" value="No"><span>No</span></label></div><div id="q43_detail" class="conditional" hidden><label for="q43_notes">List the organizations and the relationship.</label><textarea id="q43_notes" name="q43_notes" class="field"></textarea></div></fieldset>
     </section>
 
     <section id="section-9" class="form-section" data-section="9" aria-labelledby="section-9-title">
-      <header class="section-header"><p class="section-kicker">09 · Brand applications</p><h2 id="section-9-title">Where the identity will live</h2><p id="physicalHint" class="section-hint" hidden>You selected physical applications. Note any production limitations in Section 10.</p></header>
+      <header class="section-header"><h2 id="section-9-title">Brand applications</h2><p class="section-lead">Where the identity will live</p><p id="physicalHint" class="section-hint" hidden>You selected physical items. Add production limits in section 10.</p></header>
       <fieldset id="q44" class="question"><legend><span class="q-number">Q44</span><span>Which materials should be designed as part of this project?</span></legend><div class="choices" data-other-group>
         <label class="choice"><input type="checkbox" name="q44" value="Brand guidelines"><span>Brand guidelines</span></label><label class="choice"><input type="checkbox" name="q44" value="Business card"><span>Business card</span></label>
         <label class="choice"><input type="checkbox" name="q44" value="Letterhead"><span>Letterhead</span></label><label class="choice"><input type="checkbox" name="q44" value="Email signature"><span>Email signature</span></label>
@@ -385,27 +392,27 @@
         <label class="choice"><input type="checkbox" name="q44" value="Photography direction"><span>Photography direction</span></label><label class="choice"><input type="checkbox" name="q44" value="Illustration system"><span>Illustration system</span></label>
         <label class="choice"><input type="checkbox" name="q44" value="Icon system"><span>Icon system</span></label><label class="choice"><input type="checkbox" name="q44" value="Other" data-other-toggle="q44_other"><span>Other</span></label>
       </div><input id="q44_other" name="q44_other" class="field other-field" type="text" aria-label="Other material" hidden></fieldset>
-      <fieldset id="q45" class="question stacked-fields"><legend><span class="q-number">Q45</span><span>Which three applications are most important for testing the identity?</span></legend><p class="helper">A good identity must work in the places where customers will actually experience it.</p><label for="q45_1">1 · Most important</label><input id="q45_1" name="q45_1" class="field" type="text"><label for="q45_2">2 · Second</label><input id="q45_2" name="q45_2" class="field" type="text"><label for="q45_3">3 · Third</label><input id="q45_3" name="q45_3" class="field" type="text"></fieldset>
-      <fieldset id="q46" class="question"><legend><span class="q-number">Q46</span><span>Does the identity need to support multiple products, services, locations, or sub-brands?</span></legend><div class="choices" data-conditional-group="q46_detail"><label class="choice"><input type="radio" name="q46" value="Yes"><span>Yes</span></label><label class="choice"><input type="radio" name="q46" value="No"><span>No</span></label></div><div id="q46_detail" class="conditional" hidden><label for="q46_notes">Describe the current and expected brand structure.</label><textarea id="q46_notes" name="q46_notes" class="field"></textarea></div></fieldset>
+      <fieldset id="q45" class="question stacked-fields"><legend><span class="q-number">Q45</span><span>Which three applications are most important for testing the identity?</span></legend><p class="helper">Where customers will see the brand most.</p><label for="q45_1">Priority 1</label><input id="q45_1" name="q45_1" class="field" type="text"><label for="q45_2">Priority 2</label><input id="q45_2" name="q45_2" class="field" type="text"><label for="q45_3">Priority 3</label><input id="q45_3" name="q45_3" class="field" type="text"></fieldset>
+      <fieldset id="q46" class="question"><legend><span class="q-number">Q46</span><span>Does the identity need to support multiple products, services, locations, or sub-brands?</span></legend><div class="choices" data-conditional-group="q46_detail"><label class="choice"><input type="radio" name="q46" value="Yes"><span>Yes</span></label><label class="choice"><input type="radio" name="q46" value="No"><span>No</span></label></div><div id="q46_detail" class="conditional" hidden><label for="q46_notes">Current and planned brand structure.</label><textarea id="q46_notes" name="q46_notes" class="field"></textarea></div></fieldset>
       <fieldset id="q47" class="question"><legend><span class="q-number">Q47</span><span>Does the identity need to support multiple languages or writing systems?</span></legend><div class="choices" data-conditional-group="q47_detail"><label class="choice"><input type="radio" name="q47" value="Yes"><span>Yes</span></label><label class="choice"><input type="radio" name="q47" value="No"><span>No</span></label></div><div id="q47_detail" class="conditional" hidden><label for="q47_notes">List the languages and markets.</label><textarea id="q47_notes" name="q47_notes" class="field"></textarea></div></fieldset>
     </section>
 
     <section id="section-10" class="form-section" data-section="10" aria-labelledby="section-10-title">
-      <header class="section-header"><p class="section-kicker">10 · Practical constraints</p><h2 id="section-10-title">Rules the design must respect</h2></header>
-      <fieldset id="q48" class="question"><legend><span class="q-number">Q48</span><span>Are there legal, regulatory, cultural, or industry requirements we should know about?</span><span class="optional">Optional</span></legend><p class="helper">Required wording, trademarks, licensing, product labels, professional regulations, or culturally sensitive imagery.</p><label class="no-print" for="q48_answer">Your answer</label><textarea id="q48_answer" name="q48" class="field"></textarea></fieldset>
+      <header class="section-header"><h2 id="section-10-title">Practical constraints</h2><p class="section-lead">Rules the design must respect</p></header>
+      <fieldset id="q48" class="question"><legend><span class="q-number">Q48</span><span>Are there legal, regulatory, cultural, or industry requirements we should know about?</span><span class="optional">Optional</span></legend><p class="helper">Required wording, trademarks, labels, regulations, or sensitive imagery.</p><textarea id="q48_answer" name="q48" class="field"></textarea></fieldset>
       <fieldset id="q49" class="question"><legend><span class="q-number">Q49</span><span>Are there accessibility requirements for the brand?</span><span class="optional">Optional</span></legend><div class="choices" data-other-group>
         <label class="choice"><input type="checkbox" name="q49" value="Readable for older audiences"><span>Readable for older audiences</span></label><label class="choice"><input type="checkbox" name="q49" value="High color contrast"><span>High color contrast</span></label>
         <label class="choice"><input type="checkbox" name="q49" value="Color-blind-friendly combinations"><span>Color-blind-friendly combinations</span></label><label class="choice"><input type="checkbox" name="q49" value="Large-text applications"><span>Large-text applications</span></label>
         <label class="choice"><input type="checkbox" name="q49" value="Screen-reader-compatible digital materials"><span>Screen-reader-compatible digital materials</span></label><label class="choice"><input type="checkbox" name="q49" value="Plain-language communication"><span>Plain-language communication</span></label>
         <label class="choice"><input type="checkbox" name="q49" value="No specific requirement identified"><span>No specific requirement identified</span></label><label class="choice"><input type="checkbox" name="q49" value="Other" data-other-toggle="q49_other"><span>Other</span></label>
       </div><input id="q49_other" name="q49_other" class="field other-field" type="text" aria-label="Other accessibility requirement" hidden></fieldset>
-      <fieldset id="q50" class="question"><legend><span class="q-number">Q50</span><span>Are there technical or production limitations?</span><span class="optional">Optional</span></legend><p class="helper">One-color printing, embroidery, engraving, small packaging, low-resolution screens, signage fabrication, or internal software restrictions.</p><label class="no-print" for="q50_answer">Your answer</label><textarea id="q50_answer" name="q50" class="field"></textarea></fieldset>
+      <fieldset id="q50" class="question"><legend><span class="q-number">Q50</span><span>Are there technical or production limitations?</span><span class="optional">Optional</span></legend><p class="helper">One-color print, embroidery, small packaging, low-res screens, signage, or software limits.</p><textarea id="q50_answer" name="q50" class="field"></textarea></fieldset>
     </section>
 
     <section id="section-11" class="form-section" data-section="11" aria-labelledby="section-11-title">
-      <header class="section-header"><p class="section-kicker">11 · Decision and approval</p><h2 id="section-11-title">How decisions get made</h2></header>
-      <fieldset id="q51" class="question"><legend><span class="q-number">Q51</span><span>Who will make the final decision?</span></legend><p class="helper">List one final decision-maker whenever possible.</p><label class="no-print" for="q51_answer">Your answer</label><input id="q51_answer" name="q51" class="field" type="text"></fieldset>
-      <fieldset id="q52" class="question"><legend><span class="q-number">Q52</span><span>Who else needs to review or approve the work?</span></legend><p class="helper">Include their role and what they are responsible for reviewing.</p><label class="no-print" for="q52_answer">Your answer</label><textarea id="q52_answer" name="q52" class="field"></textarea></fieldset>
+      <header class="section-header"><h2 id="section-11-title">Decision and approval</h2><p class="section-lead">How decisions get made</p></header>
+      <fieldset id="q51" class="question"><legend><span class="q-number">Q51</span><span>Who will make the final decision?</span></legend><p class="helper">Name one decision-maker if you can.</p><input id="q51_answer" name="q51" class="field" type="text"></fieldset>
+      <fieldset id="q52" class="question"><legend><span class="q-number">Q52</span><span>Who else needs to review or approve the work?</span></legend><p class="helper">Role and what they review.</p><textarea id="q52_answer" name="q52" class="field"></textarea></fieldset>
       <fieldset id="q53" class="question"><legend><span class="q-number">Q53</span><span>What criteria will be used to approve the brand direction?</span></legend><p class="helper">Select up to five.</p><div class="choices" data-max-select="5" data-other-group>
         <label class="choice"><input type="checkbox" name="q53" value="Reflects the company’s strategy"><span>Reflects the company’s strategy</span></label><label class="choice"><input type="checkbox" name="q53" value="Appeals to the target audience"><span>Appeals to the target audience</span></label>
         <label class="choice"><input type="checkbox" name="q53" value="Clearly differs from competitors"><span>Clearly differs from competitors</span></label><label class="choice"><input type="checkbox" name="q53" value="Feels credible and professional"><span>Feels credible and professional</span></label>
@@ -413,15 +420,15 @@
         <label class="choice"><input type="checkbox" name="q53" value="Supports future growth"><span>Supports future growth</span></label><label class="choice"><input type="checkbox" name="q53" value="Receives leadership approval"><span>Receives leadership approval</span></label>
         <label class="choice"><input type="checkbox" name="q53" value="Receives customer or market validation"><span>Receives customer or market validation</span></label><label class="choice"><input type="checkbox" name="q53" value="Other" data-other-toggle="q53_other"><span>Other</span></label>
       </div><input id="q53_other" name="q53_other" class="field other-field" type="text" aria-label="Other approval criterion" hidden></fieldset>
-      <fieldset id="q54" class="question stacked-fields"><legend><span class="q-number">Q54</span><span>Are there any fixed launch dates or business events connected to this project?</span></legend><p class="helper">Product launches, events, investor presentations, store openings, or website releases.</p><label for="q54_date">Date</label><input id="q54_date" name="q54_date" class="field" type="date"><label for="q54_notes">Context</label><textarea id="q54_notes" name="q54_notes" class="field"></textarea></fieldset>
-      <fieldset id="q55" class="question"><legend><span class="q-number">Q55</span><span>What would make this branding project feel successful one year after launch?</span></legend><p class="helper">Describe an observable business or customer outcome, not only whether the team likes the design.</p><label class="no-print" for="q55_answer">Your answer</label><textarea id="q55_answer" name="q55" class="field"></textarea></fieldset>
-      <fieldset id="q56" class="question"><legend><span class="q-number">Q56</span><span>What haven’t we asked that could materially affect the brand identity?</span></legend><p class="helper">Share any internal history, disagreements, sensitivities, ambitions, or future plans the design team should understand.</p><label class="no-print" for="q56_answer">Your answer</label><textarea id="q56_answer" name="q56" class="field"></textarea></fieldset>
+      <fieldset id="q54" class="question stacked-fields"><legend><span class="q-number">Q54</span><span>Are there any fixed launch dates or business events connected to this project?</span></legend><p class="helper">Launches, events, investor meetings, store openings, or site releases.</p><label for="q54_date">Date</label><input id="q54_date" name="q54_date" class="field" type="date"><label for="q54_notes">Context</label><textarea id="q54_notes" name="q54_notes" class="field"></textarea></fieldset>
+      <fieldset id="q55" class="question"><legend><span class="q-number">Q55</span><span>What would success look like one year after launch?</span></legend><p class="helper">A business or customer result, not just team approval.</p><textarea id="q55_answer" name="q55" class="field"></textarea></fieldset>
+      <fieldset id="q56" class="question"><legend><span class="q-number">Q56</span><span>What else should we know?</span></legend><p class="helper">History, disagreements, sensitivities, or plans that affect the work.</p><textarea id="q56_answer" name="q56" class="field"></textarea></fieldset>
     </section>
 
     <section class="action-card no-print" aria-labelledby="actions-heading">
       <h2 id="actions-heading">Save or submit</h2>
-      <p class="action-note"><strong>Save</strong> creates a link you can copy and share. Your answers stay inside the link.</p>
-      <p class="action-note"><strong>Submit</strong> opens Print so you can save a PDF, then opens an email to design@sprint19.com. Attach the PDF and send.</p>
+      <p class="action-note"><strong>Save</strong> copies a link with your answers.</p>
+      <p class="action-note"><strong>Submit</strong> opens Print to save a PDF, then opens email to design@sprint19.com. Attach the PDF and send.</p>
       <div class="action-row">
         <button id="saveButton" class="btn btn-secondary" type="button" disabled>Save</button>
         <button id="submitButton" class="btn btn-primary" type="button" disabled>Submit</button>
@@ -434,22 +441,22 @@
   <hr>
   <p>Answers stay in your browser or in the share link you create. Nothing is uploaded.</p>
   <p>Prepared by <a href="https://sprint19.com" target="_blank" rel="noopener noreferrer">Sprint19</a>.</p>
-  <p class="guardrail">This questionnaire supports brand discovery and alignment. It does not replace legal, trademark, accessibility, or market research advice.</p>
+  <p class="guardrail">This form supports brand discovery. It is not legal, trademark, accessibility, or market research advice.</p>
   <p class="copyright">&copy; 2026 Sprint19. Code licensed under <a href="/LICENSE">MIT</a>. Sprint19 name and branding may not be used without permission.</p>
 </footer>
 
 <div id="shareModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="shareTitle" hidden>
   <div class="modal-backdrop" data-close-modal="shareModal"></div>
   <div class="modal-dialog">
-    <h2 id="shareTitle">Shareable link</h2>
-    <p>Anyone with this link can open the form with your answers filled in. Answers live in the link, not on our servers.</p>
+    <h2 id="shareTitle">Copy link</h2>
+    <p>Anyone with this link can open your filled form. Answers stay in the link, not on our servers.</p>
     <div class="share-row">
       <label class="no-print" for="shareUrl">Link</label>
       <input id="shareUrl" class="field" type="text" readonly>
       <button id="copyShare" class="btn btn-primary" type="button">Copy link</button>
     </div>
     <p id="copyFeedback" class="copy-feedback" aria-live="polite"></p>
-    <p id="linkWarning" class="warning" hidden>This link is very long. Some apps may shorten or truncate it; email is the safest way to share it.</p>
+    <p id="linkWarning" class="warning" hidden>This link is long. Some apps truncate links. Email is the safest way to send it.</p>
     <div class="modal-actions"><button class="btn btn-secondary" type="button" data-close-modal="shareModal">Close</button></div>
   </div>
 </div>
@@ -457,8 +464,8 @@
 <div id="submitModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="submitTitle" hidden>
   <div class="modal-backdrop" data-close-modal="submitModal"></div>
   <div class="modal-dialog">
-    <h2 id="submitTitle">Almost done</h2>
-    <p>Save the PDF from the print dialog, attach it to the email to <strong>design@sprint19.com</strong>, then send.</p>
+    <h2 id="submitTitle">Next steps</h2>
+    <p>Save the PDF from the print dialog, attach it to the email to <strong>design@sprint19.com</strong>, and send.</p>
     <div class="modal-actions">
       <button id="openEmailAgain" class="btn btn-primary" type="button">Open email again</button>
       <button id="printAgain" class="btn btn-secondary" type="button">Print again</button>
@@ -625,7 +632,7 @@
     var answered = 0;
     questions.forEach(function (question) { if (questionAnswered(question)) answered++; });
     document.getElementById('answerProgress').textContent = answered + ' of 56 answered';
-    document.getElementById('progressFill').style.width = Math.round(answered / 56 * 100) + '%';
+    document.getElementById('progressFill').style.transform = 'scaleX(' + (answered / 56) + ')';
 
     var current = 1;
     var sections = form.querySelectorAll('.form-section');
@@ -708,10 +715,10 @@
       if (!window.LZString) throw new Error('Compression library unavailable.');
       var json = window.LZString.decompressFromEncodedURIComponent(window.location.hash.slice(3));
       if (!json || !applyState(JSON.parse(json))) throw new Error('Invalid state.');
-      loadStatus.textContent = 'Loaded answers from a shared link. Review them before saving or submitting.';
+      loadStatus.textContent = 'Loaded from a shared link. Review before saving or submitting.';
       loadStatus.hidden = false;
     } catch (error) {
-      loadStatus.textContent = 'This share link could not be read. It may be incomplete or damaged. You can still complete a new questionnaire below.';
+      loadStatus.textContent = 'This link could not be read. It may be incomplete. You can still fill out a new form below.';
       loadStatus.hidden = false;
     }
   }
@@ -771,15 +778,15 @@
     var company = document.getElementById('client_company').value.trim();
     var body = [
       'Hello Sprint19 Design,', '',
-      'Please find the Brand Identity Questionnaire PDF attached.', '',
+      'Brand Identity Questionnaire PDF attached.', '',
       'Client: ' + document.getElementById('client_name').value.trim(),
       'Company: ' + company,
       'Email: ' + document.getElementById('client_email').value.trim(),
       'Brand name: ' + brand, '',
-      'Shareable questionnaire link:', lastShareUrl, '',
+      'Questionnaire link:', lastShareUrl, '',
       'Thank you.'
     ].join('\n');
-    return 'mailto:design@sprint19.com?subject=' + encodeURIComponent('Brand Identity Questionnaire — ' + company) + '&body=' + encodeURIComponent(body);
+    return 'mailto:design@sprint19.com?subject=' + encodeURIComponent('Brand Identity Questionnaire for ' + company) + '&body=' + encodeURIComponent(body);
   }
 
   function openEmail() {
@@ -787,10 +794,7 @@
   }
 
   function controlLabel(control) {
-    if (control.labels && control.labels.length) {
-      var label = control.labels[0].textContent.trim();
-      if (label && label !== 'Your answer') return label;
-    }
+      if (control.labels && control.labels.length) return control.labels[0].textContent.trim();
     return control.getAttribute('aria-label') || '';
   }
 
@@ -806,7 +810,7 @@
         if (!value) return;
         if (control.matches('[data-rank-check]')) {
           var rank = control.closest('.rank-row').querySelector('.rank-input').value;
-          lines.push(control.value + (rank ? ' — rank ' + rank : ''));
+          lines.push(control.value + (rank ? ' (rank ' + rank + ')' : ''));
           return;
         }
         if (/^q39_rank_/.test(control.name)) return;
